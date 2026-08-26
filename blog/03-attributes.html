@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Building Amber on ngn/k — an essay series</title>
-<meta name="description" content="Five posts, in implementation order, on what I added to the ngn/k array interpreter to turn it into Amber: a columnar in-memory engine with a q/kdb+ vocabulary.">
+<title>One byte at offset −13: column attributes in C</title>
+<meta name="description" content="How Amber implements kdb-style column attributes in C: where the byte lives, which kernels branch on it, what each of the four promises, and the measured 2261x speedup on find.">
 <meta name="author" content="Andrea Bonucci">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0F'/%3E%3Cpath d='M16 5 26.6 23.4a1.1 1.1 0 0 1-1 1.7h-3.9L16 14.9l-5.7 10.2H6.4a1.1 1.1 0 0 1-1-1.7L16 5Z' fill='%23FFB020'/%3E%3C/svg%3E">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Building Amber on ngn/k — an essay series">
-<meta property="og:description" content="Five posts, in implementation order, on what I added to the ngn/k array interpreter to turn it into Amber: a columnar in-memory engine with a q/kdb+ vocabulary.">
-<meta property="article:published_time" content="2026-07-24">
+<meta property="og:title" content="One byte at offset −13: column attributes in C">
+<meta property="og:description" content="How Amber implements kdb-style column attributes in C: where the byte lives, which kernels branch on it, what each of the four promises, and the measured 2261x speedup on find.">
+<meta property="article:published_time" content="2026-03-08">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -269,7 +269,7 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
 </style>
 <script>document.documentElement.className+=" js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
 </head>
-<body class="index">
+<body class="post">
 <a class="skip" href="#main">Skip to content</a>
 <div id="progress"></div>
 
@@ -277,7 +277,7 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
   <div class="topbar-in">
     <a class="mark" href="index.html">
       <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="mg" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#mg)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#mg)" opacity=".62"/></svg>
-      <span>Amber</span><span class="sub">Essays</span>
+      <span>Amber</span><span class="sub">Post 03</span>
     </a>
     <div class="tb-right">
       <a class="ibtn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" aria-label="Repository">
@@ -294,55 +294,464 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
 <nav class="toc" id="toc" aria-label="On this page"><div class="h">Contents</div><div id="tocList"></div></nav>
 
 <main id="main">
-<header class="idx-hero"><div class="wrap"><div class="col">
-  <div class="series"><span class="bar"></span>Essay series</div>
-  <h1 style="max-width:18ch">Building Amber on ngn/k</h1>
-  <p class="dek" style="max-width:46ch">Five posts, in the order I wrote the code. What a 10,000-line K
-  interpreter gives you for free, and what I had to add to turn it into a columnar engine a tick shop
-  could actually use.</p>
-  <div class="meta"><span class="tag">5 parts</span><span>2026</span><span class="sep">·</span>
-  <span>C99 · AGPLv3</span><span class="sep">·</span><span>Andrea Bonucci</span></div>
-</div></div></header>
-<section class="idx-list"><div class="wrap"><div class="col"><a class="idx" href="01-ngn-k.html" style="--i1:#7aa2f7;--i2:#a78bfa">
-  <div class="no">01</div>
-  <div>
-    <h3>The interpreter underneath: what ngn/k is, and why Amber starts there</h3>
-    <p>Before any of my code existed there was a 10,000-line C interpreter that fits in a cache. This is what it does, why K is shaped the way it is, and what I inherited.</p>
-    <div class="m"><span>2026-01-12</span><span>·</span><span>15 min</span><span>·</span><span>foundation</span></div>
+<header class="hero"><div class="wrap"><div class="col">
+  <div class="series"><span class="bar"></span>Building Amber on ngn/k &nbsp;·&nbsp; Part 03 of 05</div>
+  <div class="postno">03</div>
+  <h1>One byte at offset −13: column attributes in C</h1>
+  <p class="dek">`s, `u, `p and `g are not metadata. They are a promise the kernel is allowed to believe, stored in a byte nobody has to look for, and they are the difference between 4.23 seconds and 1.9 milliseconds.</p>
+  <div class="meta">
+    <span class="tag">v1.0 – v1.4</span>
+    <span>2026-03-08</span><span class="sep">·</span><span>19 min read</span>
+    <span class="sep">·</span><span>Andrea Bonucci</span>
   </div>
-</a><a class="idx" href="02-the-q-layer.html" style="--i1:#56d4dd;--i2:#5ddba0">
-  <div class="no">02</div>
-  <div>
-    <h3>Teaching K to speak q: tables, the join family, and bare qSQL</h3>
-    <p>K has dictionaries and a transpose. Everything else a tick shop needs — table literals, keyed tables, eight joins and select … by … from — had to be built. Here is how, and where I put each piece.</p>
-    <div class="m"><span>2026-02-03</span><span>·</span><span>17 min</span><span>·</span><span>v1.0 – v1.5</span></div>
-  </div>
-</a><a class="idx" href="03-attributes.html" style="--i1:#ffb020;--i2:#ff7a18">
-  <div class="no">03</div>
-  <div>
-    <h3>One byte at offset −13: column attributes in C</h3>
-    <p>`s, `u, `p and `g are not metadata. They are a promise the kernel is allowed to believe, stored in a byte nobody has to look for, and they are the difference between 4.23 seconds and 1.9 milliseconds.</p>
-    <div class="m"><span>2026-03-08</span><span>·</span><span>19 min</span><span>·</span><span>v1.0 – v1.4</span></div>
-  </div>
-</a><a class="idx" href="04-native-kernels.html" style="--i1:#ff8a4c;--i2:#ffb020">
-  <div class="no">04</div>
-  <div>
-    <h3>Down to the metal: temporal types, SIMD, the arena, and a branch-free as-of join</h3>
-    <p>The point where Amber stopped being a library written in K and started being an engine written in C. Four releases, five kernels, and one 16 MB bump allocator that exists purely to keep malloc out of the tick path.</p>
-    <div class="m"><span>2026-05-19</span><span>·</span><span>22 min</span><span>·</span><span>v1.6 – v1.9</span></div>
-  </div>
-</a><a class="idx" href="05-platform.html" style="--i1:#a78bfa;--i2:#f472b6">
-  <div class="no">05</div>
-  <div>
-    <h3>From language to platform: -8!, one-report diagnostics, owning the terminal, and libamber.so</h3>
-    <p>Five point releases that added no vocabulary at all. What they added instead was a wire format, an error report you can act on, a line editor, an extension seam, and a shared library — everything an ecosystem needs to exist outside the repository.</p>
-    <div class="m"><span>2026-07-24</span><span>·</span><span>21 min</span><span>·</span><span>v1.9.1 – v1.9.6</span></div>
-  </div>
-</a>
-<p style="margin-top:34px;font-size:.92rem;color:var(--faint)">Each post is a single self-contained
-HTML file — no stylesheet, no script, no build step. The engine lives at
-<a href="https://github.com/BonucciAndrea/amber">github.com/BonucciAndrea/amber</a>.</p>
-</div></div></section>
+</div></div></header><article><div class="col"><p>There is a byte at offset <code>-13</code> of every array Amber allocates. On a fresh vector it is
+zero. Set it to one and a linear scan over five million elements becomes a binary search: 4.23 seconds
+becomes 1.9 milliseconds, with the same input, the same code path from your side, and an identical
+answer.</p>
+
+<p>That byte is the whole of Amber's column attributes. This post is what it means, where it came from,
+which kernels are allowed to believe it, and why "metadata" is exactly the wrong word for it.</p>
+
+<h2>What an attribute actually is</h2>
+
+<p>An attribute is not a description of a column. It is a <strong>promise</strong>, made by whoever set
+it, that the column satisfies a structural property — and a licence for the kernel to skip the work of
+proving that property itself.</p>
+
+<div class="tbl">
+<table>
+  <thead><tr><th style="width:14%">Attribute</th><th style="width:20%">Promise</th><th>What it licenses</th></tr></thead>
+  <tbody>
+    <tr><td><code>`s</code> sorted</td><td>non-decreasing</td><td><code>?</code> and <code>in</code> may binary-search instead of scanning — <code>O(log n)</code></td></tr>
+    <tr><td><code>`u</code> unique</td><td>no duplicates</td><td>a probe may stop at the first hit instead of proving there is no second one</td></tr>
+    <tr><td><code>`p</code> parted</td><td>equal values are contiguous</td><td>a group is a <em>slice</em>, found by binary search, not a gather</td></tr>
+    <tr><td><code>`g</code> grouped</td><td>a group index exists</td><td><code>O(1)</code> access to every row of a given key</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>The distinction matters because it decides what happens when the promise is false. A description that
+is wrong is merely stale. A promise that is wrong produces a wrong answer — quietly, at speed. Amber
+does not verify the promise on every read, because verifying it costs exactly what believing it
+saves.</p>
+
+<blockquote>
+<p>The whole point of carrying an attribute is not having to re-derive it.</p>
+<cite>— comment in <code>src/a.c</code>, next to the as-of join kernel</cite>
+</blockquote>
+
+<p>So the interface is built so that the normal way of producing a sorted column also sets the flag.
+<code>asc</code> sets <code>`s</code>. <code>xasc</code> sets it on the column it sorted by.
+<code>gentq</code> stamps both <code>`s</code> on <code>time</code> and <code>`p</code> on
+<code>sym</code>. You reach for <code>`sa</code> by hand only when you are asserting something about
+data that arrived already ordered — from a partitioned store, say, or a tickerplant that guarantees
+sequence.</p>
+
+<h2>Where the byte lives</h2>
+
+<p>K's object header sits <em>before</em> the payload and every field is a negative offset. From
+<code>src/a.h</code>:</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">src/a.h</span></div><pre><code class="l-c">#define _n(x)  (*(U *)((x)- 4))  //length
+#define _r(x)  (*(U *)((x)- 8))  //refcount
+#define _T(x)  (*(UC*)((x)- 9))  //type(hdr)
+#define _k(x)  (*(UC*)((x)-10))  //arity(for funcs)
+#define _E(x)  (*(UC*)((x)-11))  //adverb(for tr)
+#define _O(x)  (*(UC*)((x)-12))  //scroffset(for symbol lists)
+#define _at(x) (*(UC*)((x)-13))  //amber attribute: 0=none 1=sorted(`s)</code></pre></div>
+
+<p>Byte <code>-13</code> was unused for every type that is not a function. So the attribute costs
+nothing: no extra allocation, no second structure to keep in sync, no pointer to chase. It is already in
+the cache line the kernel is about to touch anyway, because the header and the payload share one.</p>
+
+<figure class="wide">
+  <div class="frame"><svg viewBox="0 0 880 380" role="img" aria-label="Setting an attribute writes one byte at offset minus 13 of the array header; the find primitive reads that byte to choose between a linear scan, a binary search, a lookup table and a hash index.">
+<style>
+ .b{fill:var(--surface2);stroke:var(--border);stroke-width:1}
+ .ba{fill:color-mix(in srgb,var(--hue) 16%,transparent);stroke:var(--hue);stroke-opacity:.55;stroke-width:1}
+ .bd{fill:none;stroke:var(--border2);stroke-width:1;stroke-dasharray:4 4}
+ .t{fill:var(--text);font:600 12.5px var(--sans)}
+ .m{fill:var(--dim);font:400 11.5px var(--mono)}
+ .s{fill:var(--faint);font:400 10.5px var(--mono)}
+ .a{fill:var(--hue);font:600 12px var(--mono)}
+ .l{stroke:var(--border2);stroke-width:1.1;fill:none;marker-end:url(#aa)}
+ .la{stroke:var(--hue);stroke-opacity:.7;stroke-width:1.3;fill:none;marker-end:url(#ab)}
+ .h{fill:var(--faint);font:600 10.5px var(--sans);letter-spacing:.1em}
+</style>
+<defs>
+ <marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--border2)"/></marker>
+ <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--hue)"/></marker>
+</defs>
+
+<text class="h" x="20" y="22">SET</text>
+<rect class="b" x="20" y="34" width="180" height="38" rx="8"/>
+<text class="a" x="36" y="59">`sa v   ·   asc v</text>
+<path class="la" d="M204 53 L 250 53"/>
+<text class="s" x="258" y="49">qsa() in a.c:</text>
+<text class="a" x="258" y="66">_at(x) = 1</text>
+<text class="s" x="392" y="66">one store. no index built. no data moved.</text>
+
+<text class="h" x="20" y="112">STORE — THE ARRAY HEADER, READ BACKWARDS FROM THE PAYLOAD</text>
+<rect class="b"  x="20"  y="124" width="86"  height="40" rx="7"/>
+<rect class="b"  x="110" y="124" width="86"  height="40" rx="7"/>
+<rect class="b"  x="200" y="124" width="70"  height="40" rx="7"/>
+<rect class="ba" x="274" y="124" width="70"  height="40" rx="7"/>
+<rect class="b"  x="348" y="124" width="86"  height="40" rx="7"/>
+<rect class="bd" x="438" y="124" width="422" height="40" rx="8"/>
+<text class="m" x="34"  y="149">count</text>
+<text class="m" x="124" y="149">refcnt</text>
+<text class="m" x="214" y="149">type</text>
+<text class="a" x="290" y="149">attr</text>
+<text class="m" x="362" y="149">bucket</text>
+<text class="m" x="456" y="149">payload — untouched by any of this</text>
+<text class="s" x="20"  y="182">−4</text><text class="s" x="110" y="182">−8</text>
+<text class="s" x="200" y="182">−9</text><text class="a" x="274" y="182">−13</text>
+<text class="s" x="348" y="182">−32</text><text class="s" x="438" y="182">0</text>
+
+<text class="h" x="20" y="226">READ — fnd() IN f.c PICKS ITS KERNEL FROM THAT ONE BYTE</text>
+
+<rect class="b" x="20" y="238" width="196" height="72" rx="10"/>
+<text class="t" x="38" y="262">0 — none</text>
+<text class="s" x="38" y="280">fGL / fHL / fIL / fLL</text>
+<text class="s" x="38" y="298">index, or linear scan</text>
+
+<rect class="ba" x="236" y="238" width="196" height="72" rx="10"/>
+<text class="t" x="254" y="262">1 — `s sorted</text>
+<text class="s" x="254" y="280">bGL / bHL / bIL / bLL</text>
+<text class="a" x="254" y="298">binary search · O(log n)</text>
+
+<rect class="b" x="452" y="238" width="196" height="72" rx="10"/>
+<text class="t" x="470" y="262">3 — `p parted</text>
+<text class="s" x="470" y="280">same binary path</text>
+<text class="s" x="470" y="298">runs are contiguous</text>
+
+<rect class="b" x="668" y="238" width="192" height="72" rx="10"/>
+<text class="t" x="686" y="262">4 — `g grouped</text>
+<text class="s" x="686" y="280">group index</text>
+<text class="s" x="686" y="298">O(1) slice by key</text>
+
+<text class="s" x="20" y="344">2 — `u unique asserts distinctness: the probe can stop at the first hit instead of proving there is no second one.</text>
+<text class="s" x="20" y="364">Every kernel returns the identical answer. The attribute only decides how long that takes.</text>
+</svg>
+</div>
+  <figcaption>Setting an attribute is one store. Reading it is one load from a cache line the kernel was
+  going to fetch regardless. Everything after that is kernel selection.</figcaption>
+</figure>
+
+<p>Setting it is four nearly identical one-liners in <code>src/a.c</code>:</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">src/a.c</span></div><pre><code class="l-c">Z A1(qsa,UC t=_t(x);P(_tP(x)||!LH(tG,t,tS),x)x=mut(x);_at(x)=1;x)//`s sorted
+Z A1(qua,UC t=_t(x);P(_tP(x)||!LH(tG,t,tS),x)x=mut(x);_at(x)=2;x)//`u unique
+Z A1(qpa,UC t=_t(x);P(_tP(x)||!LH(tG,t,tS),x)x=mut(x);_at(x)=3;x)//`p parted
+Z A1(qga,UC t=_t(x);P(_tP(x)||!LH(tG,t,tS),x)x=mut(x);_at(x)=4;x)//`g grouped</code></pre></div>
+
+<p>Read one of them: if the value is a packed atom or not a type that can carry an attribute, return it
+unchanged; otherwise take a mutable copy (refcount discipline — you may not stamp a value someone else
+is holding) and write the byte.</p>
+
+<p>No index is built. No data is moved. No validation is performed. That last one is deliberate and
+worth being explicit about: <code>`sa</code> on an unsorted vector is a lie you are allowed to tell, and
+the engine will believe you. This is exactly how kdb+ behaves, and the alternative — an <code>O(n)</code>
+check on every set — would make stamping a hundred-million-row column as expensive as sorting it.</p>
+
+<h2>Reading it: kernel selection in <code>fnd()</code></h2>
+
+<p>Here is where the byte earns its keep. <code>src/f.c</code>, the find primitive:</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">src/f.c</span></div><pre><code class="l-c">B srt = !_tP(x) &amp;&amp; xt!=tF &amp;&amp; xt!=tS &amp;&amp; (_at(x)==1 || _at(x)==3);
+TY(fGL)*f = (srt ? G(&amp;bGL,bHL,bIL,bLL)
+                 : G(&amp;fGL,fHL,fIL,fLL))[xw-3];</code></pre></div>
+
+<p>Two lines. <code>srt</code> is true when the left argument carries <code>`s</code> (1) or
+<code>`p</code> (3). If it does, <code>f</code> points into the <strong>b</strong>-family —
+<code>bGL</code>, <code>bHL</code>, <code>bIL</code>, <code>bLL</code>, one per integer width — which
+binary-search. If it does not, <code>f</code> points into the <strong>f</strong>-family, which does not.
+Everything after that line is identical: same loop, same output vector, same semantics.</p>
+
+<p>The width suffix (<code>G</code>/<code>H</code>/<code>I</code>/<code>L</code> — 8, 16, 32, 64 bits) is
+selected from the column's own type in the same expression, because Amber stores an integer vector in the
+narrowest type that holds every element. So <code>1 2 3</code> is physically <code>int8</code>, and the
+search that runs over it is the <code>int8</code> search, comparing four times as many elements per cache
+line as a naive <code>int64</code> column would.</p>
+
+<h3>Why <code>`p</code> takes the same path as <code>`s</code></h3>
+
+<p>Because a parted column <em>is</em> a sorted column for search purposes. "Equal values are contiguous"
+is weaker than "non-decreasing" in general — <code>`p</code> permits <code>3 3 1 1 2</code> — but for
+finding the boundaries of a run, a binary search over the run structure works either way, and the
+practical case that produces <code>`p</code> is a symbol column that was sorted and then had its runs
+noted. Treating them together is one fewer branch in the hot path.</p>
+
+<h3>Why floats and symbols are excluded</h3>
+
+<p><code>xt!=tF && xt!=tS</code>. Floats are out because <code>0n</code> and the infinities do not order
+the way a naive comparison expects and I would rather be correct than clever. Symbols are out because a
+symbol column stores interned 32-bit ids and the ids are allocated in <em>first-seen</em> order, not
+alphabetical order — a symbol column that looks sorted to a human is not sorted in the representation the
+kernel compares. Grouping and joining on symbols is fast for a different reason (they are integers), and
+that is enough.</p>
+
+<h2>The numbers</h2>
+
+<p><code>bench.k</code> measures <code>?</code> (find) on identical data, sorted-attributed versus not.
+It builds one vector, makes a second from the same values with the attribute dropped, checks the two
+results are identical, and times both. The assertion that they agree is in the benchmark, not in a
+comment.</p>
+
+<figure class="wide">
+  <div class="frame"><svg viewBox="0 0 880 262" role="img" aria-label="Cost of x find y as the left vector grows: a linear scan is O of n times m while the sorted binary search stays flat.">
+<style>
+ .ax{stroke:var(--border);stroke-width:1}
+ .lb{fill:var(--faint);font:400 10.5px var(--mono)}
+ .t{fill:var(--text);font:600 11.5px var(--sans)}
+ .a{fill:var(--hue);font:600 11.5px var(--mono)}
+ .r{fill:var(--red);font:600 11.5px var(--mono)}
+ .bar1{fill:var(--red);opacity:.72}
+ .bar2{fill:var(--hue)}
+</style>
+<text class="t" x="20" y="22">x ? y — same data, same answer</text>
+<text class="lb" x="20" y="40">bench.k, log scale</text>
+
+<!-- rows -->
+<g>
+ <text class="lb" x="20"  y="80">100 k</text>
+ <rect class="bar1" x="90" y="68" width="230" height="12" rx="3"/>
+ <text class="r"  x="330" y="79">87 ms</text>
+ <rect class="bar2" x="90" y="86" width="22"  height="12" rx="3"/>
+ <text class="a"  x="122" y="97">0.6 ms</text>
+ <text class="lb" x="430" y="88">141×</text>
+</g>
+<g>
+ <text class="lb" x="20"  y="130">500 k</text>
+ <rect class="bar1" x="90" y="118" width="330" height="12" rx="3"/>
+ <text class="r"  x="430" y="129">417 ms</text>
+ <rect class="bar2" x="90" y="136" width="26"  height="12" rx="3"/>
+ <text class="a"  x="126" y="147">0.9 ms</text>
+ <text class="lb" x="530" y="138">470×</text>
+</g>
+<g>
+ <text class="lb" x="20"  y="180">2 M</text>
+ <rect class="bar1" x="90" y="168" width="470" height="12" rx="3"/>
+ <text class="r"  x="570" y="179">1.73 s</text>
+ <rect class="bar2" x="90" y="186" width="32"  height="12" rx="3"/>
+ <text class="a"  x="132" y="197">1.4 ms</text>
+ <text class="lb" x="660" y="188">1244×</text>
+</g>
+<g>
+ <text class="lb" x="20"  y="230">5 M</text>
+ <rect class="bar1" x="90" y="218" width="580" height="12" rx="3"/>
+ <text class="r"  x="680" y="229">4.23 s</text>
+ <rect class="bar2" x="90" y="236" width="36"  height="12" rx="3"/>
+ <text class="a"  x="136" y="247">1.9 ms</text>
+ <text class="lb" x="770" y="238">2261×</text>
+</g>
+</svg>
+</div>
+  <figcaption>5,000 look-ups into vectors of increasing size. The scan grows linearly; the binary search
+  does not move.</figcaption>
+</figure>
+
+<div class="tbl">
+<table>
+  <thead><tr><th>rows</th><th class="n">linear scan</th><th class="n">binary (<code>`s</code>)</th><th class="n">speedup</th></tr></thead>
+  <tbody>
+    <tr><td>100 k</td><td class="n">87 ms</td><td class="n">0.6 ms</td><td class="n hi">141&times;</td></tr>
+    <tr><td>500 k</td><td class="n">417 ms</td><td class="n">0.9 ms</td><td class="n hi">470&times;</td></tr>
+    <tr><td>2 M</td><td class="n">1.73 s</td><td class="n">1.4 ms</td><td class="n hi">1244&times;</td></tr>
+    <tr><td>5 M</td><td class="n">4.23 s</td><td class="n">1.9 ms</td><td class="n hi">2261&times;</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Look at the shape of the last column rather than its magnitude. The speedup <em>grows</em> with
+<code>n</code>, because one side is <code>O(n·m)</code> and the other is <code>O(m·log n)</code>. A
+headline number from one size tells you almost nothing; the slope tells you whether the system degrades
+gracefully as the tape grows or falls off a cliff on exactly the busy day when it matters.</p>
+
+<h2>The one that is not like the others</h2>
+
+<p><code>`g</code> — grouped — does not accelerate <code>?</code>. It asserts that a group index exists,
+and the index is what does the work. In <code>fin.k</code> that is three functions and they are three
+lines:</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">fin.k</span></div><pre><code class="l-q">gidx:{=x}                        / index of a vector:  value -&gt; positions
+bysym:{[t]=t`sym}                / per-symbol row positions of a table
+symrows:{[t;g;s]atr[t;g s]}      / O(1): the rows of t for symbol s</code></pre></div>
+
+<p><code>=</code> is K's group primitive: it returns a dictionary from distinct value to the vector of
+positions where it occurs. Build it once, and every subsequent "give me AAPL's rows" is a dictionary
+lookup followed by an index — no scan, no comparison, no matter how many symbols there are or how many
+rows each has.</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">gentq 100000
+g:bysym trades                   / build the index once
+#symrows[trades;g;`AAPL]         / O(1) thereafter</code></pre></div>
+
+<p><code>bench-fin.k</code> measures that against a linear filter and reports roughly
+<strong>20,000&times;</strong>. It is a less interesting number than it sounds, because it is really
+measuring "a hash lookup versus a full scan" — the honest version is that grouping is what you want when
+you will slice the same table by the same key many times, and a scan is fine if you will do it once.</p>
+
+<h2>Seeing them</h2>
+
+<p>A promise you cannot inspect is a promise nobody will trust. Attributes are visible from the first
+release, in two places.</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">`at v                            / read the attribute: `s `u `p `g or `
+meta trades                      / the `a` column of the metadata table</code></pre></div>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;  meta trades</span></div><pre><code class="l-out">c     | t a
+------|-----
+sym   | s p
+time  | j s
+px    | f
+sz    | i</code></pre></div>
+
+<p><code>meta</code>'s third column is <code>{`at x}'value d</code> — the attribute of each column,
+mapped. Nine characters of the definition, and it is the single most useful diagnostic in the language:
+if a query is unexpectedly slow, <code>meta</code> is where you look first, and the answer is almost
+always an empty <code>a</code> column.</p>
+
+<h2>Where attributes are believed elsewhere</h2>
+
+<p>Find is the headline, but it is not the only place. Three more, in increasing order of how much they
+matter.</p>
+
+<h3>The as-of join skips a proof</h3>
+
+<p><code>aj</code> needs to know that its right-hand table's rows are grouped into contiguous runs by
+symbol and ordered by time inside each run. Establishing that from scratch is a pass over the data.
+Instead, <code>ajsorted</code> asks the columns:</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber.k</span></div><pre><code class="l-q">ajsorted:{[c;t] … g0:*gc; `ajs(gc; d tc; $[1=#gc; in[`at g0;`s`p]; 0b])}
+ajord:{[c;t]$[ajsorted[c;t]; t; xasc[c;t]]}</code></pre></div>
+
+<p>If the grouping column already carries <code>`s</code> or <code>`p</code>, the third argument to the
+C kernel is true and the kernel skips the pass that would have proved it. If not, the table is sorted
+first — correctly, just more slowly. The comment in <code>src/a.c</code> next to the flag reads: <em>"an
+attributed column lets us skip it outright — the whole point of carrying an attribute is not having to
+re-derive it."</em></p>
+
+<h3>The attribute survives the wire</h3>
+
+<p>When the binary serializer arrived in 1.9.3, the attribute byte went into the format explicitly:</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">src/ser.c</span></div><pre><code class="l-out">ATTRIBUTES.  _at(x) (0=none, 1=`s#-sorted) rides in the attr byte for every
+heap type, so a sorted column stays sorted across the wire and keeps the
+O(log n) binary-search path in fnd() on the far side.</code></pre></div>
+
+<p>Which sounds like a footnote and is not. A column that arrives from a <code>peach</code> worker, or
+from a file in a partitioned store, or from a tickerplant log, would otherwise lose its promise at the
+boundary — and the receiving side would have to re-establish it with a sort, per message, forever.
+<a href="https://github.com/BonucciAndrea/amber-tick" target="_blank" rel="noopener">amber-tick</a>'s
+store writes one file per column in exactly this format, with <code>`s#</code> stamped on
+<code>time</code>, so a partition loads and is <em>immediately</em> ready for an as-of join.</p>
+
+<h3>A sorted result stays sorted</h3>
+
+<p>Some operations produce a result that is provably ordered. Where that is true, the attribute is
+propagated rather than dropped, so the next operation gets it for free. In <code>src/v.c</code>, after a
+kernel that emits values in ascending run order:</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">src/v.c</span></div><pre><code class="l-c">_at(z) = 1;                   // result IS sorted: keep `s#</code></pre></div>
+
+<p>One line. It is the kind of thing that is easy to forget and expensive to forget, because the cost of
+dropping an attribute is not paid where you dropped it — it is paid three operations later, in code that
+looks fine.</p>
+
+<h2>What attributes do not do</h2>
+
+<p>Being honest about the boundary is more useful than the speedups.</p>
+
+<ul>
+  <li><strong>They do not make anything correct.</strong> Every kernel returns the same answer with or
+  without them. If a query gives a different result once you add <code>`s#</code>, that is a bug in
+  Amber or a false promise from you, and either way something is wrong.</li>
+  <li><strong>They do not survive arbitrary transformation.</strong> Add a constant to a sorted column and
+  the result is still sorted, but the general case is not provable cheaply, so most operations drop the
+  attribute rather than guess. Re-stamp after a transformation you know preserves order.</li>
+  <li><strong>They are not free to establish.</strong> Setting the byte is free. <em>Sorting</em> the two
+  hundred million rows so that the byte is true is not. The right time to pay it is once, at ingest, as
+  part of writing the store — which is why <code>gentq</code> sets both attributes and why
+  <code>amber-tick</code> lays its partitions out sorted by <code>(sym, time)</code>.</li>
+  <li><strong>They do not help symbols or floats find faster.</strong> See above.</li>
+</ul>
+
+<h2>An unrelated 32&times;, and why it is in this post</h2>
+
+<p>In 1.9.2 I found that <code>x?y</code> on <em>un</em>attributed integer vectors was a linear scan of
+<code>x</code> for every element of <code>y</code> — <code>O(#x · #y)</code>. The comparative benchmark's
+inner join, one million left keys probed against a thousand sparse right keys, was therefore five hundred
+million comparisons: <strong>180.95 ms</strong>, 126&times; the C baseline, and Amber's worst cell in the
+table by a wide margin.</p>
+
+<p>The fix builds an index over <code>x</code> once, in whichever of two shapes fits the data:</p>
+
+<div class="tbl">
+<table>
+  <thead><tr><th style="width:26%">Shape</th><th>When, and why</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Direct lookup table</strong></td><td>when the key <em>range</em> is small (&le; 64K slots, so the table stays L2-resident): <code>lut[v-lo] = i</code>, no hashing at all</td></tr>
+    <tr><td><strong>Compact open-addressed hash</strong></td><td>otherwise. A flat table is the wrong shape for a <em>sparse</em> domain — 1,000 keys spanning a 10<sup>6</sup> range means a 4 MB table where every probe is an L3 or DRAM miss. Measured at 28 ms: only 7&times; better than the scan. Sizing to the key <em>count</em> instead (2&middot;m rounded up — 24 KB here) keeps it in L1 and probes ~10&times; faster again.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Both fill <strong>backwards</strong>, so the lowest index wins and <code>?</code>'s first-occurrence
+semantics stay exact. Result: <strong>180.95 ms &rarr; 5.66 ms</strong>, 32&times;.</p>
+
+<p>I am putting it in the attributes post because of the last clause of that change: <em>neither index is
+built unless it beats the scan it replaces, and <code>`s#</code>-sorted <code>x</code> keeps its existing
+<code>O(log m)</code> binary search.</em></p>
+
+<p>That is the design rule, stated by a counter-example. The index is a fallback for when you did not
+tell the engine anything. The attribute is you telling it something, and it still wins — no allocation,
+no build pass, no cache footprint beyond the data itself, and it survives serialisation, which an index
+built on the fly does not.</p>
+
+<div class="note ok">
+  <b>Verified against the previous binary</b>
+  <p>The 1.9.2 find rewrite was checked against an unmodified 1.9.1 build over 28,429 result lines
+  spanning ranges above and below the LUT cap, negative offsets and offsets past 2&times;10<sup>9</sup>,
+  nulls, self-find and atom find — byte-identical throughout. A fast path that is occasionally wrong is
+  worse than no fast path, and "occasionally" is not something you can reason your way to.</p>
+</div>
+
+<h2>Using them</h2>
+
+<p>In practice it is three habits.</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">/ 1. sort with xasc — it stamps the attributes for you
+trades:xasc[`sym`time; trades]
+quotes:xasc[`sym`time; quotes]
+meta trades                        / check: sym -&gt; p, time -&gt; s
+
+/ 2. build a group index when you will slice the same table repeatedly
+g:bysym trades
+symrows[trades;g;`AAPL]
+
+/ 3. when a query is slow, look at meta before you look at anything else</code></pre></div>
+
+<p>And one habit for anyone loading data from outside: if your store already guarantees an order —
+because a tickerplant sequenced it, or because you wrote the partition sorted — say so explicitly with
+<code>`sa</code> rather than re-sorting to re-derive something you already know. That is the case the
+whole mechanism exists for.</p>
+
+<h2>Why this is the post I most wanted to write</h2>
+
+<p>Everything else in this series is code: a parser change, a kernel, a wire format, a line editor.
+Attributes are barely code at all. Four one-line setters, two lines of kernel selection, one byte in a
+header that was already there.</p>
+
+<p>What they are instead is a <em>contract</em> — a place in the design where the system lets you say
+something you know and be rewarded for it, rather than re-deriving it on your behalf every time because
+it does not trust you. The whole of the performance story that follows in
+<a href="04-native-kernels.html">post four</a> is downstream of that: the as-of join is fast because it
+is allowed to assume the layout, and it is allowed to assume the layout because there is somewhere to
+record that you promised it.</p>
+
+<p>One byte. Nobody has to look for it.</p>
+<div class="endnote">Part of <a href="index.html">Building Amber on ngn/k</a>, a five-part series on what I added to a K interpreter to turn it into a columnar engine for market data.</div><div class="pager"><a href="02-the-q-layer.html"><span class="d">&larr; Previous</span><span class="t">02. Teaching K to speak q</span></a><a class="nx" href="04-native-kernels.html"><span class="d">Next &rarr;</span><span class="t">04. Down to the metal</span></a></div></div></article>
 </main>
 
 <footer>

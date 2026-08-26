@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Building Amber on ngn/k — an essay series</title>
-<meta name="description" content="Five posts, in implementation order, on what I added to the ngn/k array interpreter to turn it into Amber: a columnar in-memory engine with a q/kdb+ vocabulary.">
+<title>Down to the metal: temporal types, SIMD, the arena, and a branch-free as-of join</title>
+<meta name="description" content="Native date/time/timestamp types, the AVX2/NEON kernel library, the multithreaded vector engine, the thread-local arena, and the branch-free lower_bound behind Amber&#x27;s as-of join.">
 <meta name="author" content="Andrea Bonucci">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0F'/%3E%3Cpath d='M16 5 26.6 23.4a1.1 1.1 0 0 1-1 1.7h-3.9L16 14.9l-5.7 10.2H6.4a1.1 1.1 0 0 1-1-1.7L16 5Z' fill='%23FFB020'/%3E%3C/svg%3E">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Building Amber on ngn/k — an essay series">
-<meta property="og:description" content="Five posts, in implementation order, on what I added to the ngn/k array interpreter to turn it into Amber: a columnar in-memory engine with a q/kdb+ vocabulary.">
-<meta property="article:published_time" content="2026-07-24">
+<meta property="og:title" content="Down to the metal: temporal types, SIMD, the arena, and a branch-free as-of join">
+<meta property="og:description" content="Native date/time/timestamp types, the AVX2/NEON kernel library, the multithreaded vector engine, the thread-local arena, and the branch-free lower_bound behind Amber&#x27;s as-of join.">
+<meta property="article:published_time" content="2026-05-19">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,7 +27,7 @@
   --border:rgba(255,255,255,.085); --border2:rgba(255,255,255,.17);
   --text:#eceef3; --dim:#a4a6b2; --faint:#71737f;
   --amber:#ffb020; --amber2:#ffcb6b; --amber3:#ff7a18;
-  --hue:#ffb020; --hue2:#ff7a18;
+  --hue:#ff8a4c; --hue2:#ffb020;
   --glow:color-mix(in srgb, var(--hue) 15%, transparent);
   --code-bg:#0a0a10; --code-br:rgba(255,255,255,.07);
   --green:#5ddba0; --red:#ff6b6b; --blue:#6aa6ff; --violet:#a78bfa; --cyan:#56d4dd;
@@ -269,7 +269,7 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
 </style>
 <script>document.documentElement.className+=" js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
 </head>
-<body class="index">
+<body class="post">
 <a class="skip" href="#main">Skip to content</a>
 <div id="progress"></div>
 
@@ -277,7 +277,7 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
   <div class="topbar-in">
     <a class="mark" href="index.html">
       <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="mg" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#mg)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#mg)" opacity=".62"/></svg>
-      <span>Amber</span><span class="sub">Essays</span>
+      <span>Amber</span><span class="sub">Post 04</span>
     </a>
     <div class="tb-right">
       <a class="ibtn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" aria-label="Repository">
@@ -294,55 +294,439 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
 <nav class="toc" id="toc" aria-label="On this page"><div class="h">Contents</div><div id="tocList"></div></nav>
 
 <main id="main">
-<header class="idx-hero"><div class="wrap"><div class="col">
-  <div class="series"><span class="bar"></span>Essay series</div>
-  <h1 style="max-width:18ch">Building Amber on ngn/k</h1>
-  <p class="dek" style="max-width:46ch">Five posts, in the order I wrote the code. What a 10,000-line K
-  interpreter gives you for free, and what I had to add to turn it into a columnar engine a tick shop
-  could actually use.</p>
-  <div class="meta"><span class="tag">5 parts</span><span>2026</span><span class="sep">·</span>
-  <span>C99 · AGPLv3</span><span class="sep">·</span><span>Andrea Bonucci</span></div>
-</div></div></header>
-<section class="idx-list"><div class="wrap"><div class="col"><a class="idx" href="01-ngn-k.html" style="--i1:#7aa2f7;--i2:#a78bfa">
-  <div class="no">01</div>
-  <div>
-    <h3>The interpreter underneath: what ngn/k is, and why Amber starts there</h3>
-    <p>Before any of my code existed there was a 10,000-line C interpreter that fits in a cache. This is what it does, why K is shaped the way it is, and what I inherited.</p>
-    <div class="m"><span>2026-01-12</span><span>·</span><span>15 min</span><span>·</span><span>foundation</span></div>
+<header class="hero"><div class="wrap"><div class="col">
+  <div class="series"><span class="bar"></span>Building Amber on ngn/k &nbsp;·&nbsp; Part 04 of 05</div>
+  <div class="postno">04</div>
+  <h1>Down to the metal: temporal types, SIMD, the arena, and a branch-free as-of join</h1>
+  <p class="dek">The point where Amber stopped being a library written in K and started being an engine written in C. Four releases, five kernels, and one 16 MB bump allocator that exists purely to keep malloc out of the tick path.</p>
+  <div class="meta">
+    <span class="tag">v1.6 – v1.9</span>
+    <span>2026-05-19</span><span class="sep">·</span><span>22 min read</span>
+    <span class="sep">·</span><span>Andrea Bonucci</span>
   </div>
-</a><a class="idx" href="02-the-q-layer.html" style="--i1:#56d4dd;--i2:#5ddba0">
-  <div class="no">02</div>
-  <div>
-    <h3>Teaching K to speak q: tables, the join family, and bare qSQL</h3>
-    <p>K has dictionaries and a transpose. Everything else a tick shop needs — table literals, keyed tables, eight joins and select … by … from — had to be built. Here is how, and where I put each piece.</p>
-    <div class="m"><span>2026-02-03</span><span>·</span><span>17 min</span><span>·</span><span>v1.0 – v1.5</span></div>
-  </div>
-</a><a class="idx" href="03-attributes.html" style="--i1:#ffb020;--i2:#ff7a18">
-  <div class="no">03</div>
-  <div>
-    <h3>One byte at offset −13: column attributes in C</h3>
-    <p>`s, `u, `p and `g are not metadata. They are a promise the kernel is allowed to believe, stored in a byte nobody has to look for, and they are the difference between 4.23 seconds and 1.9 milliseconds.</p>
-    <div class="m"><span>2026-03-08</span><span>·</span><span>19 min</span><span>·</span><span>v1.0 – v1.4</span></div>
-  </div>
-</a><a class="idx" href="04-native-kernels.html" style="--i1:#ff8a4c;--i2:#ffb020">
-  <div class="no">04</div>
-  <div>
-    <h3>Down to the metal: temporal types, SIMD, the arena, and a branch-free as-of join</h3>
-    <p>The point where Amber stopped being a library written in K and started being an engine written in C. Four releases, five kernels, and one 16 MB bump allocator that exists purely to keep malloc out of the tick path.</p>
-    <div class="m"><span>2026-05-19</span><span>·</span><span>22 min</span><span>·</span><span>v1.6 – v1.9</span></div>
-  </div>
-</a><a class="idx" href="05-platform.html" style="--i1:#a78bfa;--i2:#f472b6">
-  <div class="no">05</div>
-  <div>
-    <h3>From language to platform: -8!, one-report diagnostics, owning the terminal, and libamber.so</h3>
-    <p>Five point releases that added no vocabulary at all. What they added instead was a wire format, an error report you can act on, a line editor, an extension seam, and a shared library — everything an ecosystem needs to exist outside the repository.</p>
-    <div class="m"><span>2026-07-24</span><span>·</span><span>21 min</span><span>·</span><span>v1.9.1 – v1.9.6</span></div>
-  </div>
-</a>
-<p style="margin-top:34px;font-size:.92rem;color:var(--faint)">Each post is a single self-contained
-HTML file — no stylesheet, no script, no build step. The engine lives at
-<a href="https://github.com/BonucciAndrea/amber">github.com/BonucciAndrea/amber</a>.</p>
-</div></div></section>
+</div></div></header><article><div class="col"><p>By 1.5 Amber was a q vocabulary written in K, running on someone else's excellent interpreter. It was
+correct, it was pleasant to use, and on ten million rows it was not fast enough to be interesting. The
+next four releases are where that changed — where the parts of the system that a tick session actually
+spends its time in stopped being K and became C.</p>
+
+<p>Five pieces, roughly in the order they landed: real temporal types, a SIMD kernel library, a
+multithreaded vector engine, a bump arena, and a branch-free as-of join. Plus one thing I removed, which
+I think is the more useful story.</p>
+
+<h2>1.7 — temporal types that are actually types</h2>
+
+<p>Since 1.1 Amber had temporal <em>functions</em>: <code>hms</code>, <code>stime</code>,
+<code>minbar</code>, <code>xbar</code>, all operating on integers by convention. A time was "milliseconds
+since midnight, if everyone agrees". Nothing enforced it, nothing displayed it, and — as
+<a href="02-the-q-layer.html">post two</a> describes — storing a formatted time instead of a numeric one
+silently broke every join.</p>
+
+<p>1.7 made <code>date</code>, <code>time</code> and <code>timestamp</code> first-class C-level types with
+their own type tags. That meant touching five files:</p>
+
+<div class="tbl">
+<table>
+  <thead><tr><th style="width:16%">File</th><th>What changed</th></tr></thead>
+  <tbody>
+    <tr><td><code>a.h</code></td><td>the type enum, the type tables, and the <code>TU</code>/<code>TP</code> macros that classify a tag</td></tr>
+    <tr><td><code>p.c</code></td><td>the literal scanner — <code>2026.07.30</code>, <code>10:00:05.000</code>, <code>2026.07.30D09:30:00.000000000</code> parse directly</td></tr>
+    <tr><td><code>s.c</code></td><td>the formatter — a value auto-displays in its own format</td></tr>
+    <tr><td><code>2.c</code></td><td>type-aware arithmetic: <code>date - date</code> is days, <code>date + n</code> is a date, <code>time + time</code> is a time</td></tr>
+    <tr><td><code>c.c</code></td><td>the casts: <code>"D"$</code>, <code>"T"$</code>, <code>"P"$</code>, and <code>`i$</code> to get the raw number back</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">2026.07.30                          / date
+10:00:00.000 + 00:00:05.000         / 10:00:05.000
+2026.08.15 - 2026.07.30             / 16  (days)
+2026.07.30D09:30:00.000000000       / timestamp: ns since 2000.01.01
+year 2026.07.30                     / 2026
+`i$2026.07.30                       / 9709 — the raw value, when you want it</code></pre></div>
+
+<p>The crucial decision, and the one I would make again: <strong>columns keep numeric storage</strong>,
+exactly as kdb does internally. The type tag changes how a value parses, prints and combines. It does not
+change the bytes.</p>
+
+<p>So <code>xasc</code> still works on a time column. The <code>`s</code> attribute still applies. The
+as-of join kernel still binary-searches raw <code>int64</code> nanoseconds without knowing or caring that
+they are timestamps. A temporal type that had introduced a boxed representation would have been prettier
+and would have cost every single one of those.</p>
+
+<div class="note info">
+  <b>The epoch</b>
+  <p>Dates count days from <strong>2000-01-01</strong>; timestamps count nanoseconds from the same
+  instant; a time is milliseconds since midnight and carries no date at all. Same convention as kdb+, and
+  it buys thirty years at the end of the <code>int64</code> range that matters — 1707–2292 instead of
+  Unix nanoseconds' 1677–2262. It also means every integration has to convert explicitly, and none of them
+  do it silently, because a quiet thirty-year shift is the worst class of bug there is: it does not crash,
+  it produces a chart that looks fine.</p>
+</div>
+
+<h2>1.7 — the first C kernels</h2>
+
+<p>Three functions moved out of K in the same release, chosen because profiling said so, not because they
+looked slow.</p>
+
+<p><strong><code>wj</code>, the window join</strong> (<code>wjc</code> in <code>i.c</code>) was an
+interpreted per-row loop. It became a vectorised binary-search range probe per row plus a contiguous slice
+sweep for the standard reducers — <code>first last min max sum avg count</code>. About 2&times; in a
+throttled sandbox, more on real cores, and bit-exact against the interpreted version for the non-floating
+reducers. Arbitrary aggregators still fall back to <code>wjK</code>, because supporting "any function"
+means calling back into the interpreter and there is no point pretending otherwise.</p>
+
+<p><strong><code>ema</code></strong> was a per-element scan; it became a single <code>O(n)</code> C sweep,
+verified identical.</p>
+
+<p><strong>The Arrow C Data Interface</strong> arrived here too — <code>src/ar.c</code>,
+<code>arrow.export</code> and <code>arrow.import</code>, about ninety lines with <strong>no
+<code>libarrow</code> linkage</strong>. Export is zero-copy: the child <code>buffers[1]</code> pointers
+alias Amber's column payloads directly, and the <code>release</code> callback drops the Amber refcount.
+Import copies, because Amber's inline object header precludes adopting a foreign buffer — the asymmetry I
+described in <a href="01-ngn-k.html">post one</a>, showing up for the first time as a user-visible
+property.</p>
+
+<h2>1.6 — <code>peach</code>, and choosing processes over threads</h2>
+
+<p><code>peach[f;y]</code> applies <code>f</code> to the items of <code>y</code> in parallel. The
+implementation forks <code>AMBER_THREADS</code> worker processes, each applies <code>f</code> to a slice,
+serialises its result down a pipe, and the parent deserialises and concatenates.</p>
+
+<p>Fork, not threads. That is a real decision and it has real consequences.</p>
+
+<div class="tbl">
+<table>
+  <thead><tr><th style="width:24%"></th><th>Fork (chosen)</th><th>Shared-memory threads</th></tr></thead>
+  <tbody>
+    <tr><td>Data races</td><td>None possible — copy-on-write heap per worker</td><td>Every refcount becomes a contended atomic</td></tr>
+    <tr><td>Cost to serial code</td><td>Zero</td><td>An atomic increment on every single value, forever</td></tr>
+    <tr><td>Cost to parallel code</td><td>A serialise + pipe + deserialise per chunk</td><td>Nothing</td></tr>
+    <tr><td>Precedent</td><td>How kdb+ gets multi-core</td><td>—</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>The trade is explicit: <code>peach</code> pays a per-chunk transfer cost so that single-threaded code
+pays nothing. That makes it excellent for coarse-grained, compute-heavy per-item work and pointless for a
+cheap reduction, where the fork overhead dominates. <code>examples/peach.k</code> exists to let you find
+the crossover on your own hardware rather than take my word for it.</p>
+
+<p>Worker count defaults to the online CPU count, detected via <code>sysconf</code> — not a hardcoded 4,
+which is what it was originally and which either oversubscribed a small box or left a big one idle.
+<code>AMBER_THREADS=1</code> forces serial.</p>
+
+<h2>1.9 — SIMD, and the ladder above it</h2>
+
+<p>The vector kernels are <code>src/simd.{h,c}</code>: <code>simd_add_i64/f64</code>,
+<code>simd_mul_i64/f64</code>, <code>simd_sum_i64/f64</code>, operating on plain <code>int64_t*</code> and
+<code>double*</code> arrays. Three backends — AVX2 via <code>&lt;immintrin.h&gt;</code>, NEON via
+<code>&lt;arm_neon.h&gt;</code>, and a scalar C99 fallback — selected at compile time.</p>
+
+<p>Above them sits <code>src/parallel.{h,c}</code>, which splits arrays above
+<code>PAR_THRESHOLD</code> (100,000 elements) into one contiguous chunk per POSIX thread and hands each
+chunk to the SIMD kernel. Below the threshold it calls the kernel directly with no thread overhead,
+because for a small array the <code>pthread_create</code> <em>is</em> the cost.</p>
+
+<figure class="wide">
+  <div class="frame"><svg viewBox="0 0 880 300" role="img" aria-label="How a vector operation is dispatched: below one hundred thousand elements it goes straight to a SIMD kernel; above it the array is split into one contiguous chunk per thread and each chunk runs the same kernel. The kernel itself is chosen at compile time from AVX2, NEON or scalar.">
+<style>
+ .b{fill:var(--surface2);stroke:var(--border);stroke-width:1}
+ .ba{fill:color-mix(in srgb,var(--hue) 15%,transparent);stroke:var(--hue);stroke-opacity:.5;stroke-width:1}
+ .t{fill:var(--text);font:600 12.5px var(--sans)}
+ .m{fill:var(--dim);font:400 11px var(--mono)}
+ .s{fill:var(--faint);font:400 10.5px var(--mono)}
+ .a{fill:var(--hue);font:600 11.5px var(--mono)}
+ .l{stroke:var(--border2);stroke-width:1.1;fill:none;marker-end:url(#da)}
+ .h{fill:var(--faint);font:600 10.5px var(--sans);letter-spacing:.1em}
+</style>
+<defs><marker id="da" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--border2)"/></marker></defs>
+
+<rect class="ba" x="20" y="20" width="200" height="44" rx="9"/>
+<text class="a" x="38" y="48">a + b</text>
+<text class="s" x="96" y="48">two float64 vectors</text>
+
+<path class="l" d="M224 42 L 268 42"/>
+<rect class="b" x="272" y="20" width="192" height="44" rx="9"/>
+<text class="t" x="290" y="48">n &lt; PAR_THRESHOLD?</text>
+
+<path class="l" d="M368 68 L 368 96"/>
+<text class="s" x="378" y="88">yes — under 100,000</text>
+
+<path class="l" d="M468 42 L 620 42"/>
+<text class="s" x="500" y="34">no</text>
+<rect class="b" x="624" y="20" width="236" height="44" rx="9"/>
+<text class="t" x="642" y="48">parallel.c — one chunk / thread</text>
+
+<path class="l" d="M742 68 L 742 96"/>
+<text class="s" x="860" y="88" text-anchor="end">pthread_create × AMBER_THREADS</text>
+
+<rect class="ba" x="20" y="102" width="840" height="56" rx="10"/>
+<text class="a" x="40" y="126">simd.c — simd_add_f64 / simd_mul_f64 / simd_sum_f64</text>
+<text class="m" x="40" y="146">plain double* in, double* out. no K objects, no refcounts, no branches on type.</text>
+
+<path class="l" d="M440 162 L 440 190"/>
+
+<text class="h" x="20" y="192">BACKEND — SELECTED AT COMPILE TIME, REPORTED AT RUN TIME BY `simd 0</text>
+<rect class="b"  x="20"  y="204" width="272" height="60" rx="10"/>
+<rect class="b"  x="304" y="204" width="272" height="60" rx="10"/>
+<rect class="b"  x="588" y="204" width="272" height="60" rx="10"/>
+<text class="t" x="38"  y="228">AVX2</text>
+<text class="s" x="38"  y="248">&lt;immintrin.h&gt; · x86_64 · 4 doubles/op</text>
+<text class="t" x="322" y="228">NEON</text>
+<text class="s" x="322" y="248">&lt;arm_neon.h&gt; · aarch64 · 2 doubles/op</text>
+<text class="t" x="606" y="228">scalar</text>
+<text class="s" x="606" y="248">portable C99 · always built</text>
+
+<text class="s" x="20" y="290">Below the threshold the thread pool is never touched: for a small array the pthread_create is the cost.</text>
+</svg>
+</div>
+  <figcaption>Three layers, one decision each: is it big enough to thread, and which kernel was compiled
+  in. Neither question involves the interpreter.</figcaption>
+</figure>
+
+<p>Both layers self-report, which matters more than it sounds when the answer to "why is this slow" is
+often "you are on the scalar path":</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-out">amber&gt; `simd 0
+simd: backend=scalar n=400009 simd_add=1.44ms scalar_add=1.98ms ok=1
+1
+amber&gt; \\                       (rebuilt with AMBER_NATIVE=1)
+simd: backend=avx2 n=400009 simd_add=1.51ms scalar_add=1.76ms ok=1</code></pre></div>
+
+<div class="note warn">
+  <b>One thing I have not verified on hardware</b>
+  <p>The NEON path was written against the real ARM64 intrinsics and reviewed carefully, but the machine
+  I developed on has no ARM cross-compiler, so it has never been <em>executed</em> on Apple Silicon.
+  That is in the README too. A benchmark table with an unqualified ARM column would have been a claim I
+  could not support, and the fix is to say so, not to quietly not mention it.</p>
+</div>
+
+<h3>The build flag that has to be probed</h3>
+
+<p><code>AMBER_NATIVE=1</code> asks for a machine-tuned build. The obvious implementation —
+<code>-march=native</code> — is x86 syntax that Apple's clang rejects outright on Apple Silicon, so the
+obvious implementation breaks every arm64 CI runner. <code>build.sh</code> probes: it tries
+<code>-march=native</code>, falls back to <code>-mcpu=native</code> on aarch64, and falls back again to a
+portable build. So the flag succeeds everywhere rather than being a platform-specific landmine.</p>
+
+<h2>1.9 — the arena</h2>
+
+<p>Evaluating an expression produces transient buffers: an index vector, a mask, a scratch array for a
+kernel. In a refcounted heap each of those is a <code>malloc</code> and a <code>free</code>, and the
+allocator's tail latency lands directly in your tick path.</p>
+
+<p><code>src/arena.{h,c}</code> is a <strong>thread-local 16 MB bump allocator</strong>. Reserved at
+startup, rewound once per evaluation cycle. Allocation is a pointer increment; freeing is not a thing that
+happens. There is a leak-free overflow path for the rare allocation that exceeds the slab, and a self-test
+builtin (<code>`arn 0</code>) that exercises bump, reset and the overflow path — asserted by
+<code>test.k</code>, because an allocator nobody tests is an allocator.</p>
+
+<p>The point is not throughput. It is <em>jitter</em>. A general allocator is fast on average and
+occasionally is not, and "occasionally" in a per-tick loop is a tail latency number somebody will ask
+about.</p>
+
+<div class="note">
+  <b>Alignment, and a measurement that surprised me</b>
+  <p>The arena originally used plain <code>malloc</code> and 16-byte alignment; SIMD wanted 32, so it
+  moved to <code>posix_memalign</code>. Later I probed the <em>main</em> heap and found something worse:
+  <code>HD</code>, the array header size, was 32 bytes, which put every payload pointer exactly 32 bytes
+  past a 64-byte boundary — <code>ptr % 64 == 32</code> for every allocation size — splitting a cache line
+  on the first wide access of every array in the system. Moving <code>HD</code> to 64 fixed it, and
+  because that touches the core buddy allocator it was re-validated under AddressSanitizer and
+  UndefinedBehaviorSanitizer across every suite plus the fuzzer.</p>
+</div>
+
+<h2>1.9 — the as-of join, in C</h2>
+
+<p>This is the one the whole engine is for. <code>aj</code> matches each trade to the most recent quote at
+or before it, per symbol. In 1.0 it was a scalar search per row. In 1.5 it became one vectorised
+<code>bin</code> per group (~6&times;). In 1.9 it became a kernel.</p>
+
+<figure class="wide">
+  <div class="frame"><svg viewBox="0 0 880 330" role="img" aria-label="The as-of join kernel: rows are sorted by symbol then time, so each symbol owns a contiguous slice; for each trade the kernel runs a branch-free lower_bound over that symbol's quote slice and returns the index of the last quote at or before the trade.">
+<style>
+ .b{fill:var(--surface2);stroke:var(--border);stroke-width:1}
+ .ba{fill:color-mix(in srgb,var(--hue) 16%,transparent);stroke:var(--hue);stroke-opacity:.5;stroke-width:1}
+ .bg{fill:var(--surface);stroke:var(--border);stroke-width:1}
+ .t{fill:var(--text);font:600 12px var(--sans)}
+ .m{fill:var(--dim);font:400 11px var(--mono)}
+ .s{fill:var(--faint);font:400 10px var(--mono)}
+ .a{fill:var(--hue);font:600 11.5px var(--mono)}
+ .l{stroke:var(--border2);stroke-width:1.1;fill:none;marker-end:url(#ja)}
+ .la{stroke:var(--hue);stroke-width:1.4;fill:none;marker-end:url(#jb)}
+ .h{fill:var(--faint);font:600 10.5px var(--sans);letter-spacing:.1em}
+</style>
+<defs>
+ <marker id="ja" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--border2)"/></marker>
+ <marker id="jb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--hue)"/></marker>
+</defs>
+
+<text class="h" x="20" y="22">QUOTES — SORTED BY (sym, time), `p ON sym, `s ON time</text>
+<rect class="bg" x="20"  y="34" width="230" height="40" rx="8"/>
+<rect class="bg" x="256" y="34" width="330" height="40" rx="8"/>
+<rect class="bg" x="592" y="34" width="268" height="40" rx="8"/>
+<text class="t" x="38"  y="59">AAPL</text><text class="s" x="92"  y="59">rows 0 … 41,203</text>
+<text class="t" x="274" y="59">GOOG</text><text class="s" x="330" y="59">rows 41,204 … 92,880</text>
+<text class="t" x="610" y="59">MSFT</text><text class="s" x="668" y="59">rows 92,881 …</text>
+<text class="a" x="20" y="94">each symbol owns ONE contiguous slice — that is what `p buys, and it is why the kernel never scans for group boundaries</text>
+
+<text class="h" x="20" y="140">ONE TRADE</text>
+<rect class="ba" x="20" y="152" width="240" height="40" rx="8"/>
+<text class="a" x="38" y="177">GOOG @ 34,201,118,402,000</text>
+<path class="la" d="M264 172 L 330 172"/>
+
+<rect class="b" x="336" y="152" width="524" height="40" rx="8"/>
+<text class="t" x="354" y="177">ajlb() — branch-free lower_bound over the GOOG slice</text>
+
+<text class="h" x="20" y="228">THE PROBE</text>
+<g>
+ <rect class="bg" x="20"  y="240" width="840" height="30" rx="6"/>
+ <line x1="440" y1="240" x2="440" y2="270" stroke="var(--hue)" stroke-width="1.5"/>
+ <line x1="230" y1="240" x2="230" y2="270" stroke="var(--border2)" stroke-width="1"/>
+ <line x1="650" y1="240" x2="650" y2="270" stroke="var(--border2)" stroke-width="1"/>
+ <line x1="335" y1="240" x2="335" y2="270" stroke="var(--border2)" stroke-width="1" stroke-dasharray="3 3"/>
+ <text class="s" x="30"  y="260">lo</text>
+ <text class="s" x="836" y="260">hi</text>
+ <text class="a" x="446" y="260">mid</text>
+</g>
+<text class="m" x="20" y="292">k[v &lt; xl] = i   —   the comparison lowers to a cmov. No data-dependent branch, so nothing to mispredict.</text>
+<text class="s" x="20" y="312">5,000,000 trades against 10,000,000 quotes: 704 ms. The scratch match vector comes from the arena, so the loop never calls malloc.</text>
+</svg>
+</div>
+  <figcaption>Sorted by <code>(sym, time)</code>, each symbol owns one contiguous slice. The probe is a
+  <code>lower_bound</code> whose comparison lowers to a <code>cmov</code>, so there is no data-dependent
+  branch to mispredict.</figcaption>
+</figure>
+
+<p>Three properties, and they compound:</p>
+
+<h3>Branch-free</h3>
+
+<p>A textbook binary search branches on the comparison, and a binary search over random keys mispredicts
+roughly half the time. Five million probes &times; half a mispredict &times; ~15 cycles of pipeline flush
+is the entire runtime. The kernel instead writes <code>k[v &lt; xl] = i</code> — indexing a two-slot array
+rather than jumping — which the compiler lowers to a conditional move. Nothing to predict, nothing to
+flush.</p>
+
+<h3>It is allowed to assume the layout</h3>
+
+<p>The kernel needs each symbol's rows to be contiguous and its times non-decreasing. Proving that is a
+pass over the data. Instead the marshalling layer checks whether the grouping column already carries
+<code>`s</code> or <code>`p</code> and, if it does, passes a flag that tells the kernel to skip the proof.
+That is <a href="03-attributes.html">post three</a> cashing in.</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">src/a.c</span></div><pre><code class="l-c">// Optional third argument: the caller has established from the COLUMN
+// ATTRIBUTES (`s sorted / `p parted, see _at() in a.h) that the group keys are
+// already confined to contiguous runs. That is precisely what pass 3 below
+// spends its time proving, so an attributed column lets us skip it outright --
+// the whole point of carrying an attribute is not having to re-derive it.
+B trust = _n(x)==3 &amp;&amp; _t(e[2])!=tA &amp;&amp; _v(e[2])!=0;</code></pre></div>
+
+<h3>The type switch is hoisted out of the row loop</h3>
+
+<p>The group-boundary pass has to compare adjacent elements of every grouping column, and those columns
+can be any integer width or a symbol. The naive shape puts a type dispatch inside the row loop. This one
+puts the loop inside a macro and the macro inside the switch: <strong>one dispatch per column, not one
+per element.</strong></p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">src/a.c</span></div><pre><code class="l-c">#define AJS_NE(T) {CO T*RES p=_V(c); for(U r=1;r&lt;n;r++) chg[r] |= (UC)(p[r]!=p[r-1]);}
+F(ng, A c=gc[i];
+  switch(_t(c)){
+   case tG: case tC: AJS_NE(G) break;
+   case tH:          AJS_NE(H) break;
+   case tI: case tS: AJS_NE(I) break;   // tS stores packed 32-bit ids
+   case tL:          AJS_NE(L) break;
+   case tF:          AJS_NE(F) break;
+   default: return x(al(0));            // unknown type: sort, don&#x27;t guess
+  })</code></pre></div>
+
+<p>Note the default: an unrecognised column type does not get a guess, it gets the slow-but-correct path.
+That is the rule everywhere in this layer — a fast path that is occasionally wrong is worse than no fast
+path.</p>
+
+<p>Result: <strong>5,000,000 trades against 10,000,000 quotes in 704 ms</strong>. The scratch match vector
+comes from the arena, so the loop never touches <code>malloc</code>. The pure-K reference,
+<code>ajmK</code>, is still in the tree — a differential test against a slow implementation you trust is
+worth far more than the disk it uses.</p>
+
+<h2>1.9 — the disassembler, and the honest deviation</h2>
+
+<p>The brief I set myself for this release included "add a compiler and a bytecode VM". I did not, and the
+reason is worth stating because it is the most useful thing in this post.</p>
+
+<p><strong><code>b.c</code> already <em>is</em> the real compiler and VM.</strong> ngn/k compiles every
+expression to a flat opcode array plus a constant pool and runs it on a stack machine
+(<code>cr()</code>, <code>cpl()</code>, <code>run()</code>); the AST is never walked at eval time. Adding a
+second, disconnected VM would have produced a demo that ran alongside the engine and told you nothing
+about it.</p>
+
+<p>So <code>src/vm.{h,c}</code> is a <em>disassembler</em> instead. It mirrors <code>b.c</code>'s real
+opcode table byte for byte and decodes the actual bytecode Amber produces, with a self-consistency check
+— the decode loop must consume exactly the bytecode length.</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;  \disasm (1+2)*3-4</span></div><pre><code class="l-out">locals (0):
+constants (2):
+  #0  -1
+  #1  3
+bytecode (6 bytes):
+    0  MONAD    1
+    1  CONST    #0
+    2  CONSTDYAD const#1 dyad=3
+    5  MONAD    0</code></pre></div>
+
+<p>The constant pool holds <code>3</code> and <code>-1</code>, not <code>1</code>, <code>2</code>,
+<code>3</code>, <code>4</code>: the compiler constant-folded <code>1+2</code> and <code>3-4</code> before
+emitting. That is precisely the kind of fact a disassembler for the <em>real</em> VM surfaces and a
+from-scratch reimplementation would not, and I only know it because I built the honest version.</p>
+
+<h2>The thing I deleted</h2>
+
+<p>The same release added <code>\hl &lt;expr&gt;</code> — a command that echoed one line back with ANSI
+syntax colour. It shipped, and then I removed it.</p>
+
+<p>It only ever colourised a line you had explicitly run. That is not what "live syntax highlighting"
+means; live highlighting colours your keystrokes <em>as you type them</em>, and doing that would have
+meant rewriting the REPL's raw-input loop. The feature was a plausible-looking thing that satisfied the
+words of the goal and none of its substance, and shipping it would have made the roadmap item look done.</p>
+
+<p>Deleting it is in the changelog with that explanation. Eighteen months later I did rewrite the input
+loop, for entirely different reasons, and got the capability properly —
+<a href="05-platform.html">post five</a>.</p>
+
+<h2>1.9 — the audit</h2>
+
+<p>1.9 was also a memory-safety and undefined-behaviour pass over the whole tree, and it is the least
+glamorous and most important thing in this post. Real bugs found and fixed, in both categories:</p>
+
+<ul>
+  <li>memory safety and UB in the core — the kind that ASan finds and code review does not</li>
+  <li>language semantics — cases where a primitive was subtly wrong at an edge and no test covered it</li>
+</ul>
+
+<p>What came out of it, besides the fixes, is <code>tests/test_matrix.k</code>: a <strong>309-case
+combinatorial matrix</strong> — every primitive &times; every element type &times; sizes 0, 1, 10 and
+100,000+ — crossing the SIMD and <code>PAR_THRESHOLD</code> boundaries deliberately, and asserted as
+<em>invariants</em> (shape, algebraic identity, vector-kernel-versus-scalar-reference) rather than frozen
+literals.</p>
+
+<p>The distinction matters. A test that asserts a frozen literal tells you the output changed. A test that
+asserts <code>simd_add(a,b) == scalar_add(a,b)</code> at sizes either side of the threshold tells you
+<em>which</em> of your two implementations is wrong, and it keeps working when you add a third.</p>
+
+<h2>Where this left things</h2>
+
+<div class="stats">
+  <div><div class="v">704 ms</div><div class="l">as-of join, 5M trades × 10M quotes</div></div>
+  <div><div class="v">151 ms</div><div class="l">1-minute VWAP over 5M trades</div></div>
+  <div><div class="v">0.1 ms</div><div class="l">50-period EMA, tacit, straight into the C kernel</div></div>
+  <div><div class="v">2261×</div><div class="l">find on 5M rows, with <code>`s</code></div></div>
+</div>
+
+<p>By the end of 1.9 the parts of Amber a tick session spends its time in were C: the join, the vector
+arithmetic, the reductions, the window join, the EMA, the temporal arithmetic. The parts that were still K
+— the query layer, the group-by, the probe — were about to become the next bottleneck, and finding that
+out is where <a href="05-platform.html">the last post</a> starts.</p>
+<div class="endnote">Part of <a href="index.html">Building Amber on ngn/k</a>, a five-part series on what I added to a K interpreter to turn it into a columnar engine for market data.</div><div class="pager"><a href="03-attributes.html"><span class="d">&larr; Previous</span><span class="t">03. One byte at offset −13</span></a><a class="nx" href="05-platform.html"><span class="d">Next &rarr;</span><span class="t">05. From language to platform</span></a></div></div></article>
 </main>
 
 <footer>

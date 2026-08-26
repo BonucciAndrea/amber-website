@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Building Amber on ngn/k — an essay series</title>
-<meta name="description" content="Five posts, in implementation order, on what I added to the ngn/k array interpreter to turn it into Amber: a columnar in-memory engine with a q/kdb+ vocabulary.">
+<title>The interpreter underneath: what ngn/k is, and why Amber starts there</title>
+<meta name="description" content="ngn/k is a compact AGPLv3 implementation of the K array language. What it is, how its evaluator and heap work, and why it is the right foundation for a q/kdb+-shaped engine.">
 <meta name="author" content="Andrea Bonucci">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0F'/%3E%3Cpath d='M16 5 26.6 23.4a1.1 1.1 0 0 1-1 1.7h-3.9L16 14.9l-5.7 10.2H6.4a1.1 1.1 0 0 1-1-1.7L16 5Z' fill='%23FFB020'/%3E%3C/svg%3E">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Building Amber on ngn/k — an essay series">
-<meta property="og:description" content="Five posts, in implementation order, on what I added to the ngn/k array interpreter to turn it into Amber: a columnar in-memory engine with a q/kdb+ vocabulary.">
-<meta property="article:published_time" content="2026-07-24">
+<meta property="og:title" content="The interpreter underneath: what ngn/k is, and why Amber starts there">
+<meta property="og:description" content="ngn/k is a compact AGPLv3 implementation of the K array language. What it is, how its evaluator and heap work, and why it is the right foundation for a q/kdb+-shaped engine.">
+<meta property="article:published_time" content="2026-01-12">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,7 +27,7 @@
   --border:rgba(255,255,255,.085); --border2:rgba(255,255,255,.17);
   --text:#eceef3; --dim:#a4a6b2; --faint:#71737f;
   --amber:#ffb020; --amber2:#ffcb6b; --amber3:#ff7a18;
-  --hue:#ffb020; --hue2:#ff7a18;
+  --hue:#7aa2f7; --hue2:#a78bfa;
   --glow:color-mix(in srgb, var(--hue) 15%, transparent);
   --code-bg:#0a0a10; --code-br:rgba(255,255,255,.07);
   --green:#5ddba0; --red:#ff6b6b; --blue:#6aa6ff; --violet:#a78bfa; --cyan:#56d4dd;
@@ -269,7 +269,7 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
 </style>
 <script>document.documentElement.className+=" js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
 </head>
-<body class="index">
+<body class="post">
 <a class="skip" href="#main">Skip to content</a>
 <div id="progress"></div>
 
@@ -277,7 +277,7 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
   <div class="topbar-in">
     <a class="mark" href="index.html">
       <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="mg" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#mg)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#mg)" opacity=".62"/></svg>
-      <span>Amber</span><span class="sub">Essays</span>
+      <span>Amber</span><span class="sub">Post 01</span>
     </a>
     <div class="tb-right">
       <a class="ibtn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" aria-label="Repository">
@@ -294,55 +294,336 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
 <nav class="toc" id="toc" aria-label="On this page"><div class="h">Contents</div><div id="tocList"></div></nav>
 
 <main id="main">
-<header class="idx-hero"><div class="wrap"><div class="col">
-  <div class="series"><span class="bar"></span>Essay series</div>
-  <h1 style="max-width:18ch">Building Amber on ngn/k</h1>
-  <p class="dek" style="max-width:46ch">Five posts, in the order I wrote the code. What a 10,000-line K
-  interpreter gives you for free, and what I had to add to turn it into a columnar engine a tick shop
-  could actually use.</p>
-  <div class="meta"><span class="tag">5 parts</span><span>2026</span><span class="sep">·</span>
-  <span>C99 · AGPLv3</span><span class="sep">·</span><span>Andrea Bonucci</span></div>
-</div></div></header>
-<section class="idx-list"><div class="wrap"><div class="col"><a class="idx" href="01-ngn-k.html" style="--i1:#7aa2f7;--i2:#a78bfa">
-  <div class="no">01</div>
-  <div>
-    <h3>The interpreter underneath: what ngn/k is, and why Amber starts there</h3>
-    <p>Before any of my code existed there was a 10,000-line C interpreter that fits in a cache. This is what it does, why K is shaped the way it is, and what I inherited.</p>
-    <div class="m"><span>2026-01-12</span><span>·</span><span>15 min</span><span>·</span><span>foundation</span></div>
+<header class="hero"><div class="wrap"><div class="col">
+  <div class="series"><span class="bar"></span>Building Amber on ngn/k &nbsp;·&nbsp; Part 01 of 05</div>
+  <div class="postno">01</div>
+  <h1>The interpreter underneath: what ngn/k is, and why Amber starts there</h1>
+  <p class="dek">Before any of my code existed there was a 10,000-line C interpreter that fits in a cache. This is what it does, why K is shaped the way it is, and what I inherited.</p>
+  <div class="meta">
+    <span class="tag">foundation</span>
+    <span>2026-01-12</span><span class="sep">·</span><span>15 min read</span>
+    <span class="sep">·</span><span>Andrea Bonucci</span>
   </div>
-</a><a class="idx" href="02-the-q-layer.html" style="--i1:#56d4dd;--i2:#5ddba0">
-  <div class="no">02</div>
-  <div>
-    <h3>Teaching K to speak q: tables, the join family, and bare qSQL</h3>
-    <p>K has dictionaries and a transpose. Everything else a tick shop needs — table literals, keyed tables, eight joins and select … by … from — had to be built. Here is how, and where I put each piece.</p>
-    <div class="m"><span>2026-02-03</span><span>·</span><span>17 min</span><span>·</span><span>v1.0 – v1.5</span></div>
-  </div>
-</a><a class="idx" href="03-attributes.html" style="--i1:#ffb020;--i2:#ff7a18">
-  <div class="no">03</div>
-  <div>
-    <h3>One byte at offset −13: column attributes in C</h3>
-    <p>`s, `u, `p and `g are not metadata. They are a promise the kernel is allowed to believe, stored in a byte nobody has to look for, and they are the difference between 4.23 seconds and 1.9 milliseconds.</p>
-    <div class="m"><span>2026-03-08</span><span>·</span><span>19 min</span><span>·</span><span>v1.0 – v1.4</span></div>
-  </div>
-</a><a class="idx" href="04-native-kernels.html" style="--i1:#ff8a4c;--i2:#ffb020">
-  <div class="no">04</div>
-  <div>
-    <h3>Down to the metal: temporal types, SIMD, the arena, and a branch-free as-of join</h3>
-    <p>The point where Amber stopped being a library written in K and started being an engine written in C. Four releases, five kernels, and one 16 MB bump allocator that exists purely to keep malloc out of the tick path.</p>
-    <div class="m"><span>2026-05-19</span><span>·</span><span>22 min</span><span>·</span><span>v1.6 – v1.9</span></div>
-  </div>
-</a><a class="idx" href="05-platform.html" style="--i1:#a78bfa;--i2:#f472b6">
-  <div class="no">05</div>
-  <div>
-    <h3>From language to platform: -8!, one-report diagnostics, owning the terminal, and libamber.so</h3>
-    <p>Five point releases that added no vocabulary at all. What they added instead was a wire format, an error report you can act on, a line editor, an extension seam, and a shared library — everything an ecosystem needs to exist outside the repository.</p>
-    <div class="m"><span>2026-07-24</span><span>·</span><span>21 min</span><span>·</span><span>v1.9.1 – v1.9.6</span></div>
-  </div>
-</a>
-<p style="margin-top:34px;font-size:.92rem;color:var(--faint)">Each post is a single self-contained
-HTML file — no stylesheet, no script, no build step. The engine lives at
-<a href="https://github.com/BonucciAndrea/amber">github.com/BonucciAndrea/amber</a>.</p>
-</div></div></section>
+</div></div></header><article><div class="col"><p>Every project that gets built on something has a moment where you have to explain the something.
+Amber's is <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a> — a compact,
+AGPLv3 implementation of the K array language, written by ngn, in a dialect of C that I can only
+describe as <em>compressed</em>. I did not write it. Everything in the four posts after this one is
+built on it, and none of that would make sense without first saying what it is and what it already
+does.</p>
+
+<p>This post is that. What K is, why an array language ends up looking like line noise, how ngn's
+interpreter actually represents a value, and — the part that matters for everything downstream —
+which properties of that design made it the right thing to build a market-data engine on.</p>
+
+<h2>What K is</h2>
+
+<p>K is an array language in the APL tradition. The unit of work is the whole array, not the element.
+There are no loops in idiomatic K because there is nothing to loop over: the primitives already apply
+to every element.</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">k</span></div><pre><code class="l-q">1 2 3 + 10 20 30        / 11 22 33
++/ 1 2 3 4 5            / 15   — plus, folded
+!5                      / 0 1 2 3 4
+&amp;1 0 1 1 0              / 0 2 3  — the indices where the mask is true</code></pre></div>
+
+<p>What distinguishes K from APL is the ASCII and the size. APL wants a special keyboard; K uses the
+characters that were already on yours. And where a modern APL implementation is a large system, K has
+a tradition of being small enough for one person to hold in their head — Arthur Whitney's original K
+implementations were famously terse, and ngn/k continues that lineage.</p>
+
+<p>The primitives are single characters, and most of them are overloaded on arity. <code>#</code> is
+<em>count</em> as a monad and <em>take</em> as a dyad. <code>|</code> is <em>reverse</em> and
+<em>max</em>. <code>?</code> is <em>distinct</em>, <em>find</em> and <em>random</em> depending on
+what you hand it. That sounds like a recipe for chaos and mostly is not, because the meanings are
+related and because in practice you are reading a phrase, not a character.</p>
+
+<blockquote>
+<p>The reason a K expression looks dense is that it <em>is</em> dense. It is not shorthand for a longer
+program — there is no longer program. The phrase is the whole thing.</p>
+</blockquote>
+
+<p>The other half of the language is the adverbs — <code>/</code> <code>\</code> <code>'</code> — which
+modify a verb rather than a value. <code>+/</code> is "plus, folded". <code>+\</code> is "plus,
+scanned", which gives you running sums. <code>'</code> is each. Combining a small set of verbs with a
+smaller set of adverbs is where the expressive density comes from, and it is the thing that takes a
+few weeks to stop feeling hostile.</p>
+
+<h2>Why I did not write my own</h2>
+
+<p>I wanted a q/kdb+-shaped engine: tables, keyed tables, the join family, <code>select … by … from</code>,
+column attributes, temporal types, an as-of join fast enough to be the default rather than the last
+resort. None of that is the hard part.</p>
+
+<p>The hard part is everything underneath: a memory manager that can allocate and free a hundred
+million small objects without fragmenting, a refcounting discipline that does not leak, a parser, a
+compiler, a VM, an error path, a formatter, and a set of primitives that are all mutually consistent
+about types, nulls, ranks and edge cases. That is years of work and it is work where being 95% correct
+is indistinguishable from being wrong.</p>
+
+<p>ngn/k has all of it, it is AGPLv3, and it is small enough to read. So I read it.</p>
+
+<h2>The representation, which is the whole idea</h2>
+
+<p>Here is the thing that took longest to appreciate and pays for itself everywhere. In ngn's design a
+K value is a single 64-bit word, and for a large family of types the value <em>is</em> that word.</p>
+
+<figure class="wide">
+  <div class="frame"><svg viewBox="0 0 880 330" role="img" aria-label="A K value is a single 64-bit word: for small types the type tag sits in the top byte and the value in the low bits, so the value never touches the heap; for lists the word is a pointer and a fixed header sits immediately before the payload.">
+<style>
+ .bx{fill:var(--surface2);stroke:var(--border);stroke-width:1}
+ .bh{fill:color-mix(in srgb,var(--hue) 15%,transparent);stroke:var(--hue);stroke-opacity:.55;stroke-width:1}
+ .bp{fill:var(--surface);stroke:var(--border);stroke-width:1;stroke-dasharray:4 4}
+ .m{fill:var(--text);font:500 12.5px var(--mono)}
+ .mm{fill:var(--dim);font:400 11px var(--mono)}
+ .s{fill:var(--faint);font:400 10.5px var(--mono)}
+ .a{fill:var(--hue);font:600 12px var(--mono)}
+ .h{fill:var(--dim);font:600 11px var(--sans);letter-spacing:.09em}
+ .ln{stroke:var(--border2);stroke-width:1;fill:none}
+</style>
+
+<text class="h" x="20" y="24">PACKED — THE VALUE IS THE WORD</text>
+<rect class="bh" x="20" y="38" width="112" height="42" rx="8"/>
+<rect class="bx" x="136" y="38" width="256" height="42" rx="8"/>
+<rect class="bx" x="396" y="38" width="404" height="42" rx="8"/>
+<text class="a"  x="36"  y="64">tttttttt</text>
+<text class="mm" x="152" y="64">........................</text>
+<text class="m"  x="412" y="64">vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv</text>
+<text class="s"  x="20"  y="98">type tag</text>
+<text class="s"  x="136" y="98">unused</text>
+<text class="s"  x="396" y="98">the value itself — int, char, symbol id, date, time</text>
+<text class="s"  x="20"  y="116">8 bits</text>
+<text class="a"  x="396" y="116">no allocation · no refcount · no indirection</text>
+
+<text class="h" x="20" y="168">ON THE HEAP — THE WORD IS A POINTER</text>
+<rect class="bp" x="20" y="182" width="150" height="42" rx="8"/>
+<text class="mm" x="36" y="208">A  →  0x7f…</text>
+<path class="ln" d="M174 203 L 214 203" marker-end="url(#ar)"/>
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--border2)"/></marker></defs>
+
+<rect class="bx" x="218" y="182" width="66"  height="42" rx="7"/>
+<rect class="bx" x="288" y="182" width="66"  height="42" rx="7"/>
+<rect class="bx" x="358" y="182" width="58"  height="42" rx="7"/>
+<rect class="bh" x="420" y="182" width="58"  height="42" rx="7"/>
+<rect class="bx" x="482" y="182" width="72"  height="42" rx="7"/>
+<rect class="bh" x="558" y="182" width="242" height="42" rx="8"/>
+<text class="mm" x="232" y="208">count</text>
+<text class="mm" x="300" y="208">refcnt</text>
+<text class="mm" x="372" y="208">type</text>
+<text class="a"  x="432" y="208">attr</text>
+<text class="mm" x="496" y="208">bucket</text>
+<text class="a"  x="576" y="208">payload — one contiguous typed array</text>
+
+<text class="s" x="218" y="244">−4</text>
+<text class="s" x="288" y="244">−8</text>
+<text class="s" x="358" y="244">−9</text>
+<text class="a" x="420" y="244">−13</text>
+<text class="s" x="482" y="244">−32</text>
+<text class="s" x="558" y="244">0</text>
+
+<text class="s" x="218" y="272">the header is a fixed 64 bytes, so every payload pointer is cache-line aligned</text>
+<text class="s" x="218" y="290">and every field is one negative offset away — no descriptor object, no lookup</text>
+<text class="a" x="218" y="312">the attribute byte at −13 is the whole of Amber&#39;s `s `u `p `g</text>
+</svg>
+</div>
+  <figcaption>A packed value carries its type in the top byte and its payload in the low bits — nothing
+  is allocated. A list is a pointer, and every field of its header is one negative offset behind the
+  payload.</figcaption>
+</figure>
+
+<p>The header comment in <code>src/a.h</code> states the layout directly:</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">src/a.h</span></div><pre><code class="l-c">//header bytes: b....... XXXXXXXX ....OEkt rrrrnnnn
+#define _V(x) ((V*)(x))       //pointer to data
+#define _n(x) (*(U *)((x)- 4))//length
+#define _r(x) (*(U *)((x)- 8))//refcount
+#define _T(x) (*(UC*)((x)- 9))//type(hdr)
+#define _k(x) (*(UC*)((x)-10))//arity(for funcs)
+#define _E(x) (*(UC*)((x)-11))//adverb(for tr)
+#define _O(x) (*(UC*)((x)-12))//scroffset(for symbol lists)
+#define _X(x) (*(A *)((x)-24))//ptr to next chunk in bucket
+#define _b(x) (*(UC*)((x)-32))//bucket index</code></pre></div>
+
+<p>Three consequences follow, and all three are load-bearing later.</p>
+
+<h3>1. A pointer to a K list points at the data</h3>
+
+<p>Not at a struct that contains a pointer to the data. The header sits <em>before</em> the payload and
+you reach it by subtracting. So <code>_V(x)</code> — the address of the first element — is
+<code>x</code> itself, and handing that address to something outside the interpreter is free.</p>
+
+<p>That is the entire reason Amber's Arrow and NumPy bridges can be genuinely zero-copy. A column's
+payload is already a plain contiguous typed array with nothing interleaved and no descriptor in front
+of it. There is nothing to convert. (It is also the reason the <em>inbound</em> direction always
+copies: a foreign allocation has no header behind it, and you cannot retroactively put one there.)</p>
+
+<h3>2. Small values never touch the heap</h3>
+
+<p>An integer, a char, a symbol id — these live entirely in the tagged word. No allocation, no
+refcount traffic, no cache miss to find out what type something is. In a language where a scalar
+appears in every expression, that is not a micro-optimisation; it is the difference between an
+interpreter and a toy.</p>
+
+<h3>3. There is room in the header</h3>
+
+<p>Look at the offsets: <code>-9</code> type, <code>-10</code> arity, <code>-11</code> adverb,
+<code>-12</code> symbol scroffset… and then a gap before <code>-24</code>. Byte <code>-13</code> is
+unused for every type that is not a function.</p>
+
+<p>That gap is where Amber's column attributes live. One byte, already in the cache line you were
+going to touch anyway, costing nothing to read and nothing to carry. <a href="03-attributes.html">Post
+three</a> is entirely about what I did with it.</p>
+
+<h2>The code, and how to read it</h2>
+
+<p>ngn/k is written in a macro-heavy, extremely abbreviated C. The first time you open it, it does not
+look like C at all:</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">src/a.h — the macro vocabulary</span></div><pre><code class="l-c">#define    _(a...) {return({a;});}
+#define  W(x,a...) while(x){a;}
+#define  P(x,a...) if(x){_(a)}
+#define  I(x,a...) if(x){a;}
+#define    J(a...) else I(a)
+#define    E(a...) else{a;}
+#define  S(x,a...) switch(x){a}
+#define  C(x,a...) case x:{a;}break;
+#define    D(a...) default:{a;}break;</code></pre></div>
+
+<p>So <code>P(cond, expr)</code> is "if cond, return expr". <code>S(t, C(tI, …) C(tF, …) D(…))</code> is a
+switch over a type tag. Once you have those nine macros the code reads normally, and the density stops
+being an obstacle and becomes the point: a whole primitive is visible at once, without scrolling.</p>
+
+<p>The file names are single characters and the line counts are meaningless. Some real numbers from
+the tree Amber builds:</p>
+
+<div class="stats">
+  <div><div class="v">82</div><div class="l">lines in <code>b.c</code> — the compiler and the stack VM</div></div>
+  <div><div class="v">10 KB</div><div class="l">…in those 82 lines. ~123 characters each.</div></div>
+  <div><div class="v">108</div><div class="l">lines in <code>p.c</code>, the parser</div></div>
+  <div><div class="v">24</div><div class="l">core files, ~264 KB, the whole interpreter</div></div>
+</div>
+
+<p>The 82-line file is not a stub. <code>b.c</code> contains the real compiler — it walks a parse tree
+and emits a flat opcode array plus a constant pool — and the real VM that runs it (<code>cr()</code>,
+<code>cpl()</code>, <code>run()</code>). The AST is never walked at evaluation time. I only learned
+that with certainty when I wrote <a href="05-platform.html">the disassembler</a>, which decodes the
+bytecode the compiler actually emits and confirms, among other things, that it constant-folds.</p>
+
+<div class="note info">
+  <b>A detail I love</b>
+  <p><code>src/g.h</code> — a file of accessor macros — carries the comment
+  <code>// generated by g.k</code>. Part of the C is generated by a K program. In a language whose whole
+  argument is that array notation is a better way to express transformations, using it to write your own
+  boilerplate is not a stunt; it is the thesis applied to itself.</p>
+</div>
+
+<h2>Memory</h2>
+
+<p>The heap is <code>mmap</code>'d with <code>MAP_NORESERVE</code> and sized lazily by the operating
+system. There is no tunable, no <code>--heap-size</code>, no configuration file. That is why Amber has
+no <code>AMBER_MEM_MB</code> and never will: there is nothing to tune, because the OS is already doing
+the tuning.</p>
+
+<p>Allocation is a buddy allocator over power-of-two buckets. <code>an(n, t)</code> computes the bucket
+index from the byte size, pulls a chunk, stamps the header and hands back a pointer to the payload:</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">src/m.c</span></div><pre><code class="l-c">NI A an(U n,C t)_(Q(!lck)Q(tA&lt;=t)Q(t&lt;tn)Q(!TP(t))
+  U i=58-CLZ(HD|HD-1+(((W)n&lt;&lt;Tw[t])+7&gt;&gt;3));
+  A x=mb(i);xb=i;xr=REFB;xT=t;xn=n;_at(x)=0;x)</code></pre></div>
+
+<p>Freeing is refcount-driven, and the refcount is one 32-bit field at <code>-8</code>. Amber added
+exactly one line to that function — <code>_at(x)=0</code>, clearing the attribute byte on a fresh
+allocation — which is a fair summary of how invasive most of my changes to the core needed to be.</p>
+
+<div class="note">
+  <b>Where the alignment went wrong, later</b>
+  <p><code>HD</code>, the header size, was 32 bytes. Which meant every payload pointer landed exactly 32
+  bytes past a 64-byte boundary — I measured <code>ptr % 64 == 32</code> for every allocation size —
+  splitting a cache line on the first wide access of every array. Moving <code>HD</code> to 64 fixed it.
+  That is the kind of thing you only find by probing, and it only mattered once I had SIMD kernels
+  reading those payloads. It is in <a href="05-platform.html">post five</a>.</p>
+</div>
+
+<h2>What I got for free</h2>
+
+<p>Setting the language aside, here is the inventory of what already existed the day I started:</p>
+
+<div class="tbl">
+<table>
+  <thead><tr><th style="width:22%">Component</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>p.c</code></td><td>the parser — tokens to parse tree, including the context-sensitive rules that make <code>/</code> either an adverb or a comment</td></tr>
+    <tr><td><code>b.c</code></td><td>the compiler and the stack VM. Every expression becomes bytecode; nothing walks a tree at run time</td></tr>
+    <tr><td><code>m.c</code></td><td>the buddy allocator and the refcounting</td></tr>
+    <tr><td><code>2.c</code>, <code>3.c</code></td><td>the element-wise and reduction kernels, one per type combination</td></tr>
+    <tr><td><code>f.c</code></td><td>search and find — <code>?</code>, <code>in</code>, the group and distinct machinery</td></tr>
+    <tr><td><code>v.c</code></td><td>the verb table and rank/rank-adjustment logic</td></tr>
+    <tr><td><code>s.c</code></td><td>the formatter — how a value prints</td></tr>
+    <tr><td><code>e.c</code></td><td>the error path, and the caret that points at the failing token</td></tr>
+    <tr><td><code>0.c</code></td><td>the platform layer: file I/O, <code>mmap</code>, the socket <code>connect()</code>, and a freestanding <code>wasm</code> mode</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>That last one deserves a note. <code>0.c</code> already had a <code>-Dwasm</code> path with its own
+tiny virtual filesystem and syscall shims, designed so the interpreter could be compiled for
+<code>wasm32</code>. Years later that is why <a href="https://github.com/BonucciAndrea/amber-notepad"
+target="_blank" rel="noopener">Amber Notepad</a> — the real engine, in a browser tab, offline — was a
+weekend rather than a rewrite. Someone else's foresight.</p>
+
+<h2>What K does not have</h2>
+
+<p>Everything a tick shop needs, roughly. K gives you dictionaries and a transpose, and a table in the
+q sense is a transposed dictionary of columns — but that is an observation, not an implementation.
+There is no <code>([]…)</code> literal, no keyed table, no <code>select</code>, no join family, no
+<code>meta</code>, no attributes, no temporal types, no as-of join.</p>
+
+<p>There is also no q vocabulary at all: no <code>wavg</code>, no <code>xbar</code>, no
+<code>aj</code>, no <code>bars</code>. Those names carry meaning to anyone who has worked on a trading
+desk, and reproducing them exactly — including the argument orders people already have in their
+fingers — is most of what makes an engine adoptable rather than merely correct.</p>
+
+<p>And there are ergonomics. Errors print a single terse word. Tables do not render as grids. The REPL
+has no line editing (this was true when I started; I ended up writing my own editor, which is
+<a href="05-platform.html">post five</a>). None of that is a criticism — K is a language, not a
+product, and it is a very good language.</p>
+
+<h2>The licence, said plainly</h2>
+
+<p>ngn/k is AGPLv3. Amber is therefore AGPLv3, and that attribution is recorded in
+<code>NOTICE</code>:</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">NOTICE</span></div><pre><code class="l-out">Amber&#x27;s interpreter core is derived from a k array-language interpreter released
+under the GNU AGPLv3 by its original author (ngn). That upstream copyright is
+retained here solely as the AGPLv3 requires; this NOTICE is the single place it
+is recorded. Amber is an independent language and is not affiliated with, nor a
+distribution of, that project.</code></pre></div>
+
+<p>Both halves of that matter. The attribution is real work by someone else and it stays. And Amber is
+its own language with its own name, its own vocabulary and its own semantics — the interpreter is named
+<code>amber</code>, never <code>k</code> or <code>q</code>; it reads no <code>QHOME</code>, no config,
+no dotfiles; and it lives entirely inside one folder so that deleting the folder uninstalls it. Your
+existing k, q or kona installs are untouched, because Amber never goes anywhere near them.</p>
+
+<h2>What the next four posts are</h2>
+
+<p>In the order I built them:</p>
+
+<ul>
+  <li><strong>The q layer</strong> — <code>([]…)</code> table literals in the C parser, keyed tables, the
+  eight-member join family, and a line rewriter that lets you type <code>select … by … from …</code> at
+  the prompt with no wrapper.</li>
+  <li><strong>Attributes</strong> — the byte at <code>-13</code>, the four promises it can hold, and
+  which kernels are allowed to believe it.</li>
+  <li><strong>Native kernels</strong> — first-class temporal types, a SIMD kernel library, a
+  multithreaded vector engine, a 16 MB bump arena, and a branch-free as-of join.</li>
+  <li><strong>The platform</strong> — a binary wire format, diagnostics that print once, a line editor
+  that replaced <code>rlwrap</code>, an extension seam, and a shared library so that everything else can
+  live outside the repository.</li>
+</ul>
+
+<p>None of it would exist without the 264 kilobytes underneath. That is worth saying once, clearly,
+before I spend four posts talking about my own code.</p>
+<div class="endnote">Part of <a href="index.html">Building Amber on ngn/k</a>, a five-part series on what I added to a K interpreter to turn it into a columnar engine for market data.</div><div class="pager"><a class="ph" href="#"><span class="d">Start of series</span><span class="t">This is post one</span></a><a class="nx" href="02-the-q-layer.html"><span class="d">Next &rarr;</span><span class="t">02. Teaching K to speak q</span></a></div></div></article>
 </main>
 
 <footer>

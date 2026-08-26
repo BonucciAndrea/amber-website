@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Building Amber on ngn/k — an essay series</title>
-<meta name="description" content="Five posts, in implementation order, on what I added to the ngn/k array interpreter to turn it into Amber: a columnar in-memory engine with a q/kdb+ vocabulary.">
+<title>Teaching K to speak q: tables, the join family, and bare qSQL</title>
+<meta name="description" content="How Amber layered the q/kdb+ vocabulary on a K core: ([]…) table literals in the C parser, the eight-member join family, and the line rewriter that makes bare qSQL work at the prompt.">
 <meta name="author" content="Andrea Bonucci">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0F'/%3E%3Cpath d='M16 5 26.6 23.4a1.1 1.1 0 0 1-1 1.7h-3.9L16 14.9l-5.7 10.2H6.4a1.1 1.1 0 0 1-1-1.7L16 5Z' fill='%23FFB020'/%3E%3C/svg%3E">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Building Amber on ngn/k — an essay series">
-<meta property="og:description" content="Five posts, in implementation order, on what I added to the ngn/k array interpreter to turn it into Amber: a columnar in-memory engine with a q/kdb+ vocabulary.">
-<meta property="article:published_time" content="2026-07-24">
+<meta property="og:title" content="Teaching K to speak q: tables, the join family, and bare qSQL">
+<meta property="og:description" content="How Amber layered the q/kdb+ vocabulary on a K core: ([]…) table literals in the C parser, the eight-member join family, and the line rewriter that makes bare qSQL work at the prompt.">
+<meta property="article:published_time" content="2026-02-03">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,7 +27,7 @@
   --border:rgba(255,255,255,.085); --border2:rgba(255,255,255,.17);
   --text:#eceef3; --dim:#a4a6b2; --faint:#71737f;
   --amber:#ffb020; --amber2:#ffcb6b; --amber3:#ff7a18;
-  --hue:#ffb020; --hue2:#ff7a18;
+  --hue:#56d4dd; --hue2:#5ddba0;
   --glow:color-mix(in srgb, var(--hue) 15%, transparent);
   --code-bg:#0a0a10; --code-br:rgba(255,255,255,.07);
   --green:#5ddba0; --red:#ff6b6b; --blue:#6aa6ff; --violet:#a78bfa; --cyan:#56d4dd;
@@ -269,7 +269,7 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
 </style>
 <script>document.documentElement.className+=" js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
 </head>
-<body class="index">
+<body class="post">
 <a class="skip" href="#main">Skip to content</a>
 <div id="progress"></div>
 
@@ -277,7 +277,7 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
   <div class="topbar-in">
     <a class="mark" href="index.html">
       <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="mg" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#mg)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#mg)" opacity=".62"/></svg>
-      <span>Amber</span><span class="sub">Essays</span>
+      <span>Amber</span><span class="sub">Post 02</span>
     </a>
     <div class="tb-right">
       <a class="ibtn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" aria-label="Repository">
@@ -294,55 +294,364 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
 <nav class="toc" id="toc" aria-label="On this page"><div class="h">Contents</div><div id="tocList"></div></nav>
 
 <main id="main">
-<header class="idx-hero"><div class="wrap"><div class="col">
-  <div class="series"><span class="bar"></span>Essay series</div>
-  <h1 style="max-width:18ch">Building Amber on ngn/k</h1>
-  <p class="dek" style="max-width:46ch">Five posts, in the order I wrote the code. What a 10,000-line K
-  interpreter gives you for free, and what I had to add to turn it into a columnar engine a tick shop
-  could actually use.</p>
-  <div class="meta"><span class="tag">5 parts</span><span>2026</span><span class="sep">·</span>
-  <span>C99 · AGPLv3</span><span class="sep">·</span><span>Andrea Bonucci</span></div>
-</div></div></header>
-<section class="idx-list"><div class="wrap"><div class="col"><a class="idx" href="01-ngn-k.html" style="--i1:#7aa2f7;--i2:#a78bfa">
-  <div class="no">01</div>
-  <div>
-    <h3>The interpreter underneath: what ngn/k is, and why Amber starts there</h3>
-    <p>Before any of my code existed there was a 10,000-line C interpreter that fits in a cache. This is what it does, why K is shaped the way it is, and what I inherited.</p>
-    <div class="m"><span>2026-01-12</span><span>·</span><span>15 min</span><span>·</span><span>foundation</span></div>
+<header class="hero"><div class="wrap"><div class="col">
+  <div class="series"><span class="bar"></span>Building Amber on ngn/k &nbsp;·&nbsp; Part 02 of 05</div>
+  <div class="postno">02</div>
+  <h1>Teaching K to speak q: tables, the join family, and bare qSQL</h1>
+  <p class="dek">K has dictionaries and a transpose. Everything else a tick shop needs — table literals, keyed tables, eight joins and select … by … from — had to be built. Here is how, and where I put each piece.</p>
+  <div class="meta">
+    <span class="tag">v1.0 – v1.5</span>
+    <span>2026-02-03</span><span class="sep">·</span><span>17 min read</span>
+    <span class="sep">·</span><span>Andrea Bonucci</span>
   </div>
-</a><a class="idx" href="02-the-q-layer.html" style="--i1:#56d4dd;--i2:#5ddba0">
-  <div class="no">02</div>
-  <div>
-    <h3>Teaching K to speak q: tables, the join family, and bare qSQL</h3>
-    <p>K has dictionaries and a transpose. Everything else a tick shop needs — table literals, keyed tables, eight joins and select … by … from — had to be built. Here is how, and where I put each piece.</p>
-    <div class="m"><span>2026-02-03</span><span>·</span><span>17 min</span><span>·</span><span>v1.0 – v1.5</span></div>
-  </div>
-</a><a class="idx" href="03-attributes.html" style="--i1:#ffb020;--i2:#ff7a18">
-  <div class="no">03</div>
-  <div>
-    <h3>One byte at offset −13: column attributes in C</h3>
-    <p>`s, `u, `p and `g are not metadata. They are a promise the kernel is allowed to believe, stored in a byte nobody has to look for, and they are the difference between 4.23 seconds and 1.9 milliseconds.</p>
-    <div class="m"><span>2026-03-08</span><span>·</span><span>19 min</span><span>·</span><span>v1.0 – v1.4</span></div>
-  </div>
-</a><a class="idx" href="04-native-kernels.html" style="--i1:#ff8a4c;--i2:#ffb020">
-  <div class="no">04</div>
-  <div>
-    <h3>Down to the metal: temporal types, SIMD, the arena, and a branch-free as-of join</h3>
-    <p>The point where Amber stopped being a library written in K and started being an engine written in C. Four releases, five kernels, and one 16 MB bump allocator that exists purely to keep malloc out of the tick path.</p>
-    <div class="m"><span>2026-05-19</span><span>·</span><span>22 min</span><span>·</span><span>v1.6 – v1.9</span></div>
-  </div>
-</a><a class="idx" href="05-platform.html" style="--i1:#a78bfa;--i2:#f472b6">
-  <div class="no">05</div>
-  <div>
-    <h3>From language to platform: -8!, one-report diagnostics, owning the terminal, and libamber.so</h3>
-    <p>Five point releases that added no vocabulary at all. What they added instead was a wire format, an error report you can act on, a line editor, an extension seam, and a shared library — everything an ecosystem needs to exist outside the repository.</p>
-    <div class="m"><span>2026-07-24</span><span>·</span><span>21 min</span><span>·</span><span>v1.9.1 – v1.9.6</span></div>
-  </div>
-</a>
-<p style="margin-top:34px;font-size:.92rem;color:var(--faint)">Each post is a single self-contained
-HTML file — no stylesheet, no script, no build step. The engine lives at
-<a href="https://github.com/BonucciAndrea/amber">github.com/BonucciAndrea/amber</a>.</p>
-</div></div></section>
+</div></div></header><article><div class="col"><p>K gives you a dictionary and a transpose. A q table is, formally, a transposed dictionary of
+columns — <code>+`a`b!(1 2;3 4)</code> — and once you notice that, it is tempting to declare the job
+done and go home. It is not done. "You can express a table" and "you can work with tables" are separated
+by table literals, keyed tables, <code>meta</code>, eight joins, a query language, and about four
+hundred small decisions about argument order that determine whether anyone who already knows q can sit
+down at your prompt and be productive in the first minute.</p>
+
+<p>This post is the layer that closed that gap: releases 1.0 through 1.5, from the first
+<code>select</code> to being able to type one without quotes around it.</p>
+
+<h2>Starting point: a table is a flipped dict</h2>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">d:`sym`px!(`AAPL`MSFT; 187.3 411.2)     / a dictionary of two vectors
+t:+d                                     / flip it: now it&#x27;s a table
+t`px                                     / 187.3 411.2 — a column IS a vector</code></pre></div>
+
+<p>That last line is the whole reason this works. A column is not a wrapper, not a Series object, not a
+chunked thing — it is exactly the vector you would have written by hand, with the same header and the
+same payload. Every optimisation in the four posts after this one depends on that staying true.</p>
+
+<p>But <code>+`sym`px!(`AAPL`MSFT; 187.3 411.2)</code> is not something you want to type forty times a
+day, and it is certainly not what a q programmer's fingers already know.</p>
+
+<h2>Table literals, in the parser (1.2)</h2>
+
+<p>q writes a table as <code>([]sym:`AAPL`MSFT; px:187.3 411.2)</code> and a keyed table as
+<code>([sym:`AAPL`MSFT] lot:100 10)</code>. I wanted both, and I wanted them to be <em>syntax</em>, not a
+function that takes a string.</p>
+
+<p>So they went into <code>src/p.c</code>, the C parser. The scanner recognises <code>([</code> and
+decides, on whether anything sits between the brackets, whether it is building a plain table or a keyed
+one; the columns are parsed as ordinary expressions, so anything legal on the right of a colon is legal
+in a column.</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">([]sym:`AAPL`MSFT`AAPL; px:187.3 411.2 187.4; sz:100 250 50)
+/  sym  px    sz
+/  ----------------
+/  AAPL 187.3 100
+/  MSFT 411.2 250
+/  AAPL 187.4 50
+
+([sym:`AAPL`MSFT] lot:100 10)      / keyed table</code></pre></div>
+
+<div class="note">
+  <b>Why the parser and not a function</b>
+  <p>A function taking a string would have meant the columns are parsed by a second, different parser
+  that I would then have to keep in sync with the real one forever. Every extension to the language
+  would have needed to be re-implemented in it, and every divergence would be a bug that only appears
+  inside a table literal. Putting it in <code>p.c</code> means a column expression is parsed by the
+  parser, once, and there is nothing to drift.</p>
+</div>
+
+<p>A bare table at the prompt renders as a grid. That sounds cosmetic and it is not: an engine where you
+have to call a function to look at your data is an engine you will not explore in, and exploring is
+ninety percent of what a research session is.</p>
+
+<h2><code>meta</code>, and the third column</h2>
+
+<p>q's <code>meta</code> returns a keyed table of column, type and attribute. Mine does the same, and it
+is nine characters:</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber.k</span></div><pre><code class="l-q">meta:{d:+unkey x;xkey[`c;+`c`t`a!(!d;{@*x}&#x27;value d;{`at x}&#x27;value d)]}</code></pre></div>
+
+<p>Read it right to left: flip the (un-keyed) table into a dictionary of columns; build a new dictionary
+with three fields — the names, the type of each column's first element, and each column's attribute; flip
+that into a table; key it by <code>c</code>.</p>
+
+<p>The <code>a</code> column is <code>`at</code>, the attribute reader. It is there from the first
+release because I already knew the attribute story was going to matter, and because a column whose sort
+order is a promise the kernel relies on had better be a promise you can <em>see</em>.
+<a href="03-attributes.html">Post three</a> is that story.</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;  meta trades</span></div><pre><code class="l-out">c     | t a
+------|-----
+sym   | s p
+time  | j s
+px    | f
+sz    | i</code></pre></div>
+
+<h2>The join family</h2>
+
+<p>q has eight joins and a tick shop uses most of them in a week. All eight are in
+<code>amber.k</code>, and all eight take brackets rather than infix, because Amber does not allow a
+user-defined function to be applied infix — <code>x f y</code> parses as two nouns. That is a property
+of the host grammar, and rather than fight it I documented it and moved on.</p>
+
+<div class="tbl">
+<table>
+  <thead><tr><th style="width:20%">Verb</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>lj[t;kt]</code></td><td>left join against a keyed table</td></tr>
+    <tr><td><code>ij[t;kt]</code></td><td>inner join — rows present in both</td></tr>
+    <tr><td><code>uj[x;y]</code></td><td>union — the union of columns and of rows</td></tr>
+    <tr><td><code>pj[t;kt]</code></td><td>plus join: numeric columns are <em>added</em>, not replaced</td></tr>
+    <tr><td><code>ej[c;x;y]</code></td><td>equi join on named columns</td></tr>
+    <tr><td><code>aj[c;x;y]</code> · <code>aj0</code></td><td><strong>as-of</strong> — the most recent right row at or before each left row</td></tr>
+    <tr><td><code>wj[w;c;t;(q;a)]</code></td><td><strong>window</strong> — aggregate right rows inside a window around each left row</td></tr>
+    <tr><td><code>asof[t;d]</code></td><td>the scalar as-of lookup</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Seven of those are ordinary relational operations expressed in array primitives. <code>ej</code>, for
+instance, is one line — an equi join is an inner join against a table you keyed on the fly:</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber.k</span></div><pre><code class="l-q">ej:{[c;x;y]ij[x;xkey[c;y]]}</code></pre></div>
+
+<p>The eighth is the one the whole engine ends up being about.</p>
+
+<h2>Why the as-of join is different</h2>
+
+<blockquote>
+<p>Every serious question about execution quality starts with the same join: for each trade, what was
+the quote standing at the moment it printed?</p>
+</blockquote>
+
+<p>That is not an equality join. There is no matching key — you want the <em>last</em> right row whose
+timestamp does not exceed the left row's, per symbol. Expressed in SQL it becomes a correlated subquery
+or a window function over a union, and the planner has to rediscover from the shape of the query that
+what you meant was "walk both sequences in order". It usually does not.</p>
+
+<p>In 1.0 <code>aj</code> was pure K: for every trade, a binary search into that symbol's quote slice.
+Correct, and slow, because it was a scalar operation performed in a loop — the exact thing an array
+language exists to avoid. In <strong>1.5</strong> I rewrote the matcher to issue <strong>one vectorised
+<code>bin</code> per group</strong> instead of one scalar search per row: roughly 700 ms down to 115 ms
+at 50,000 rows, ~6&times;, identical results.</p>
+
+<p>That was the last version written in K. In 1.9 it became a C kernel with a branch-free
+<code>lower_bound</code>, which is <a href="04-native-kernels.html">post four</a>. The pure-K version is
+still in the tree as <code>ajmK</code>, because a reference implementation you can diff against is worth
+more than the space it takes.</p>
+
+<div class="note warn">
+  <b>The bug that shaped the layout rules</b>
+  <p>Early on I stored trade times already formatted as <code>"09:30:00.123"</code> strings, because that
+  is how they render. Every join silently produced garbage: <code>stime</code> on a stored column makes
+  the time a <em>string</em>, and a lexicographic comparison of strings is not a temporal comparison.</p>
+  <p>The rule that came out of it, and that <code>fin.k</code> has enforced ever since: <strong>store
+  times as numbers and format only for display.</strong> <code>tsym[t;c]</code> renders the columns you
+  name as <code>HH:MM:SS.mmm</code> at print time and never touches storage. It is also why Amber later
+  got real temporal <em>types</em> rather than a convention — see <a href="04-native-kernels.html">post
+  four</a>.</p>
+</div>
+
+<h2>qSQL, as a template engine</h2>
+
+<p>The interesting problem in <code>select vwap:wavg[sz;px] by sym from trades where px&gt;0</code> is
+that <code>sz</code>, <code>px</code> and <code>sym</code> are not variables. They are column names, and
+they only mean anything relative to the table named after <code>from</code>.</p>
+
+<p>So <code>qsql.k</code> does the obvious thing, carefully. It splits the clause on the keywords,
+tokenises each expression, and rewrites every bare identifier that <em>is</em> a column of the target
+table into an indexing expression. Then it compiles the result into a one-argument lambda and hands that
+to the existing engine.</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">qsql.k</span></div><pre><code class="l-q">qword:{((x&gt;64)&amp;x&lt;91)|((x&gt;96)&amp;x&lt;123)|((x&gt;47)&amp;x&lt;58)|x=95}   / word-char mask
+qidsub:{[cols;s] … in[`$t;cols] … &quot;(x`&quot;,t,&quot;)&quot; … }          / bare name -&gt; (x`name)
+qfn:{[cols;e]. &quot;{[x]&quot;,qidsub[cols;e],&quot;}&quot;}                  / expr string -&gt; 1-arg fn</code></pre></div>
+
+<p><code>wavg[sz;px]</code> becomes <code>{[x]wavg[(x`sz);(x`px)]}</code>. Names that are <em>not</em>
+columns are left alone, so a global, a user function or a literal still means what it meant. And because
+the rewritten text is compiled by <code>.</code> — the real evaluator — the expression language inside a
+query is the whole language, with no separate grammar to maintain.</p>
+
+<figure class="wide">
+  <div class="frame"><svg viewBox="0 0 880 300" role="img" aria-label="The path of a bare qSQL line: the REPL rewriter turns it into a sel call, sel parses the clauses, qwhere and qby run over raw column vectors, and the kernel primitives do the work.">
+<style>
+ .b{fill:var(--surface2);stroke:var(--border);stroke-width:1}
+ .ba{fill:color-mix(in srgb,var(--hue) 14%,transparent);stroke:var(--hue);stroke-opacity:.5;stroke-width:1}
+ .t{fill:var(--text);font:600 12.5px var(--sans)}
+ .c{fill:var(--dim);font:400 11px var(--mono)}
+ .s{fill:var(--faint);font:400 10px var(--mono)}
+ .a{fill:var(--hue);font:600 11.5px var(--mono)}
+ .l{stroke:var(--border2);stroke-width:1.1;fill:none;marker-end:url(#qa)}
+ .h{fill:var(--faint);font:600 10.5px var(--sans);letter-spacing:.1em}
+</style>
+<defs><marker id="qa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--border2)"/></marker></defs>
+
+<text class="h" x="20" y="22">WHAT YOU TYPE</text>
+<rect class="ba" x="20" y="34" width="840" height="40" rx="9"/>
+<text class="a" x="38" y="59">select vwap:wavg[sz;px] by sym from trades where px&gt;0</text>
+
+<path class="l" d="M440 78 L 440 100"/>
+
+<rect class="b" x="20" y="106" width="196" height="58" rx="10"/>
+<text class="t" x="38" y="130">qrw</text>
+<text class="s" x="38" y="148">qsql.k — the line rewriter</text>
+
+<rect class="b" x="236" y="106" width="196" height="58" rx="10"/>
+<text class="t" x="254" y="130">sel &quot;…&quot;</text>
+<text class="s" x="254" y="148">clause split, no evaluation</text>
+
+<rect class="b" x="452" y="106" width="196" height="58" rx="10"/>
+<text class="t" x="470" y="130">qproj · qrefs</text>
+<text class="s" x="470" y="148">narrow to columns used</text>
+
+<rect class="b" x="668" y="106" width="192" height="58" rx="10"/>
+<text class="t" x="686" y="130">qwhere · qgrp · qby</text>
+<text class="s" x="686" y="148">raw column vectors</text>
+
+<path class="l" d="M220 135 L 232 135"/>
+<path class="l" d="M436 135 L 448 135"/>
+<path class="l" d="M652 135 L 664 135"/>
+<path class="l" d="M764 168 L 764 196"/>
+
+<text class="h" x="20" y="196">THE KERNEL — NO K OBJECT IS ALLOCATED PER ROW</text>
+<rect class="ba" x="20" y="206" width="840" height="52" rx="10"/>
+<text class="a" x="40"  y="230">=  group</text>
+<text class="a" x="180" y="230">?  find</text>
+<text class="a" x="300" y="230">@  index</text>
+<text class="a" x="430" y="230">&amp;  where</text>
+<text class="a" x="570" y="230">wavg  weighted mean</text>
+<text class="c" x="40"  y="248">one dispatch per column · payload in, payload out</text>
+
+<text class="s" x="20" y="286">Before 1.9.1 the group and probe path flipped each row into a boxed K value: 10M rows meant 10M transient heap objects, 7.9 s of an 8.4 s query.</text>
+</svg>
+</div>
+  <figcaption>From the input line to the kernel. Everything left of the kernel row is text manipulation
+  done once per query; everything in the kernel row is a whole-column operation.</figcaption>
+</figure>
+
+<p>Underneath sit three functions that do the actual work, and they are usable directly:</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">qwhere[t; mask]                                     / filter
+qselect[t; …]                                       / project
+qby[t; `sym; (,`vwap)!,{wavg[x`sz;x`px]}]           / group + aggregate</code></pre></div>
+
+<p><code>qby</code> takes a table, one or more grouping columns, and a dictionary from output name to
+function. Each function receives the sub-table for one group — which is why
+<code>{wavg[x`sz;x`px]}</code> reads two columns and returns one number. It is a small interface and it
+has never needed to change.</p>
+
+<h2>Bare qSQL: the line rewriter (1.5)</h2>
+
+<p>Up to 1.4 you wrote <code>sel"select … from t"</code>. The quotes are a papercut and papercuts
+compound: they break syntax highlighting, they make you escape things, and they are a constant small
+reminder that you are talking to a K interpreter wearing a q costume.</p>
+
+<p>1.5 added <code>qrw</code>, a rewriter that runs on the REPL's <em>input line</em> before evaluation.
+If the line looks like a query, it becomes the matching <code>sel</code>/<code>exq</code>/<code>upd</code>/<code>del</code>
+call. If it does not, it is passed through untouched.</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">select from trades where px&gt;150
+select vwap:wavg[sz;px], n:#px by sym from trades
+select vwap:wavg[sz;px] by time:1m xbar time from trades
+exec px from trades where sym=`AAPL
+update px:px*1.01 from trades where sym=`AAPL
+delete from trades where sz&lt;100</code></pre></div>
+
+<p>It handles the cases you actually hit: assignment (<code>r:select …</code>), and a prefix applied to
+the whole query (<code>5#select …</code>, <code>count select …</code>). It deliberately does <em>not</em>
+run inside a <code>.k</code> script — there the string form or the functional form is what you use,
+because a source file being silently rewritten line by line is a debugging experience nobody wants.</p>
+
+<div class="note info">
+  <b>The clause that has no space in front of it</b>
+  <p><code>qsplit</code> splits on <code>" by "</code>. Which fails on <code>select by sym from t</code>,
+  where the by-clause is the entire select-part and therefore has nothing before it to match the leading
+  space against. <code>qsplit0</code> exists solely to handle that: if the plain split found nothing, try
+  the keyword with its leading space stripped, anchored at position zero. It is four lines and it took
+  longer than the joins.</p>
+</div>
+
+<p>1.5 also fixed <code>select from t</code> — a column-less select with a leading <code>from</code>,
+which the clause splitter had been mis-splitting — and, less visibly, made <code>repl.k</code> actually
+load all six library modules. Before that, <code>std</code>, <code>qsql</code>, <code>temporal</code>,
+<code>sys</code>, <code>hdb</code> and <code>ipc</code> were on disk and simply never loaded, so
+<code>sel</code> and the moving aggregates were silently unavailable at the prompt. Everything worked in
+the test suite, which loads them explicitly. That is a good lesson about what a test suite is not.</p>
+
+<h2>Narrowing before grouping</h2>
+
+<p>One refinement worth flagging here even though it landed much later, because it belongs to this layer
+conceptually. <code>qby</code> materialises one sub-table per group, and the function that does it
+indexes <em>every</em> column it is handed. On a wide table that means copying dozens of columns per
+group that no aggregate ever reads.</p>
+
+<p><code>qrefs</code> tokenises an aggregate expression with the same tokeniser <code>qidsub</code> uses
+to rewrite it, so the set of names it returns is exactly the set of columns the compiled function can
+reach. <code>qproj</code> then narrows the table to those columns before grouping. It can only ever
+narrow, so it cannot change a result — and the cost of a group-by starts scaling with columns
+<strong>used</strong> instead of columns <strong>present</strong>.</p>
+
+<h2><code>fin.k</code>: giving the vocabulary a domain (1.4)</h2>
+
+<p>A general table engine is not the same thing as something a desk can use. 1.4 added
+<code>fin.k</code>, auto-loaded after <code>amber.k</code>, which is where the market-data vocabulary
+lives:</p>
+
+<div class="tbl">
+<table>
+  <thead><tr><th style="width:22%">Group</th><th>Functions</th></tr></thead>
+  <tbody>
+    <tr><td>book</td><td><code>mid</code> <code>spread</code> <code>spreadbps</code> <code>micro</code> <code>imbal</code></td></tr>
+    <tr><td>trades</td><td><code>vwap</code> <code>twap</code> <code>tsign</code> <code>signedvol</code> <code>effspread</code> <code>notional</code></td></tr>
+    <tr><td>returns / vol</td><td><code>ret</code> <code>logret</code> <code>rvol</code> <code>movavg</code> <code>movsum</code> <code>movmax</code> <code>movmin</code> <code>ema</code> <code>rollstd</code></td></tr>
+    <tr><td>aggregation</td><td><code>bars</code> (OHLCV) <code>symstats</code></td></tr>
+    <tr><td>index</td><td><code>bysym</code> <code>symrows</code> <code>gidx</code> — O(1) per-symbol slicing</td></tr>
+    <tr><td>generators</td><td><code>gentq</code> <code>genopt</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p><code>gentq n</code> matters more than it looks. It generates a session — <code>trades</code> and
+<code>quotes</code> globals with plausible microstructure — which means every example, every benchmark
+and every bug report can start from one line and be reproducible on someone else's machine. It also
+stamps the attributes on the key columns (<code>`s</code> on <code>time</code>, <code>`p</code> on
+<code>sym</code>), so the default state of a freshly generated session is the fast one rather than a
+trap.</p>
+
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">gentq 100000                       / sets global `trades` and `quotes`
+m:aj[`sym`time; trades; quotes]    / TAQ: prevailing quote for every trade
+tsign m                            / Lee-Ready trade sign (+1 buy / -1 sell)
+effspread m                        / effective spread = 2|px-mid|
+bars[1; trades]                    / 1-minute OHLCV</code></pre></div>
+
+<h2>The rest of 1.1 – 1.5, briefly</h2>
+
+<ul>
+  <li><strong>Temporal helpers (1.1)</strong> — <code>hms hh mm sec milli minute second stime ptime</code>,
+  and <code>minbar</code> / <code>bar</code> / <code>xbar</code> for OHLC bucketing. Times as milliseconds
+  since midnight, mirroring q's convention. These were library functions over integers; they became real
+  <em>types</em> in 1.7.</li>
+  <li><strong>Grid rendering (1.1, fixed properly in 1.3)</strong> — tables, keyed tables and
+  dictionaries print as q-style grids. 1.3 fixed list-valued dictionaries (what <code>group</code>
+  returns), nested columns (what <code>xgroup</code> returns), and a crash where <code>iskeyed</code> ran
+  an odometer over a plain vector.</li>
+  <li><strong><code>./a</code> rebuilds when the C sources are newer than the binary (1.3)</strong> — the
+  reason table literals mysteriously did not render for some people was that they were running a stale
+  build. Making the launcher check is two lines and removed an entire category of bug report.</li>
+  <li><strong>Help pages</strong> — <code>\q</code> scalars and sets, <code>\j</code> tables and joins,
+  <code>\z</code> temporal and attributes, <code>\m</code> the finance module. Built in, because the
+  first thing you want in an unfamiliar array language is a list of what exists.</li>
+  <li><strong>CI from 1.1</strong> — the suite grew 97 &rarr; 104 &rarr; 148 &rarr; 153 assertions across
+  these releases, run on every push.</li>
+</ul>
+
+<h2>Where this left things</h2>
+
+<p>By 1.5 you could sit down at the prompt, type <code>gentq 1000000</code>, type a
+<code>select … by … from … where …</code> without quoting it, join trades to quotes as-of, bucket into
+one-minute bars and see a grid — all in a language whose vocabulary a q programmer already knows.</p>
+
+<p>What you could not do was any of it particularly fast on ten million rows. The query layer was K
+calling K; the joins were K; the temporal functions were integer arithmetic wearing a costume. That is
+what the next two posts are about — starting with the one piece of C-level machinery that was there from
+the very first release, because I knew from the start that everything else would depend on it.</p>
+<div class="endnote">Part of <a href="index.html">Building Amber on ngn/k</a>, a five-part series on what I added to a K interpreter to turn it into a columnar engine for market data.</div><div class="pager"><a href="01-ngn-k.html"><span class="d">&larr; Previous</span><span class="t">01. The interpreter underneath</span></a><a class="nx" href="03-attributes.html"><span class="d">Next &rarr;</span><span class="t">03. One byte at offset −13</span></a></div></div></article>
 </main>
 
 <footer>
