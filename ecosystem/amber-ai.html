@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>amber-ai — a local, offline co-pilot and vector extensions</title>
+<meta name="description" content="A schema-aware assistant that reads your live Amber tables before it answers, talks only to 127.0.0.1, installs through the ext/ seam, and cannot hang or break the REPL.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="amber-ai — a local, offline co-pilot and vector extensions">
+<meta property="og:description" content="A schema-aware assistant that reads your live Amber tables before it answers, talks only to 127.0.0.1, installs through the ext/ seam, and cannot hang or break the REPL.">
+<meta property="og:site_name" content="Amber">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/amber.css">
+<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v1.9.6</span></a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../docs/">Docs</a><a href="../ecosystem/" class="active">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a>
+      <a href="https://github.com/BonucciAndrea/amber-notepad" rel="noopener" target="_blank" class="np-mobile">Scratchpad</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-btn scratchpad-nav" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener" title="Amber Notepad — browser scratchpad" aria-label="Amber Notepad scratchpad">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </a>
+      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+  </div>
+</header>
+<main id="main">
+<div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
+<div class="grp">Ecosystem</div>
+<a href="../ecosystem/index.html">Overview</a>
+<div class="grp">Data & interop</div>
+<a href="../ecosystem/python-amber.html">python-amber</a>
+<a href="../ecosystem/amber-arrow.html">amber-arrow</a>
+<a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
+<div class="grp">Market data</div>
+<a href="../ecosystem/amber-tick.html">amber-tick</a>
+<a href="../ecosystem/grafana.html">Grafana datasource</a>
+<div class="grp">Tooling</div>
+<a href="../ecosystem/vscode-amber.html">vscode-amber</a>
+<a href="../ecosystem/amber-ai.html" class="active">amber-ai</a>
+</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../ecosystem/index.html">Ecosystem</a> / amber-ai</div>
+<h1>amber-ai</h1>
+<p class="lead">A local, offline AI co-pilot for Amber. It reads <strong>your live tables</strong>
+before it answers — their names, column types, attributes and row counts — so its suggestions are
+about your session, not about a generic K tutorial.</p>
+
+<div class="badge-row" style="margin-bottom:26px">
+  <span class="pill pill-accent">v2.0.0</span>
+  <span class="pill">requires amber ≥ 1.9.5</span>
+  <span class="pill pill-dot" style="color:var(--green)">127.0.0.1 only</span>
+  <span class="pill">184 tests</span>
+  <a class="pill" href="https://github.com/BonucciAndrea/amber-ai" target="_blank" rel="noopener">GitHub &rarr;</a>
+</div>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-out">amber&gt; trades:gentq 1000000
+
+amber&gt; \ai average price per symbol in the last hour
+select avg px by sym from trades where time&gt;.z.p-01:00</code></pre></div>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-out">amber&gt; select last px by sym from trads
+error[E0101]: Undefined variable `trads`
+
+amber&gt; \ai why
+The name `trads` does not exist. This workspace has `trades`
+(table: time:P sym:S`g px:F size:I, 1,000,000 rows) — you are one
+character off. `sym` already carries the `g attribute, so the
+grouped select will use the index.</code></pre></div>
+
+<h2>Four things that make it different from a chat window</h2>
+<div class="grid grid-2" style="margin:20px 0">
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--text)">Local only</h4>
+    <p class="small mb-0">The one endpoint it ever contacts is <code>http://127.0.0.1:11434</code> — a
+    model server on your machine. No account, no API key, no telemetry, no TLS stack, no hosted
+    fallback. Your schema and your queries do not leave the box.</p>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--text)">It cannot hang your REPL</h4>
+    <p class="small mb-0">Every request carries an absolute millisecond deadline covering connect, send
+    and the whole receive loop. Tab completion gets 100 ms; a failed connect arms a 4-second circuit
+    breaker so a REPL with no backend pays <strong>one</strong> failed connect, not one per
+    keystroke.</p>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--text)">It cannot break your REPL</h4>
+    <p class="small mb-0">Every entry point is trapped. No backend, no model pulled, a malformed reply,
+    a half-open socket — each is one friendly sentence, never an exception and never a stack trace.</p>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--text)">It does not patch Amber</h4>
+    <p class="small mb-0">It installs through the published <a href="../docs/capi.html">extension
+    seam</a>: three files into <code>ext/</code>, one into <code>lib/</code>, one rebuild.
+    <code>./uninstall.sh</code> puts the engine back byte-for-byte.</p>
+  </div>
+</div>
+
+<h2>Install</h2>
+<div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/amber-ai.git
+cd amber-ai
+./install.sh /path/to/amber</code></pre></div>
+
+<p>The path is optional — <code>./install.sh</code> finds a sibling <code>../amber</code>,
+<code>$AMBER_HOME</code>, <code>~/amber</code>, or an <code>amber</code> on your <code>PATH</code>. It
+then checks your toolchain, checks the target's version and extension ABI (and refuses politely if they
+do not match), copies <code>src/net.c</code>, <code>src/net.h</code> and <code>src/ai_ext.c</code> into
+<code>ext/</code> plus <code>lib/ai.k</code> into <code>lib/</code>, runs the engine's own
+<code>build.sh</code>, verifies the <code>`ai</code> / <code>`aio</code> verbs and <code>\ai</code>
+against Amber's own suite, and probes <code>127.0.0.1:11434</code> — distinguishing <em>nothing
+listening</em>, <em>a live Ollama</em>, <em>a live Ollama with no models pulled</em>, and <em>something
+else squatting on the port</em>, each with its own fix.</p>
+
+<h3>Then start a model</h3>
+<p>Any local backend that speaks Ollama, llama.cpp or an OpenAI-compatible <code>/v1</code> endpoint
+will do:</p>
+<div class="code"><pre><code class="lang-sh">curl -fsSL https://ollama.com/install.sh | sh    # linux / wsl2  (macOS: brew install ollama)
+ollama serve &amp;
+ollama pull qwen2.5-coder:0.5b                   # ~400 MB, runs on a laptop CPU</code></pre></div>
+<p>Or run <code>./setup-ollama.sh</code>, which walks through the same thing and asks before every
+system change. Without a backend the agent is a <strong>no-op</strong>: it says so once, and the REPL
+is exactly Amber.</p>
+
+<h3>Shell alias</h3>
+<div class="code"><pre><code class="lang-sh">alias amber-ai='AMBER_NATIVE=1 AMBER_AI=1 \
+  AMBER_AI_URL="http://127.0.0.1:11434/api/generate" \
+  AMBER_AI_TIMEOUT_MS=10000 "$AMBER_HOME/a"'
+
+alias amber-noai='AMBER_AI=0 "$AMBER_HOME/a"'    # agent off for one session</code></pre></div>
+
+<div class="note note-warn">
+  <span class="note-title">Do not pass <code>lib/ai.k</code> as an argument</span>
+  <p><code>amber $AMBER_HOME/lib/ai.k</code> runs the agent library as a <em>script</em> and exits.
+  <code>repl.k</code> already loads it through <code>lib/ext.k</code> at startup; the alias only has to
+  start the REPL. And alias the launcher <code>a</code>, not the bare <code>amber</code> binary — the
+  binary has no stdlib and no <code>repl.k</code>, so <code>\ai</code> does not exist there.</p>
+</div>
+
+<h2><code>\ai</code> commands</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:32%">Command</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>\ai &lt;question&gt;</code></td><td>schema-aware code generation for <strong>this</strong> session</td></tr>
+    <tr><td><code>\ai explain &lt;expr&gt;</code></td><td>unpack a terse K expression, innermost first</td></tr>
+    <tr><td><code>\ai why [error]</code></td><td>diagnose the last (or a given) error against your real tables</td></tr>
+    <tr><td><code>\ai profile &lt;table&gt;</code></td><td>rows, column types, attributes, distinct counts + indexing advice</td></tr>
+    <tr><td><code>\ai optimize &lt;query&gt;</code></td><td>faster vector paths for a query</td></tr>
+    <tr><td><code>\ai status</code></td><td>endpoint, model, budgets, what it has learned, live workspace</td></tr>
+    <tr><td><code>\ai memory</code> / <code>learn</code> / <code>forget</code></td><td>inspect / extend / erase the persistent memory</td></tr>
+    <tr><td><code>\ai on</code> | <code>off</code></td><td>master switch (default <strong>on</strong>)</td></tr>
+    <tr><td><code>\ai tab on</code> | <code>off</code></td><td>inline Tab suggestions (default <strong>on</strong>)</td></tr>
+    <tr><td><code>\ai model &lt;name&gt;</code> | <code>url &lt;endpoint&gt;</code></td><td>switch model / endpoint for this session</td></tr>
+    <tr><td><code>\ai timeout &lt;ms&gt;</code> | <code>tabtimeout &lt;ms&gt;</code></td><td>answer / Tab budgets</td></tr>
+    <tr><td><code>\ai warm</code></td><td>load the model now, on its own budget, and measure your machine's tokens/sec</td></tr>
+    <tr><td><code>\ai retry</code></td><td>forget a dead endpoint and try it again now</td></tr>
+    <tr><td><code>\ai serve</code></td><td>start a local ollama in the background (hosts without systemd)</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small muted"><code>\ai profile</code> and <code>\ai why</code> read your <strong>actual</strong>
+workspace first — the row counts, types and attributes in their output are measured, not generated.</p>
+
+<h2>Vector execution: Tab is layered so the network is last</h2>
+<p>And usually never reached at all.</p>
+<div class="step"><span class="n">1</span><h3>Lexical</h3>
+<p class="small">Globals in your workspace, table column names, <code>\</code> commands,
+<code>\ai</code> sub-commands, the Amber/K vocabulary. Instant, offline. <em>(Amber's own — present
+without this package.)</em></p></div>
+<div class="step"><span class="n">2</span><h3>Memory</h3>
+<p class="small">Whole lines you have actually run before, mined from
+<code>~/.amber_ai_memory.k</code>. Instant, offline, and what makes the REPL feel like it has learned
+your habits.</p></div>
+<div class="step"><span class="n">3</span><h3>Model</h3>
+<p class="small">Only when 1 and 2 find nothing, only when the agent is on, and only inside
+<code>AMBER_AI_TAB_MS</code> (default 100 ms).</p></div>
+
+<p>A model suggestion is rendered as <strong>dim ghost text after the cursor</strong> and is
+<em>never</em> inserted until you accept it with a second <kbd>Tab</kbd> (or <kbd>&rarr;</kbd>, or
+<kbd>Ctrl-F</kbd>). Any other keystroke discards it. Accepted suggestions are recorded as feedback.</p>
+
+<div class="code"><pre><code class="lang-out">amber&gt; select avg px by sym from tr█ades where sym=`AAPL      &lt;- dim = suggested, not typed</code></pre></div>
+
+<h2>Persistent memory</h2>
+<p>A local model cannot be fine-tuned while you type, so "learning" here means <strong>persistent
+few-shot context</strong>. Every line that ran cleanly, every schema this workspace has held and every
+accepted Tab suggestion is appended to <code>~/.amber_ai_memory.k</code>, one self-describing Amber
+expression per line:</p>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">~/.amber_ai_memory.k</span></div><pre><code class="lang-q">ai.rec["q";1755512345;3;"select sym,px from trades";"trades quotes"]
+/       kind  epoch-s  hits  text                    context</code></pre></div>
+
+<p>Loading it is simply evaluating it, so it stays human-readable and hand-editable.
+<code>\ai memory</code> shows it, <code>\ai forget</code> erases it,
+<code>AMBER_AI_MEMORY=/path</code> moves it (per-project memories work), and deleting the file is
+always safe.</p>
+
+<h2>Tuning the budget</h2>
+<p>A 7B on CPU generates a few tokens a second, so a 128-token answer can take 30&nbsp;s while a 0.5B
+does it in 4 — and Ollama unloads an idle model after five minutes, so the load is paid again and again
+inside the same deadline.</p>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-out">amber&gt; \ai warm            # load the model now, on its own budget, and measure</code></pre></div>
+
+<p><code>\ai warm</code> asks for a single token, so it returns as soon as the weights are resident
+rather than when an answer is finished. It then times a short generation and, if your measured
+tokens/sec cannot produce a full answer inside the current budget, raises the budget and says so. It
+measures your machine rather than guessing from the model's name. Every request also carries
+<code>keep_alive</code>, so the backend holds the model for 30 minutes after each call.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:34%">Variable</th><th style="width:14%">Default</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>AMBER_AI_URL</code></td><td><code>127.0.0.1:11434</code></td><td>the model endpoint</td></tr>
+    <tr><td><code>AMBER_AI_TIMEOUT_MS</code></td><td><code>10000</code></td><td>answer budget</td></tr>
+    <tr><td><code>AMBER_AI_TAB_MS</code></td><td><code>100</code></td><td>Tab budget — leave it small, it runs on the keystroke path</td></tr>
+    <tr><td><code>AMBER_AI_NUM_PREDICT</code></td><td><code>128</code></td><td>generation length; the biggest single lever after the load</td></tr>
+    <tr><td><code>AMBER_AI_KEEP_ALIVE</code></td><td><code>30m</code></td><td><code>"0"</code> unloads at once, <code>"-1"</code> keeps forever</td></tr>
+    <tr><td><code>AMBER_AI_MEMORY</code></td><td><code>~/.amber_ai_memory.k</code></td><td>where the persistent memory lives</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Each command scales off <code>AMBER_AI_NUM_PREDICT</code> rather than using it directly, because a
+one-line answer and a table profile do not need the same room:</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:36%">Command</th><th>Tokens at the 128 default</th></tr></thead>
+  <tbody>
+    <tr><td><code>\ai</code>, <code>\ai explain</code></td><td>1.5&times; — 192</td></tr>
+    <tr><td><code>\ai why</code></td><td>2&times; — 256</td></tr>
+    <tr><td><code>\ai profile</code>, <code>\ai optimize</code></td><td>3.5&times; — 448</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small muted">Setting <code>AMBER_AI_NUM_PREDICT=48</code> scales all three down together and
+roughly halves the wait. <code>\ai warm</code> sizes the answer budget from the longest of them, so
+raising the caps cannot move the timeout to <code>\ai profile</code>.</p>
+
+<div class="note note-ok">
+  <span class="note-title">The engine repository contains no AI code and no network code</span>
+  <p><code>grep -r socket src/</code> in the engine finds only <code>src/0.c</code>'s IPC support, which
+  predates 1.9 and is the same code kdb-style <code>hopen</code> uses. Everything on this page lives in
+  <code>ext/</code>, and <code>./uninstall.sh</code> removes it.</p>
+</div>
+
+<div class="pager">
+  <a href="../ecosystem/vscode-amber.html"><span class="dir">Previous</span><span class="ttl">vscode-amber</span></a>
+  <a class="next" href="../tutorials/index.html"><span class="dir">Next</span><span class="ttl">Tutorials</span></a>
+</div>
+</article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+        <p class="small muted" style="margin-top:14px">
+          <a class="scratchpad-link" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            Amber Notepad — scratchpad
+          </a>
+        </p>
+      </div>
+      <div>
+        <h5>Documentation</h5>
+        <a href="../docs/index.html">Introduction</a>
+        <a href="../docs/language.html">Language &amp; qSQL</a>
+        <a href="../docs/temporal.html">Temporal mechanics</a>
+        <a href="../docs/protocol.html">Wire protocol</a>
+        <a href="../docs/capi.html">C API</a>
+        <a href="../docs/benchmarks.html">Benchmarks</a>
+      </div>
+      <div>
+        <h5>Ecosystem</h5>
+        <a href="../ecosystem/python-amber.html">python-amber</a>
+        <a href="../ecosystem/amber-arrow.html">amber-arrow</a>
+        <a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
+        <a href="../ecosystem/amber-tick.html">amber-tick</a>
+        <a href="../ecosystem/grafana.html">Grafana datasource</a>
+        <a href="../ecosystem/vscode-amber.html">vscode-amber</a>
+        <a href="../ecosystem/amber-ai.html">amber-ai</a>
+      </div>
+      <div>
+        <h5>Learn</h5>
+        <a href="../tutorials/index.html">Tutorials</a>
+        <a href="../blog/index.html">Blog</a>
+        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+        <a href="https://github.com/BonucciAndrea" target="_blank" rel="noopener">All repositories</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+      <span>Not affiliated with kdb+ / KX Systems.</span>
+    </div>
+  </div>
+</footer>
+<script src="../assets/js/amber.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>amber-arrow — zero-copy Arrow streaming, amberd and Flight</title>
+<meta name="description" content="An ArrowArrayStream over an Amber table whose batches are windows onto one export, the amberd TCP query server, and an Arrow Flight daemon where a ticket is an Amber query.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="amber-arrow — zero-copy Arrow streaming, amberd and Flight">
+<meta property="og:description" content="An ArrowArrayStream over an Amber table whose batches are windows onto one export, the amberd TCP query server, and an Arrow Flight daemon where a ticket is an Amber query.">
+<meta property="og:site_name" content="Amber">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/amber.css">
+<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v1.9.6</span></a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../docs/">Docs</a><a href="../ecosystem/" class="active">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a>
+      <a href="https://github.com/BonucciAndrea/amber-notepad" rel="noopener" target="_blank" class="np-mobile">Scratchpad</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-btn scratchpad-nav" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener" title="Amber Notepad — browser scratchpad" aria-label="Amber Notepad scratchpad">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </a>
+      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+  </div>
+</header>
+<main id="main">
+<div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
+<div class="grp">Ecosystem</div>
+<a href="../ecosystem/index.html">Overview</a>
+<div class="grp">Data & interop</div>
+<a href="../ecosystem/python-amber.html">python-amber</a>
+<a href="../ecosystem/amber-arrow.html" class="active">amber-arrow</a>
+<a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
+<div class="grp">Market data</div>
+<a href="../ecosystem/amber-tick.html">amber-tick</a>
+<a href="../ecosystem/grafana.html">Grafana datasource</a>
+<div class="grp">Tooling</div>
+<a href="../ecosystem/vscode-amber.html">vscode-amber</a>
+<a href="../ecosystem/amber-ai.html">amber-ai</a>
+</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../ecosystem/index.html">Ecosystem</a> / amber-arrow</div>
+<h1>amber-arrow &amp; amber-flight</h1>
+<p class="lead">Streaming Apache Arrow over the Amber columnar engine, without copying anything — plus
+a query daemon and an Arrow Flight server.</p>
+
+<div class="badge-row" style="margin-bottom:26px">
+  <span class="pill pill-accent">no libarrow linkage</span>
+  <span class="pill">ArrowArrayStream</span>
+  <span class="pill">amberd</span>
+  <span class="pill">Arrow Flight (gRPC)</span>
+  <a class="pill" href="https://github.com/BonucciAndrea/amber-arrow" target="_blank" rel="noopener">GitHub &rarr;</a>
+</div>
+
+<div class="code"><pre><code class="lang-py">import amber as am, amber_arrow as aa
+
+am.gentq(400_000_000)                                    # 400M trades
+for batch in aa.query("select from trades", batch_rows=1_000_000):
+    process(batch)                                       # 400 batches, 0 copies</code></pre></div>
+
+<p>Every batch above points at the <strong>same</strong> engine-owned column buffers. Not a copy of
+them, not a slice of them — a window, expressed with Arrow's own <code>offset</code> and
+<code>length</code> fields.</p>
+
+<div class="code"><pre><code class="lang-py">&gt;&gt;&gt; {b.column("px").buffers()[1].address for b in aa.stream(t, batch_rows=25_000)}
+{140234099785792}                                        # one address, 80 batches
+&gt;&gt;&gt; _.pop() == am.Table(t).column("px", raw=True).handle()
+True                                                     # the engine's buffer</code></pre></div>
+
+<h2>What is in here</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:24%">Component</th><th>What it is</th></tr></thead>
+  <tbody>
+    <tr><td><code>libamber_arrow.so</code></td><td>C. Implements <code>ArrowArrayStream</code> over an Amber table — the one piece of the Arrow C Data Interface the engine deliberately does not carry. Links <code>libamber.so</code>, and nothing else. <strong>No libarrow.</strong></td></tr>
+    <tr><td><code>amberd</code></td><td>C. A TCP query server: many connections, one engine, four reply encodings. ~450 lines. The thing the Grafana datasource and the VS Code language server connect to.</td></tr>
+    <tr><td><code>amber_arrow</code></td><td>Python. ctypes over <code>libamber_arrow.so</code> &rarr; <code>pyarrow.RecordBatchReader</code>, plus a reference client for the <code>amberd</code> protocol.</td></tr>
+    <tr><td><code>amber_flight</code></td><td>Python. An Arrow Flight (gRPC) server. A ticket <em>is</em> an Amber query.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Why a separate library</h2>
+<p>The engine already exports Arrow: <code>src/ar.c</code> produces one <code>ArrowSchema</code> /
+<code>ArrowArray</code> pair for a whole table, in about ninety lines with no Arrow dependency. That is
+exactly the right amount of Arrow for a 10,000-line C runtime to own. It covers "hand me this table"
+completely.</p>
+<p>What it does not cover is <em>"hand me this 400-million-row table in batches, and stop when I stop
+asking"</em> — which is what a Flight server, a Polars scan, and any consumer with a memory budget
+actually need. That is the <code>ArrowArrayStream</code>, and it belongs out here, where it can grow,
+rather than inside the engine, where it would be the largest single feature in the tree and would be
+paid for by every user who never touches Arrow.</p>
+
+<h3>A batch is a window, not a slice</h3>
+<p>The obvious way to stream a table in batches is to cut it into pieces. That copies every byte, once
+per stream — for a 400M-row table, that <em>is</em> the cost of the operation, and it defeats the
+point of using Arrow at all.</p>
+<p>So this library never cuts anything. It exports the table <strong>once</strong>, and every batch is
+a set of <code>ArrowArray</code> structs whose <code>buffers</code> pointers are the parent's, with
+<code>offset</code> and <code>length</code> moved. Arrow's format defines exactly those semantics for
+primitive and utf8 layouts alike, so there is no per-type special case.</p>
+
+<div class="note note-warn">
+  <span class="note-title">The one genuinely hard problem is lifetime</span>
+  <p><strong>Batch 3 may outlive the stream</strong>, and batches 1 and 2 may be released before batch
+  3 is created. So the parent export is not owned by the stream. It is owned by a reference count that
+  the stream holds one of, and each live batch holds one of, and it is torn down by whoever drops the
+  last one. There is a test for exactly that pattern, because it is the one that would otherwise be a
+  use-after-free.</p>
+</div>
+
+<h2>Install</h2>
+<div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/amber          # the engine
+git clone https://github.com/BonucciAndrea/amber-arrow
+cd amber-arrow
+./build.sh --amberd                                       # libamber_arrow.so + amberd
+pip install ./python                                      # amber_arrow + amber_flight
+pip install ../python-amber                               # for the embedded backend</code></pre></div>
+
+<p><code>build.sh</code> finds the engine at <code>$AMBER_SRC</code> (default <code>../amber</code>) or
+a prebuilt library at <code>$AMBER_LIB_DIR</code>, and builds it if it has to.</p>
+
+<div class="note note-warn">
+  <span class="note-title">One engine, not two</span>
+  <p><code>amber_arrow</code> loads <code>libamber.so</code> <strong>from inside the installed
+  <code>amber</code> package</strong>, with <code>RTLD_GLOBAL</code>, before it loads
+  <code>libamber_arrow.so</code>. If the loader satisfies the dependency with a <em>second</em> copy
+  from elsewhere on the search path, you get a second <strong>engine</strong> — two heaps, two symbol
+  tables, two global namespaces, and handles from one that are meaningless in the other, with no error
+  at any point because nothing is technically wrong. <code>amber_arrow.library_path()</code> tells you
+  which one you got.</p>
+</div>
+
+<h2>The Python API</h2>
+<div class="code"><pre><code class="lang-py">import amber_arrow as aa
+
+aa.query("select from trades where px&gt;0", batch_rows=1_000_000)  # -&gt; RecordBatchReader
+aa.stream(table, batch_rows=0)                                   # -&gt; RecordBatchReader
+aa.table_to_arrow(table)                                         # -&gt; pyarrow.Table
+aa.arrow_to_table(pyarrow_table_or_batch_or_reader)              # -&gt; amber.Table
+aa.library_path()</code></pre></div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:26%">Detail</th><th>Behaviour</th></tr></thead>
+  <tbody>
+    <tr><td><code>batch_rows=0</code></td><td>selects <strong>65,536</strong> — the figure the Arrow ecosystem has converged on for streaming: large enough that per-batch overhead disappears, small enough that a handful of columns stays inside L2/L3.</td></tr>
+    <tr><td>keyed results</td><td>A <code>select … by sym from t</code> is flattened with the grouping columns in front. Arrow has no keyed table, and dropping the keys would be worse than flattening them.</td></tr>
+    <tr><td>inbound direction</td><td><strong>Copies.</strong> Amber stores a 32-byte object header immediately <em>before</em> every vector payload, so it cannot adopt a foreign allocation as a native column. Outbound is where the volume is.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2><code>amberd</code> — the query server</h2>
+<div class="code"><pre><code class="lang-sh">./build/amberd --home ../amber --port 5010 --eval "gentq 10000000" -v
+./build/amberd --home ../amber --load /srv/hdb/load.k --mode jsonc --readonly</code></pre></div>
+
+<p>Single-threaded event loop over <code>poll()</code>: many connections, one query at a time,
+<strong>shared</strong> global state — the model kdb+ uses, and the only one where two clients can see
+each other's writes. Full framing, encodings and client code are on the
+<a href="../docs/protocol.html">wire protocol page</a>.</p>
+
+<div class="code"><pre><code class="lang-py">from amber_arrow.client import AmberClient
+
+with AmberClient("localhost", 5010) as c:
+    c.ping()
+    rows  = c.json("select vwap:wavg[sz;px] by sym from trades")
+    cols  = c.columns("select from trades where sym=`AAPL")
+    frame = c.pandas("select n:#px by sym from trades")</code></pre></div>
+
+<h2><code>amber-flight</code> — Arrow over gRPC</h2>
+<div class="code"><pre><code class="lang-sh">python -m amber_flight --home ../amber --port 8815 --eval "gentq 10000000"</code></pre></div>
+
+<div class="code"><pre><code class="lang-py">import pyarrow.flight as fl
+c = fl.connect("grpc://localhost:8815")
+
+for info in c.list_flights():                            # every table, real schemas
+    print(info.descriptor.path, info.total_records)
+
+t = c.do_get(fl.Ticket(b"select vwap:wavg[sz;px] by sym from trades")).read_all()
+
+w, _ = c.do_put(fl.FlightDescriptor.for_path("bars"), table.schema)
+w.write_table(table); w.close()                          # binds the global `bars`</code></pre></div>
+
+<p><strong>A ticket is an Amber query.</strong> There is no query language of its own to learn and
+nothing to translate; bare qSQL works exactly as it does at the <code>amber&gt;</code> prompt.</p>
+
+<h3>Two backends, and the difference is the whole story</h3>
+<div class="grid grid-2" style="margin:20px 0">
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--green)"><code>embedded</code> (default)</h4>
+    <p class="small mb-0">Runs the engine in this process via <code>python-amber</code> and streams
+    with <code>amber-arrow</code>. A batch handed to gRPC points at the engine's own column buffers:
+    <strong>the result is never copied</strong>, not once, between evaluation and the socket.</p>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--accent)"><code>remote</code></h4>
+    <p class="small mb-0">Fronts an <code>amberd</code> on another host and pulls columnar JSON, which
+    it converts to Arrow. That is a real copy and a real parse. It is here because sometimes the engine
+    genuinely <em>is</em> somewhere else — a tickerplant, an HDB node — and a slower path beats no
+    path. Do not reach for it when the engine could have been in-process.</p>
+  </div>
+</div>
+
+<p><code>list_flights</code> computes its catalogue rather than guessing: Amber has no catalogue
+(tables are just globals), so every global that <em>is</em> a table is reported, with its real row
+count and its real Arrow schema, obtained by streaming a zero-row slice of it.</p>
+
+<h2>Security</h2>
+<div class="note note-warn">
+  <span class="note-title">There is none, deliberately and visibly</span>
+  <p>Both <code>amberd</code> and <code>amber-flight</code> let a client evaluate arbitrary Amber,
+  which includes reading files and spawning processes. Both bind loopback by default and refuse a
+  public address without <code>--i-know-this-is-unauthenticated</code>. <code>--readonly</code> is a
+  syntactic filter that exists to stop an <strong>accident</strong>, not an attacker — the real
+  boundary is not exposing the port.</p>
+</div>
+
+<h2>Tests</h2>
+<div class="code"><pre><code class="lang-sh">./build.sh --amberd
+python -m pytest tests -q</code></pre></div>
+<p>31 tests, covering: that every batch shares one buffer address and that the address is the
+engine's; that a batch survives its stream's release; that the schema handed to a consumer is
+independent of the stream; the full <code>amberd</code> protocol against a real server on a real
+socket, including that two connections see each other's writes; and Flight discovery, streaming,
+upload and actions against a real gRPC server.</p>
+
+<div class="pager">
+  <a href="../ecosystem/python-amber.html"><span class="dir">Previous</span><span class="ttl">python-amber</span></a>
+  <a class="next" href="../ecosystem/amber-jupyter.html"><span class="dir">Next</span><span class="ttl">amber-jupyter</span></a>
+</div>
+</article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+        <p class="small muted" style="margin-top:14px">
+          <a class="scratchpad-link" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            Amber Notepad — scratchpad
+          </a>
+        </p>
+      </div>
+      <div>
+        <h5>Documentation</h5>
+        <a href="../docs/index.html">Introduction</a>
+        <a href="../docs/language.html">Language &amp; qSQL</a>
+        <a href="../docs/temporal.html">Temporal mechanics</a>
+        <a href="../docs/protocol.html">Wire protocol</a>
+        <a href="../docs/capi.html">C API</a>
+        <a href="../docs/benchmarks.html">Benchmarks</a>
+      </div>
+      <div>
+        <h5>Ecosystem</h5>
+        <a href="../ecosystem/python-amber.html">python-amber</a>
+        <a href="../ecosystem/amber-arrow.html">amber-arrow</a>
+        <a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
+        <a href="../ecosystem/amber-tick.html">amber-tick</a>
+        <a href="../ecosystem/grafana.html">Grafana datasource</a>
+        <a href="../ecosystem/vscode-amber.html">vscode-amber</a>
+        <a href="../ecosystem/amber-ai.html">amber-ai</a>
+      </div>
+      <div>
+        <h5>Learn</h5>
+        <a href="../tutorials/index.html">Tutorials</a>
+        <a href="../blog/index.html">Blog</a>
+        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+        <a href="https://github.com/BonucciAndrea" target="_blank" rel="noopener">All repositories</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+      <span>Not affiliated with kdb+ / KX Systems.</span>
+    </div>
+  </div>
+</footer>
+<script src="../assets/js/amber.js" defer></script>
+</body>
+</html>

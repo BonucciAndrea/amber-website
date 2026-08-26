@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grafana Amber datasource — complete setup guide</title>
+<meta name="description" content="Build the Go backend with mage, register the plugin with allow_loading_unsigned_plugins, provision the datasource, and create panels over bare qSQL with epoch-correct time macros.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Grafana Amber datasource — complete setup guide">
+<meta property="og:description" content="Build the Go backend with mage, register the plugin with allow_loading_unsigned_plugins, provision the datasource, and create panels over bare qSQL with epoch-correct time macros.">
+<meta property="og:site_name" content="Amber">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/amber.css">
+<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v1.9.6</span></a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../docs/">Docs</a><a href="../ecosystem/" class="active">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a>
+      <a href="https://github.com/BonucciAndrea/amber-notepad" rel="noopener" target="_blank" class="np-mobile">Scratchpad</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-btn scratchpad-nav" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener" title="Amber Notepad — browser scratchpad" aria-label="Amber Notepad scratchpad">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </a>
+      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+  </div>
+</header>
+<main id="main">
+<div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
+<div class="grp">Ecosystem</div>
+<a href="../ecosystem/index.html">Overview</a>
+<div class="grp">Data & interop</div>
+<a href="../ecosystem/python-amber.html">python-amber</a>
+<a href="../ecosystem/amber-arrow.html">amber-arrow</a>
+<a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
+<div class="grp">Market data</div>
+<a href="../ecosystem/amber-tick.html">amber-tick</a>
+<a href="../ecosystem/grafana.html" class="active">Grafana datasource</a>
+<div class="grp">Tooling</div>
+<a href="../ecosystem/vscode-amber.html">vscode-amber</a>
+<a href="../ecosystem/amber-ai.html">amber-ai</a>
+</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../ecosystem/index.html">Ecosystem</a> / Grafana</div>
+<h1>Grafana Amber datasource</h1>
+<p class="lead">Live dashboards over the Amber engine. Panels are bare qSQL, results are
+column-oriented on the wire, and the time axis knows that Amber counts from 2000-01-01.</p>
+
+<div class="badge-row" style="margin-bottom:26px">
+  <span class="pill pill-accent">bonucciandrea-amber-datasource</span>
+  <span class="pill">Go backend</span>
+  <span class="pill">Grafana ≥ 10.0</span>
+  <span class="pill">26 protocol tests</span>
+  <a class="pill" href="https://github.com/BonucciAndrea/grafana-amber-datasource" target="_blank" rel="noopener">GitHub &rarr;</a>
+</div>
+
+<h2>Architecture</h2>
+<p>The plugin keeps a deliberate separation. <code>pkg/amberd</code> holds the wire protocol, the
+columnar decode, the temporal conversions and the connection pool, using <strong>only Go's standard
+library</strong> — and it has 26 tests that run against a real <code>amberd</code> on a real socket.
+<code>pkg/plugin</code> holds the Grafana-specific integration.</p>
+
+<div class="note note-info">
+  <span class="note-title">Why the split matters to you</span>
+  <p>A protocol bug reproduces in <code>go test ./pkg/amberd/</code> with no Grafana anywhere near it.
+  Debugging a decode problem does not require standing up a dashboard stack.</p>
+</div>
+
+<h2>Prerequisites</h2>
+<ul>
+  <li>The Amber engine built as a shared library — <code>./build.sh --shared</code></li>
+  <li><code>amberd</code>, which ships with <a href="../ecosystem/amber-arrow.html">amber-arrow</a> — <code>./build.sh --amberd</code></li>
+  <li>A Go toolchain and <a href="https://magefile.org" target="_blank" rel="noopener">Mage</a></li>
+  <li>Node.js and npm, for the frontend</li>
+  <li>Grafana 10.0 or newer</li>
+</ul>
+
+<h2>1 &mdash; Build the plugin</h2>
+<div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/grafana-amber-datasource
+cd grafana-amber-datasource
+
+# backend — compiles gpx_amber_&lt;os&gt;_&lt;arch&gt; into dist/
+go mod tidy &amp;&amp; mage -v
+
+# frontend — TypeScript / React into dist/
+npm install &amp;&amp; npm run build</code></pre></div>
+
+<p><code>mage -v</code> is the Grafana plugin SDK's build entry point: it cross-compiles the backend
+binary for every supported platform and writes the results into <code>dist/</code> with the names
+<code>plugin.json</code>'s <code>executable</code> field expects.</p>
+
+<div class="note note-warn">
+  <span class="note-title">The build needs the Go module proxy</span>
+  <p>The backend is a real Grafana plugin and links
+  <code>github.com/grafana/grafana-plugin-sdk-go</code>. Behind a corporate proxy, set
+  <code>GOPROXY</code> before <code>mage</code> (or add it to <code>Dockerfile.plugin</code> if you are
+  using the containerised stack). There is no way around it.</p>
+</div>
+
+<h2>2 &mdash; <code>plugin.json</code></h2>
+<p>The plugin's identity. The <code>id</code> is what every later configuration step refers to, and it
+must match exactly.</p>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">src/plugin.json</span></div><pre><code class="lang-json">{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "datasource",
+  "name": "Amber",
+  "id": "bonucciandrea-amber-datasource",
+  "metrics": true,
+  "backend": true,
+  "alerting": false,
+  "annotations": true,
+  "logs": false,
+  "executable": "gpx_amber",
+  "info": {
+    "description": "Query the Amber columnar engine from Grafana. Bare qSQL over amberd's TCP port.",
+    "author": { "name": "the Amber authors" },
+    "keywords": ["amber", "tick", "time series", "columnar"],
+    "logos": { "small": "img/logo.svg", "large": "img/logo.svg" },
+    "version": "1.0.0",
+    "updated": "2026-08-25"
+  },
+  "dependencies": {
+    "grafanaDependency": "&gt;=10.0.0",
+    "plugins": []
+  },
+  "routes": []
+}</code></pre></div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:24%">Field</th><th>Why it is set this way</th></tr></thead>
+  <tbody>
+    <tr><td><code>"backend": true</code></td><td>All the logic — protocol, decode, temporal conversion — is in Go. The frontend only builds queries.</td></tr>
+    <tr><td><code>"executable": "gpx_amber"</code></td><td>Grafana appends <code>_&lt;os&gt;_&lt;arch&gt;</code> and launches that binary. <code>mage</code> produces exactly those names.</td></tr>
+    <tr><td><code>"metrics": true</code></td><td>The datasource can back any panel, not only a time series.</td></tr>
+    <tr><td><code>"alerting": false</code></td><td>Deliberate: <code>amberd</code> is single-threaded and unauthenticated. Alert rules would hammer it on their own schedule.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>3 &mdash; Install the plugin into Grafana</h2>
+<div class="code"><pre><code class="lang-sh">cp -r dist "$GRAFANA_PLUGINS/bonucciandrea-amber-datasource"</code></pre></div>
+<p><code>$GRAFANA_PLUGINS</code> is usually <code>/var/lib/grafana/plugins</code> on a package install,
+or <code>&lt;grafana&gt;/data/plugins</code> on a tarball install.</p>
+
+<h2>4 &mdash; Allow the unsigned plugin</h2>
+<div class="note note-warn">
+  <span class="note-title">Grafana refuses unsigned plugins by default</span>
+  <p>A locally built plugin has no signature. Without this step the plugin is present on disk, absent
+  from the datasource list, and the only clue is one line in the Grafana log.</p>
+</div>
+
+<p>Pick <em>one</em> of the three forms — they are the same setting.</p>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">grafana.ini</span></div><pre><code class="lang-ini">[plugins]
+allow_loading_unsigned_plugins = bonucciandrea-amber-datasource</code></pre></div>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">environment variable</span></div><pre><code class="lang-sh">export GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=bonucciandrea-amber-datasource</code></pre></div>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">docker-compose.yml</span></div><pre><code class="lang-yaml">services:
+  grafana:
+    image: grafana/grafana:11.3.0
+    environment:
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: bonucciandrea-amber-datasource
+      GF_USERS_DEFAULT_THEME: dark
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning:ro
+      - ./dashboards:/var/lib/grafana/dashboards:ro
+      - plugin-dist:/var/lib/grafana/plugins/bonucciandrea-amber-datasource:ro
+    ports:
+      - "3000:3000"</code></pre></div>
+
+<p>Restart Grafana, then confirm it loaded:</p>
+<div class="code"><pre><code class="lang-sh">grep -i "amber" /var/log/grafana/grafana.log | head
+# ... "Plugin registered" logger=plugin.loader pluginID=bonucciandrea-amber-datasource</code></pre></div>
+
+<h2>5 &mdash; Start <code>amberd</code></h2>
+<div class="code"><pre><code class="lang-sh">amberd --home /path/to/amber --port 5012 \
+       --load /path/to/amber-tick/q/amber-tick.k \
+       --eval 'tk.root:"/srv/store"; tk.init[]' \
+       --mode jsonc -v</code></pre></div>
+
+<h2>6 &mdash; Provision the datasource</h2>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">provisioning/datasources/amber.yaml</span></div><pre><code class="lang-yaml"># amberd has no authentication: anything that can open the socket can evaluate
+# arbitrary Amber. Keep it on loopback (or inside the compose network, as here)
+# and never expose the port.
+apiVersion: 1
+
+datasources:
+  - name: Amber
+    type: bonucciandrea-amber-datasource
+    uid: amber
+    access: proxy
+    isDefault: true
+    jsonData:
+      # Inside docker compose this resolves to the amberd service. Running
+      # Grafana outside compose against an amberd on the host: use
+      # host.docker.internal on macOS/Windows, or the host address on Linux.
+      host: amberd
+      port: 5012
+      timeoutSeconds: 60
+      maxConnections: 8
+      # The store's `time` columns are nanoseconds since 2000-01-01 -- Amber's
+      # own timestamp epoch, not the Unix one. Every panel sets this
+      # explicitly too, but the default belongs here so a new panel is right
+      # before anyone touches it.
+      defaultTimeUnit: ns-2000</code></pre></div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:26%">Config field</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>host</code> / <code>port</code></td><td>where <code>amberd</code> is listening</td></tr>
+    <tr><td><code>timeoutSeconds</code></td><td>per-query deadline. <code>amberd</code> runs one query at a time, so this is also how long a slow query can block a panel.</td></tr>
+    <tr><td><code>maxConnections</code></td><td>connection pool size. Panels then wait on the <em>engine</em> rather than on each other's sockets.</td></tr>
+    <tr><td><code>defaultTimeUnit</code></td><td><code>ns-2000</code> (nanoseconds since 2000-01-01), <code>ms-day</code> (milliseconds of day), or <code>ms-unix</code>. Explicit because a column of each overlaps in magnitude and cannot be told apart by value.</td></tr>
+    <tr><td><code>baseDate</code></td><td>optional override for time-only columns, so a <code>ms-day</code> column can be placed on a real calendar day.</td></tr>
+    <tr><td><code>maxRows</code></td><td>row cap, as a safety valve against a panel that forgets a <code>where</code>.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>7 &mdash; Create a panel</h2>
+<p>The query editor takes six things: the qSQL source, the reply format, the time unit, which column
+is the time axis, a row cap, and whether to substitute the panel's time range.</p>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">panel query</span></div><pre><code class="lang-q">select
+  t:time,
+  notional:sum px*sz
+by time:$__interval_ms xbar time
+from bars1m
+where time within ($__fromNs; $__toNs)</code></pre></div>
+
+<h3>Macros</h3>
+<p>Available when <strong>Apply time range</strong> is enabled. They come in both epochs, named so you
+cannot pick the wrong one by accident.</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:26%">Macro</th><th>Substituted with</th></tr></thead>
+  <tbody>
+    <tr><td><code>$__from</code> / <code>$__to</code></td><td>the panel range as <strong>milliseconds of day</strong></td></tr>
+    <tr><td><code>$__fromNs</code> / <code>$__toNs</code></td><td>the panel range as <strong>nanoseconds since 2000-01-01</strong></td></tr>
+    <tr><td><code>$__interval_ms</code></td><td>the panel's step, for bucketing with <code>xbar</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Editor features</h3>
+<ul>
+  <li><strong>Live completion from the engine</strong> — table names and their real column names, asked
+  for at edit time, not read from a static list.</li>
+  <li><strong>Real-time syntax validation</strong> via the engine's <code>\parse</code>, which runs the
+  real parser and never touches the compiler or the evaluator. Nothing you type is executed.</li>
+  <li><strong>Verbatim engine diagnostics on failure</strong> — the <code>error[E0101]</code> report
+  you would have seen at the prompt, in the panel.</li>
+</ul>
+
+<h2>Design decisions worth knowing</h2>
+<div class="grid grid-2" style="margin:20px 0">
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--text)">Column-oriented throughout</h4>
+    <p class="small mb-0">A Grafana data frame <em>is</em> a set of columns and Amber stores a table as
+    a dictionary of columns. Going through row-oriented JSON would transpose twice and add a per-row
+    object header for every tick. <code>jsonc</code> is the absence of a pessimisation, not an
+    optimisation.</p>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--text)">Temporal handling is explicit and tested</h4>
+    <p class="small mb-0">Conversion between Amber's epoch and Grafana's is done in Go, covered by
+    boundary tests, and disambiguated by column name where two units could plausibly apply.</p>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--text)">Nulls stay null</h4>
+    <p class="small mb-0">Amber nulls map to nullable Grafana fields, which preserves chart continuity
+    instead of drawing a line through zero.</p>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--text)">Pooled connections, one engine</h4>
+    <p class="small mb-0"><code>amberd</code> is single-threaded by design. Pooling means several
+    panels queue on the engine rather than on each other's sockets — and the fix for a slow dashboard
+    is a mart, not more connections.</p>
+  </div>
+</div>
+
+<h2>Quick start with Docker</h2>
+<div class="code"><pre><code class="lang-sh">scripts/dev.sh          # orchestrates engine, plugin and Grafana in Docker</code></pre></div>
+<p>Or, from <code>amber-tick</code>, the full three-container stack with the tick store attached and
+three dashboards provisioned:</p>
+<div class="code"><pre><code class="lang-sh">cd amber-tick
+python -m amber_tick.generate --out store --symbols 500 --sessions 5 --rows 100M
+python scripts/build_marts.py --store store --qhome q
+python grafana/refresh_symbols.py --store store    # fills the $sym dropdown
+
+cd grafana &amp;&amp; ./run.sh                             # http://localhost:3000</code></pre></div>
+
+<h2>Troubleshooting</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:34%">Symptom</th><th>Cause and fix</th></tr></thead>
+  <tbody>
+    <tr><td>The datasource does not appear in the list</td>
+        <td><code>allow_loading_unsigned_plugins</code> is missing or has the wrong id. It must be exactly <code>bonucciandrea-amber-datasource</code>.</td></tr>
+    <tr><td>Panels are empty but the datasource tests green</td>
+        <td>The marts are missing. Every panel reads <code>bars1m</code>, <code>symday</code>, <code>venueday</code> or <code>mktminute</code>, never the raw tape. Run <code>scripts/build_marts.py</code>.</td></tr>
+    <tr><td>The <code>$sym</code> dropdown is empty</td>
+        <td>The Amber datasource does not implement Grafana's variable-query API, so the list is baked into the dashboard JSON. Run <code>python grafana/refresh_symbols.py --store store</code>.</td></tr>
+    <tr><td>Provisioned datasource cannot reach <code>amberd</code> outside Compose</td>
+        <td>The provisioning file points at the Compose service name <code>amberd</code>, which does not exist outside Compose. Change <code>host</code> to <code>127.0.0.1</code>.</td></tr>
+    <tr><td><code>permission denied … /var/run/docker.sock</code></td>
+        <td>Your user is not in the <code>docker</code> group. <code>sudo usermod -aG docker "$USER" &amp;&amp; newgrp docker</code>. On a snap install you must <code>sudo addgroup --system docker</code> first — the snap does not create it.</td></tr>
+    <tr><td>Everything looks right, times are thirty years off</td>
+        <td>The panel's time unit is <code>ms-unix</code> against a <code>ns-2000</code> column. See <a href="../docs/temporal.html">Temporal mechanics</a>.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Tests</h2>
+<div class="code"><pre><code class="lang-sh">go test ./pkg/amberd/ -v      # protocol decode, temporal boundaries, errors, concurrency
+npm run typecheck             # frontend</code></pre></div>
+
+<div class="pager">
+  <a href="../ecosystem/amber-tick.html"><span class="dir">Previous</span><span class="ttl">amber-tick</span></a>
+  <a class="next" href="../ecosystem/vscode-amber.html"><span class="dir">Next</span><span class="ttl">vscode-amber</span></a>
+</div>
+</article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+        <p class="small muted" style="margin-top:14px">
+          <a class="scratchpad-link" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            Amber Notepad — scratchpad
+          </a>
+        </p>
+      </div>
+      <div>
+        <h5>Documentation</h5>
+        <a href="../docs/index.html">Introduction</a>
+        <a href="../docs/language.html">Language &amp; qSQL</a>
+        <a href="../docs/temporal.html">Temporal mechanics</a>
+        <a href="../docs/protocol.html">Wire protocol</a>
+        <a href="../docs/capi.html">C API</a>
+        <a href="../docs/benchmarks.html">Benchmarks</a>
+      </div>
+      <div>
+        <h5>Ecosystem</h5>
+        <a href="../ecosystem/python-amber.html">python-amber</a>
+        <a href="../ecosystem/amber-arrow.html">amber-arrow</a>
+        <a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
+        <a href="../ecosystem/amber-tick.html">amber-tick</a>
+        <a href="../ecosystem/grafana.html">Grafana datasource</a>
+        <a href="../ecosystem/vscode-amber.html">vscode-amber</a>
+        <a href="../ecosystem/amber-ai.html">amber-ai</a>
+      </div>
+      <div>
+        <h5>Learn</h5>
+        <a href="../tutorials/index.html">Tutorials</a>
+        <a href="../blog/index.html">Blog</a>
+        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+        <a href="https://github.com/BonucciAndrea" target="_blank" rel="noopener">All repositories</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+      <span>Not affiliated with kdb+ / KX Systems.</span>
+    </div>
+  </div>
+</footer>
+<script src="../assets/js/amber.js" defer></script>
+</body>
+</html>

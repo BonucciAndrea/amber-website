@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tutorial: an end-to-end Grafana & Amber dashboard pipeline</title>
+<meta name="description" content="Store to marts to amberd to the Go datasource to provisioned panels — the full path, including the two failures that look like something else entirely.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Tutorial: an end-to-end Grafana & Amber dashboard pipeline">
+<meta property="og:description" content="Store to marts to amberd to the Go datasource to provisioned panels — the full path, including the two failures that look like something else entirely.">
+<meta property="og:site_name" content="Amber">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/amber.css">
+<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v1.9.6</span></a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../docs/">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/" class="active">Tutorials</a><a href="../blog/">Blog</a>
+      <a href="https://github.com/BonucciAndrea/amber-notepad" rel="noopener" target="_blank" class="np-mobile">Scratchpad</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-btn scratchpad-nav" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener" title="Amber Notepad — browser scratchpad" aria-label="Amber Notepad scratchpad">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </a>
+      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+  </div>
+</header>
+<main id="main">
+<div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
+<div class="grp">Tutorials</div>
+<a href="../tutorials/index.html">All tutorials</a>
+<a href="../tutorials/tick-store.html">5M-row tick store</a>
+<a href="../tutorials/grafana-pipeline.html" class="active">Grafana pipeline</a>
+<a href="../tutorials/arrow-interop.html">Arrow → Python, zero copy</a>
+</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../tutorials/index.html">Tutorials</a> / Grafana pipeline</div>
+<span class="pill pill-accent" style="margin-bottom:14px;display:inline-flex">Tutorial 02 · ~40 minutes</span>
+<h1>Setting up an end-to-end Grafana &amp; Amber dashboard pipeline</h1>
+<p class="lead">Five moving parts: a store, a set of derived marts, an <code>amberd</code> with the
+store attached, a Go datasource plugin, and Grafana with everything provisioned. At the end you have
+three dashboards where every panel is a one-line call into an Amber script you can also run at the
+prompt.</p>
+
+<div class="diagram">
+<svg viewBox="0 0 960 470" role="img" aria-label="amber-tick data flow: the generator writes a splayed store, build_marts derives four small tables, and python-amber, amber-arrow, amberd and Grafana read them; separately a feed drives a tickerplant, an RDB and end-of-day writes back into the store.">
+  <defs>
+    <marker id="tarw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--text-faint)"/>
+    </marker>
+    <marker id="tarwa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/>
+    </marker>
+  </defs>
+  <style>
+    .b   { fill: var(--surface-2); stroke: var(--border); stroke-width: 1; }
+    .ba  { fill: var(--accent-glow); stroke: var(--accent); stroke-opacity:.5; stroke-width: 1; }
+    .t   { fill: var(--text); font: 600 14.5px var(--font-sans); }
+    .s   { fill: var(--text-faint); font: 400 11.5px var(--font-mono); }
+    .a   { fill: var(--accent); font: 600 13px var(--font-mono); }
+    .l   { stroke: var(--border-strong); stroke-width: 1.1; fill: none; marker-end: url(#tarw); }
+    .la  { stroke: var(--accent); stroke-opacity:.6; stroke-width: 1.3; fill: none; marker-end: url(#tarwa); }
+    .lab { fill: var(--text-faint); font: 400 11px var(--font-mono); }
+  </style>
+
+  <!-- generators -->
+  <rect class="b" x="30" y="14" width="212" height="46" rx="10"/>
+  <text class="t" x="46" y="36">universe · microstructure</text>
+  <text class="s" x="46" y="51">Hawkes arrivals, SV+jumps</text>
+
+  <rect class="b" x="300" y="14" width="196" height="46" rx="10"/>
+  <text class="t" x="316" y="36">amber_tick.generate</text>
+  <text class="s" x="316" y="51">--symbols 500 --rows 100M</text>
+
+  <rect class="b" x="600" y="14" width="216" height="46" rx="10"/>
+  <text class="t" x="616" y="36">build_marts.py</text>
+  <text class="s" x="616" y="51">145× smaller than the tape</text>
+
+  <!-- store -->
+  <rect class="ba" x="228" y="118" width="268" height="76" rx="12"/>
+  <text class="a" x="248" y="145">store/</text>
+  <text class="s" x="248" y="163">splayed · one file per column</text>
+  <text class="s" x="248" y="180">-8! binary · ns since 2000-01-01</text>
+
+  <!-- marts -->
+  <rect class="b" x="600" y="118" width="216" height="76" rx="12"/>
+  <text class="t" x="616" y="145">marts</text>
+  <text class="s" x="616" y="163">bars1m · symday</text>
+  <text class="s" x="616" y="180">venueday · mktminute</text>
+
+  <path class="l" d="M136 62 L 136 152 L 224 152"/>
+  <path class="l" d="M398 62 L 398 114"/>
+  <path class="l" d="M708 62 L 708 114"/>
+  <path class="l" d="M500 156 L 596 156"/>
+  <text class="lab" x="548" y="146">taq.*</text>
+
+  <!-- consumers -->
+  <rect class="b" x="30" y="264" width="176" height="58" rx="10"/>
+  <text class="t" x="46" y="288">python-amber</text>
+  <text class="s" x="46" y="305">notebook, NumPy views</text>
+
+  <rect class="b" x="222" y="264" width="176" height="58" rx="10"/>
+  <text class="t" x="238" y="288">amber-arrow</text>
+  <text class="s" x="238" y="305">Arrow IPC, Flight</text>
+
+  <rect class="b" x="414" y="264" width="176" height="58" rx="10"/>
+  <text class="t" x="430" y="288">amberd</text>
+  <text class="s" x="430" y="305">TCP qSQL :5012</text>
+
+  <rect class="b" x="606" y="264" width="210" height="58" rx="10"/>
+  <text class="t" x="622" y="288">Grafana</text>
+  <text class="s" x="622" y="305">3 provisioned dashboards</text>
+
+  <path class="l" d="M320 198 L 320 224 L 118 224 L 118 260"/>
+  <path class="l" d="M340 198 L 340 224 L 310 224 L 310 260"/>
+  <path class="l" d="M380 198 L 380 224 L 502 224 L 502 260"/>
+  <path class="l" d="M708 198 L 708 260"/>
+  <path class="l" d="M594 292 L 602 292"/>
+
+  <!-- live pipeline -->
+  <line x1="30" y1="358" x2="930" y2="358" stroke="var(--border)" stroke-dasharray="3 5"/>
+  <text class="a" x="30" y="382">live pipeline</text>
+
+  <rect class="b" x="132" y="396" width="120" height="42" rx="10"/>
+  <text class="t" x="148" y="422">feed</text>
+
+  <rect class="b" x="300" y="396" width="150" height="42" rx="10"/>
+  <text class="t" x="316" y="422">tickerplant</text>
+
+  <rect class="b" x="498" y="396" width="120" height="42" rx="10"/>
+  <text class="t" x="514" y="422">rdb</text>
+
+  <rect class="ba" x="666" y="396" width="180" height="42" rx="10"/>
+  <text class="a" x="682" y="422">store/  (EOD)</text>
+
+  <path class="la" d="M254 417 L 296 417"/>
+  <path class="la" d="M452 417 L 494 417"/>
+  <path class="la" d="M620 417 L 662 417"/>
+  <text class="lab" x="316" y="459">writes the sequenced log before it publishes — replayable</text>
+</svg>
+
+</div>
+
+<h2>Prerequisites</h2>
+<ul>
+  <li>Docker with Compose v2, or a Grafana ≥ 10 you installed yourself plus a Go toolchain</li>
+  <li>Python 3.10+, and ~12 GB of free disk for a 100M-row store</li>
+  <li>The engine, the Python bindings, and <code>amber-arrow</code> (for <code>amberd</code>)</li>
+</ul>
+
+<div class="step"><span class="n">1</span>
+<h3>Build the engine as a shared library</h3>
+<div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/amber
+git clone https://github.com/BonucciAndrea/python-amber
+git clone https://github.com/BonucciAndrea/amber-arrow
+git clone https://github.com/BonucciAndrea/amber-tick
+
+(cd amber &amp;&amp; chmod +x build.sh a &amp;&amp; ./build.sh --shared)
+
+python -m venv .venv &amp;&amp; . .venv/bin/activate
+AMBER_SRC=$PWD/amber pip install ./python-amber ./amber-arrow/python
+pip install numpy pyarrow pandas
+(cd amber-arrow &amp;&amp; ./build.sh --amberd)</code></pre></div>
+</div>
+
+<div class="step"><span class="n">2</span>
+<h3>Generate a store</h3>
+<div class="code"><pre><code class="lang-sh">cd amber-tick
+python -m amber_tick.generate --out store --symbols 500 --sessions 5 --rows 100M</code></pre></div>
+<p>About four minutes on two cores and roughly 10 GB. The generator solves for the arrival intensity
+that hits your <code>--rows</code> target analytically, before drawing a single random number, so
+scaling changes the message <em>rate</em> only — the cross-sectional distribution, the clustering and
+the trade-quote consistency are invariant.</p>
+<div class="code"><pre><code class="lang-sh">python tests/validate.py --store store      # 21 stylized facts, all passing</code></pre></div>
+</div>
+
+<div class="step"><span class="n">3</span>
+<h3>Build the marts — this is not optional</h3>
+<div class="code"><pre><code class="lang-sh">python scripts/build_marts.py --store store --qhome q</code></pre></div>
+<div class="note note-warn">
+  <span class="note-title">A dashboard cannot re-run an as-of join on every refresh</span>
+  <p>Ten million prints joined against thirty million quotes is a 700-millisecond kernel call. A panel
+  refreshing every ten seconds, times six panels, is not a dashboard — it is a denial of service
+  against your own engine. <code>build_marts.py</code> derives four small tables <strong>once</strong>,
+  using the same <code>taq.*</code> functions the ad-hoc queries use, and they come out about
+  <strong>145&times; smaller</strong> than the tape.</p>
+</div>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:20%">Mart</th><th>What it holds</th></tr></thead>
+  <tbody>
+    <tr><td><code>bars1m</code></td><td>per symbol per minute: OHLCV, VWAP, buy/sell split</td></tr>
+    <tr><td><code>symday</code></td><td>per symbol per session: volume, notional, effective spread, price improvement</td></tr>
+    <tr><td><code>venueday</code></td><td>per venue per session: share of volume, execution quality</td></tr>
+    <tr><td><code>mktminute</code></td><td>the consolidated tape per minute: notional, prints, spread</td></tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+<div class="step"><span class="n">4</span>
+<h3>Fill the <code>$sym</code> dropdown</h3>
+<div class="code"><pre><code class="lang-sh">python grafana/refresh_symbols.py --store store</code></pre></div>
+<p>The Amber datasource does not implement Grafana's variable-query API, so the symbol list is baked
+into the dashboard JSON. This script rewrites it from the store's actual security master.</p>
+</div>
+
+<div class="step"><span class="n">5</span>
+<h3>Start <code>amberd</code> with the store attached</h3>
+<p>The daemon needs the engine's stdlib, the <code>amber-tick</code> Amber library, and the store
+root.</p>
+<div class="code"><pre><code class="lang-sh">amberd --home ../amber --port 5012 \
+       --load q/amber-tick.k \
+       --eval 'tk.root:"'"$PWD"'/store"; tk.init[]' \
+       --mode jsonc -v</code></pre></div>
+<p>Check it before you go near Grafana:</p>
+<div class="code"><pre><code class="lang-sh">printf '\\ping\n' | nc localhost 5012
+printf '\\mode jsonc\nselect from mktminute where time&lt;34260000000000\n' | nc localhost 5012</code></pre></div>
+<p>If those return, the rest of the stack is a configuration problem and nothing else.</p>
+</div>
+
+<div class="step"><span class="n">6</span>
+<h3>Build the datasource plugin</h3>
+<div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/grafana-amber-datasource
+cd grafana-amber-datasource
+
+go mod tidy &amp;&amp; mage -v            # backend  -&gt; dist/gpx_amber_&lt;os&gt;_&lt;arch&gt;
+npm install &amp;&amp; npm run build      # frontend -&gt; dist/</code></pre></div>
+<p><code>mage</code> is the Grafana plugin SDK's build entry point. It links
+<code>github.com/grafana/grafana-plugin-sdk-go</code>, so the module proxy must be reachable — behind a
+corporate proxy, set <code>GOPROXY</code> first.</p>
+<div class="code"><pre><code class="lang-sh">cp -r dist "$GRAFANA_PLUGINS/bonucciandrea-amber-datasource"</code></pre></div>
+</div>
+
+<div class="step"><span class="n">7</span>
+<h3>Allow the unsigned plugin</h3>
+<p>A locally built plugin has no signature, and Grafana silently declines to register it. This is the
+single most common reason the datasource "does not exist".</p>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">grafana.ini</span></div><pre><code class="lang-ini">[plugins]
+allow_loading_unsigned_plugins = bonucciandrea-amber-datasource</code></pre></div>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">or, as an environment variable</span></div><pre><code class="lang-sh">export GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=bonucciandrea-amber-datasource</code></pre></div>
+<p>Restart Grafana and confirm:</p>
+<div class="code"><pre><code class="lang-sh">grep -i amber /var/log/grafana/grafana.log | head
+# "Plugin registered" logger=plugin.loader pluginID=bonucciandrea-amber-datasource</code></pre></div>
+</div>
+
+<div class="step"><span class="n">8</span>
+<h3>Provision the datasource</h3>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">provisioning/datasources/amber.yaml</span></div><pre><code class="lang-yaml">apiVersion: 1
+
+datasources:
+  - name: Amber
+    type: bonucciandrea-amber-datasource
+    uid: amber
+    access: proxy
+    isDefault: true
+    jsonData:
+      host: 127.0.0.1        # 'amberd' inside docker compose
+      port: 5012
+      timeoutSeconds: 60
+      maxConnections: 8
+      defaultTimeUnit: ns-2000</code></pre></div>
+<div class="note note-warn">
+  <span class="note-title">The <code>host</code> value is environment-specific</span>
+  <p>Inside Compose it is the service name <code>amberd</code>. Outside Compose that name does not
+  resolve — use <code>127.0.0.1</code>, or <code>host.docker.internal</code> if Grafana is in a
+  container and <code>amberd</code> is on the host.</p>
+</div>
+</div>
+
+<div class="step"><span class="n">9</span>
+<h3>Provision the dashboards</h3>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">provisioning/dashboards/dashboards.yaml</span></div><pre><code class="lang-yaml">apiVersion: 1
+
+providers:
+  - name: amber-tick
+    type: file
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false</code></pre></div>
+<p>Copy <code>amber-tick/grafana/dashboards/*.json</code> into that path. Three dashboards:
+<strong>Market overview</strong>, <strong>Symbol microstructure</strong> and <strong>Execution
+quality</strong>.</p>
+</div>
+
+<div class="step"><span class="n">10</span>
+<h3>Or do steps 6–9 in one command</h3>
+<div class="code"><pre><code class="lang-sh">cd amber-tick/grafana
+AMBER_TICK_STORE=$PWD/../store ./run.sh      # http://localhost:3000</code></pre></div>
+<p><code>run.sh</code> checks the things that otherwise fail as something else — a missing store,
+missing marts, a relative path Compose resolves differently from your shell, and access to the Docker
+daemon — then brings up three containers: an <code>amberd</code> built from source with the store
+attached, a one-shot container that builds the plugin into a shared volume, and Grafana 11.3 with
+everything provisioned.</p>
+</div>
+
+<h2>Writing a panel</h2>
+<p>The query editor takes the qSQL source, the reply format, the time unit, the time column, a row cap,
+and whether to substitute the panel's time range.</p>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">Market overview — consolidated notional per minute</span></div><pre><code class="lang-q">select
+  notional: sum notional
+by time: $__interval_ms xbar time
+from mktminute
+where time within ($__fromNs; $__toNs)</code></pre></div>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">Symbol microstructure — 1m bars vs VWAP</span></div><pre><code class="lang-q">select
+  o, h, l, c, vwap
+by time
+from bars1m
+where sym = `$"$sym", time within ($__fromNs; $__toNs)</code></pre></div>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">Execution quality — effective spread by venue</span></div><pre><code class="lang-q">select
+  effbps: 10000 * wavg[notional; eff % mid],
+  pibps:  10000 * wavg[notional; pi % mid]
+by venue
+from venueday
+where date within ($__fromNs; $__toNs)</code></pre></div>
+
+<div class="note note-info">
+  <span class="note-title">Every panel query runs at the prompt too</span>
+  <p>Because each one is a call into <code>q/grafana.k</code>, you can paste it into
+  <code>./amber</code> with the store loaded and get the same answer. That is the whole point of keeping
+  the query surface in Amber rather than in dashboard JSON.</p>
+</div>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">\l q/amber-tick.k
+tk.root:"/path/to/store"
+tk.init[]
+show 5#gd.marketspan[]</code></pre></div>
+
+<h2>Time macros</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:28%">Macro</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td><code>$__from</code> / <code>$__to</code></td><td>milliseconds of day</td></tr>
+    <tr><td><code>$__fromNs</code> / <code>$__toNs</code></td><td>nanoseconds since 2000-01-01</td></tr>
+    <tr><td><code>$__interval_ms</code></td><td>the panel's step, for <code>xbar</code></td></tr>
+  </tbody>
+</table>
+</div>
+<p>The store's <code>time</code> columns are <code>ns-2000</code>, so <code>$__fromNs</code> /
+<code>$__toNs</code> are the ones you want. Using the wrong pair does not error — it returns an empty
+panel or a chart thirty years adrift. See <a href="../docs/temporal.html">Temporal
+mechanics</a>.</p>
+
+<h2>Two failures that look like something else</h2>
+<div class="grid grid-2" style="margin:20px 0">
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--red)">Panels empty, datasource tests green</h4>
+    <p class="small mb-0">The marts are missing. Every panel reads <code>bars1m</code>,
+    <code>symday</code>, <code>venueday</code> or <code>mktminute</code>, never the raw tape. Run
+    <code>scripts/build_marts.py</code>. The connection test only proves <code>amberd</code> answers
+    <code>\ping</code>.</p>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--red)">"permission denied … docker.sock"</h4>
+    <p class="small mb-0">Your user is not in the <code>docker</code> group. It has nothing to do with
+    this stack. <code>sudo usermod -aG docker "$USER" &amp;&amp; newgrp docker</code>. On a
+    <em>snap</em>-installed Docker you must <code>sudo addgroup --system docker</code> first — the snap
+    does not create the group, is confined to <code>$HOME</code> and <code>/media</code>, and ships its
+    own Compose.</p>
+  </div>
+</div>
+
+<h2>Adding the live pipeline</h2>
+<p>Once the historical dashboards work, point them at a moving tape:</p>
+<div class="code"><pre><code class="lang-sh">python -m amber_tick.runtime.tickerplant --port 5010 --log tplog --date 9729 &amp;
+python -m amber_tick.runtime.rdb --port 5010 --store store --qhome q &amp;
+python -m amber_tick.runtime.feed --store store --part 2026.08.21 --speed 60</code></pre></div>
+<p>The tickerplant writes its sequenced log <em>before</em> it publishes, so a subscriber can never see
+a message the log does not already contain — recovery is a replay from the last acknowledged sequence
+number. Point a second datasource at the RDB's port, or put the <code>gateway</code> in front of both
+and let it fold RDB and historical results with an explicit combine rule (you cannot average five
+partitions' averages and get a VWAP).</p>
+
+<h2>Editing the dashboards</h2>
+<div class="code"><pre><code class="lang-sh">python grafana/build_dashboards.py     # rewrites dashboards/*.json</code></pre></div>
+<p>Panels are generated, not hand-edited as JSON. Colour follows one rule: identity gets a categorical
+hue from a fixed, colour-vision-validated order; magnitude gets a single hue. No chart puts more than
+three identity colours on screen at once.</p>
+
+<div class="pager">
+  <a href="../tutorials/tick-store.html"><span class="dir">Previous</span><span class="ttl">Tick store</span></a>
+  <a class="next" href="../tutorials/arrow-interop.html"><span class="dir">Next</span><span class="ttl">Arrow interop</span></a>
+</div>
+</article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+        <p class="small muted" style="margin-top:14px">
+          <a class="scratchpad-link" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            Amber Notepad — scratchpad
+          </a>
+        </p>
+      </div>
+      <div>
+        <h5>Documentation</h5>
+        <a href="../docs/index.html">Introduction</a>
+        <a href="../docs/language.html">Language &amp; qSQL</a>
+        <a href="../docs/temporal.html">Temporal mechanics</a>
+        <a href="../docs/protocol.html">Wire protocol</a>
+        <a href="../docs/capi.html">C API</a>
+        <a href="../docs/benchmarks.html">Benchmarks</a>
+      </div>
+      <div>
+        <h5>Ecosystem</h5>
+        <a href="../ecosystem/python-amber.html">python-amber</a>
+        <a href="../ecosystem/amber-arrow.html">amber-arrow</a>
+        <a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
+        <a href="../ecosystem/amber-tick.html">amber-tick</a>
+        <a href="../ecosystem/grafana.html">Grafana datasource</a>
+        <a href="../ecosystem/vscode-amber.html">vscode-amber</a>
+        <a href="../ecosystem/amber-ai.html">amber-ai</a>
+      </div>
+      <div>
+        <h5>Learn</h5>
+        <a href="../tutorials/index.html">Tutorials</a>
+        <a href="../blog/index.html">Blog</a>
+        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+        <a href="https://github.com/BonucciAndrea" target="_blank" rel="noopener">All repositories</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+      <span>Not affiliated with kdb+ / KX Systems.</span>
+    </div>
+  </div>
+</footer>
+<script src="../assets/js/amber.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://bonucciandrea.github.io/amber-website/sitemap.xml

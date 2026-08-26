@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zero-copy interop: bridging Amber memory buffers into Apache Arrow & Python</title>
+<meta name="description" content="What zero copy has to mean if the claim is going to survive a refcount, a batch that outlives its stream, and a 32-byte object header sitting immediately before every payload.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Zero-copy interop: bridging Amber memory buffers into Apache Arrow & Python">
+<meta property="og:description" content="What zero copy has to mean if the claim is going to survive a refcount, a batch that outlives its stream, and a 32-byte object header sitting immediately before every payload.">
+<meta property="og:site_name" content="Amber">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/amber.css">
+<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v1.9.6</span></a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../docs/">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/" class="active">Blog</a>
+      <a href="https://github.com/BonucciAndrea/amber-notepad" rel="noopener" target="_blank" class="np-mobile">Scratchpad</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-btn scratchpad-nav" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener" title="Amber Notepad — browser scratchpad" aria-label="Amber Notepad scratchpad">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </a>
+      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+  </div>
+</header>
+<main id="main">
+<div class="wrap wrap-narrow">
+  <div class="post-hero">
+    <div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../blog/index.html">Blog</a> / Zero-copy interop</div>
+    <h1>Zero-copy interop: bridging Amber memory buffers directly into Apache Arrow &amp; Python</h1>
+    <p class="lead">What the claim has to mean if it is going to survive contact with a refcount.</p>
+    <div class="post-meta" style="margin-top:18px"><span>2026-08-07</span><span>·</span><span>16 min read</span><span>·</span><span class="pill">interop</span></div>
+  </div>
+
+  <article class="prose prose-toc-source" style="padding-bottom:70px">
+
+<p>"Zero copy" is the cheapest claim in data infrastructure. Almost every system says it, and almost every
+system means something slightly different by it — usually "we avoid one copy that a naive implementation
+would make", which is fine but is not what the phrase says.</p>
+
+<p>So here is a falsifiable version. If a query result crosses from Amber into NumPy without a copy, then
+the address NumPy reports and the address the engine allocated are the <em>same integer</em>. Not
+similar. The same. And you can print both.</p>
+
+<div class="code"><pre><code class="lang-py">&gt;&gt;&gt; col = am.q("select from trades").column("px", raw=True)
+&gt;&gt;&gt; arr = numpy.asarray(col)
+&gt;&gt;&gt; hex(arr.ctypes.data) == hex(col.handle())
+True</code></pre></div>
+
+<p>That assertion is in the test suite, along with its Arrow equivalent:</p>
+
+<div class="code"><pre><code class="lang-py">assert arr.ctypes.data      == raw.handle()
+assert arrow_buffer.address == raw.handle()</code></pre></div>
+
+<p>The suites assert <strong>pointer equality, not value equality</strong>, because value equality is what
+a copy also satisfies. This post is about what it takes to make that assertion true and keep it safe.</p>
+
+<h2>Why this matters more than it sounds like it does</h2>
+
+<p>At small sizes it does not matter. Copying a thousand doubles is eight kilobytes and a memcpy; nobody
+will ever notice.</p>
+
+<p>At four hundred million rows it is the entire operation. A single float64 column of 400M rows is 3.2 GB.
+Copying it once costs you the memory bandwidth to read 3.2 GB and write 3.2 GB, plus 3.2 GB of resident
+memory you now hold twice. Do that for four columns and you have turned a query into a memory-pressure
+event.</p>
+
+<p>The relevant question is not "how fast is the copy". It is "does the pipeline have a step whose cost
+scales with the data and produces nothing". Serialisation is such a step. So is transposition. So is
+parsing. A design that includes one has already decided its ceiling.</p>
+
+<h2>The three boundaries</h2>
+
+<p>Amber crosses into three foreign worlds, and they are not equally easy.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:24%">Boundary</th><th style="width:20%">Mechanism</th><th>Cost</th></tr></thead>
+  <tbody>
+    <tr><td>Engine &rarr; NumPy</td><td>PEP 3118 buffer protocol</td><td><strong>zero</strong> for numeric columns</td></tr>
+    <tr><td>Engine &rarr; Arrow</td><td>Arrow C Data Interface</td><td><strong>zero</strong> for numeric columns; symbols materialise</td></tr>
+    <tr><td>Foreign &rarr; engine</td><td><code>amber_*</code> constructors</td><td><strong>always copies</strong></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>The asymmetry in the third row is the honest part, and I will come back to it.</p>
+
+<h2>Boundary one: the buffer protocol</h2>
+
+<p>Python's buffer protocol is the mechanism by which one object exposes raw memory to another without
+either knowing about the other's type. NumPy consumes it; so does <code>memoryview</code>; so does
+<code>pyarrow.py_buffer</code>.</p>
+
+<p>The engine side is one call:</p>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">C</span></div><pre><code class="lang-py">const void *px = amber_get_vector_ptr(column, &amp;type, &amp;n, &amp;bits);</code></pre></div>
+
+<p>That returns the payload pointer — the actual bytes the engine wrote when it evaluated the query. The
+extension module fills in a <code>Py_buffer</code> pointing at it and, critically, sets
+<code>view-&gt;obj</code> to the owning <code>Value</code> object with an INCREF.</p>
+
+<p>That one field is the whole safety story. NumPy stores it as the array's <code>base</code>:</p>
+
+<div class="code"><pre><code class="lang-py">arr.base is raw            # True
+del raw                    # the Python name goes; the refcount does not reach zero
+arr[:5]                    # still valid — the engine value is pinned by the array</code></pre></div>
+
+<p>So the lifetime rule is: <em>the engine's buffer lives exactly as long as anything Python is holding
+that points into it</em>. You cannot get a dangling array by dropping the handle, because the array
+<strong>is</strong> a handle.</p>
+
+<div class="note note-info">
+  <span class="note-title">Integer width is real, and not hidden</span>
+  <p>Amber stores an integer vector in the narrowest type that holds every element, so <code>1 2 3</code>
+  is physically <code>int8</code> and <code>1 2 3000000000</code> is <code>int64</code>. Both are "long
+  vectors" as far as the language is concerned. The arrays you get back carry the <em>true</em> dtype
+  rather than being widened behind your back — because widening would be a copy, and a zero-copy path that
+  silently copies to make the types tidy is not a zero-copy path. <code>arr.astype("int64")</code> is one
+  call away when you want uniformity, and it should be your call.</p>
+</div>
+
+<h2>Boundary two: the Arrow C Data Interface</h2>
+
+<p>Arrow's C Data Interface is a pair of structs — <code>ArrowSchema</code> and <code>ArrowArray</code> —
+with a documented memory layout and a release callback. Two libraries that both understand those structs
+can hand data to each other without either linking the other.</p>
+
+<p>The engine implements the export in about ninety lines, in <code>src/ar.c</code>, with
+<strong>no <code>libarrow</code> linkage at all</strong>:</p>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">p:arrow.export t                    / table  -&gt; (schemaAddr; arrayAddr)
+arrow.import p                      / and back</code></pre></div>
+
+<p>The <code>ArrowArray</code>'s data buffer <em>is</em> the Amber column's payload, and the release
+callback drops the Amber refcount. Same discipline as the buffer protocol, different vocabulary.</p>
+
+<p>That is exactly the right amount of Arrow for a ten-thousand-line C runtime to own. It answers "hand me
+this table" completely, and it stops there deliberately.</p>
+
+<h3>The one column type that cannot be zero-copy</h3>
+
+<p>Symbols. Amber stores a symbol column as interned <code>int32</code> ids into a global symbol table —
+four bytes a row, integer comparisons, which is the reason grouping and joining on <code>sym</code> is
+fast. Arrow's utf8 layout wants an offsets buffer and a bytes buffer.</p>
+
+<p>There is no pointer arithmetic that turns one into the other. So symbol columns are materialised, and
+the documentation says so rather than quietly folding it into an average. It matters less than it sounds:
+in a tick table the symbol column is one of nine, and the numeric columns are where the volume is.</p>
+
+<h2>Boundary three: the direction that always copies</h2>
+
+<p>Amber stores a 32-byte object header immediately <em>before</em> every vector payload. Given a pointer
+to a column's data, the engine finds its type, count, refcount and attribute by walking backwards.</p>
+
+<p>That layout is why the outbound direction is free — the payload is already exactly what a consumer
+wants, contiguous and headerless from the consumer's point of view. And it is why the inbound direction
+cannot be: a NumPy array allocated by NumPy has no thirty-two bytes of Amber header in front of it, and
+there is no way to retrofit them without moving the data.</p>
+
+<div class="code"><pre><code class="lang-py">am.set("signal", np.random.randn(1_000_000))     # copies. always.</code></pre></div>
+
+<p>This is not a limitation anyone is working around. It matches where the volume is: query results are
+large, query parameters are small. A design that made inbound free at the cost of making outbound
+expensive would be strictly worse for every workload anyone actually has.</p>
+
+<h2>Streaming: the problem the engine deliberately does not solve</h2>
+
+<p>One export gives you the whole table. That is the right answer until the table is 400 million rows, at
+which point the consumer needs batches — and a Flight server, a Polars scan and anything with a memory
+budget all need exactly that.</p>
+
+<p>The obvious implementation is to cut the table into pieces. <strong>That copies every byte, once per
+stream.</strong> For a 400M-row table that <em>is</em> the cost of the operation, and it defeats the point
+of using Arrow at all.</p>
+
+<p>So <code>amber-arrow</code> never cuts anything. It exports the table <strong>once</strong>, and every
+batch is a set of <code>ArrowArray</code> structs whose <code>buffers</code> pointers are the parent's,
+with <code>offset</code> and <code>length</code> moved. Arrow's format defines exactly those semantics for
+primitive and utf8 layouts alike, so there is no per-type special case to get wrong.</p>
+
+<p>You can watch it happen:</p>
+
+<div class="code"><pre><code class="lang-py">&gt;&gt;&gt; {b.column("px").buffers()[1].address for b in aa.stream(t, batch_rows=25_000)}
+{140234099785792}                                        # one address, 80 batches
+&gt;&gt;&gt; _.pop() == am.Table(t).column("px", raw=True).handle()
+True                                                     # the engine's buffer</code></pre></div>
+
+<p>Eighty batches. One address. The set has one element because every batch is looking at the same
+memory.</p>
+
+<h3>The lifetime problem this creates</h3>
+
+<blockquote>
+<p>Batch 3 may outlive the stream, and batches 1 and 2 may be released before batch 3 is created.</p>
+</blockquote>
+
+<p>That sentence is the whole design constraint. A consumer is entitled to keep a batch, put it in a list,
+return it from a function, or hand it to another thread — Arrow's contract says a <code>RecordBatch</code>
+is a value, and values do not stop being valid because you closed something else.</p>
+
+<p>So the parent export is <strong>not owned by the stream</strong>. It is owned by a reference count. The
+stream holds one. Each live batch holds one. Whoever drops the last one tears it down.</p>
+
+<div class="code"><pre><code class="lang-py">keep = []
+reader = aa.query("select from trades", batch_rows=250_000)
+for i, b in enumerate(reader):
+    if i == 3:
+        keep.append(b)          # deliberately outlives the loop and the reader
+del reader
+keep[0].column("px").to_numpy(zero_copy_only=True)[:5]     # still valid</code></pre></div>
+
+<p>There is a test for exactly that pattern, because it is the one that would otherwise be a
+use-after-free, and a use-after-free that only fires when a consumer holds a batch a little too long is the
+worst kind: intermittent, workload-dependent, and impossible to attribute.</p>
+
+<h2>The failure mode nobody warns you about: two engines</h2>
+
+<p>This one cost real debugging time and is worth stating loudly.</p>
+
+<p><code>libamber_arrow.so</code> links <code>libamber.so</code>. So does the <code>amber</code> Python
+package's extension module. If the dynamic loader satisfies those two dependencies with <em>different
+copies</em> of the library, you get two <strong>engines</strong> in one process: two heaps, two symbol
+tables, two global namespaces.</p>
+
+<p>Nothing errors. Nothing can error, because nothing is technically wrong — both libraries loaded, both
+initialised, both work. What happens instead is that a handle produced by one is meaningless to the other,
+and you get a segfault or, worse, plausible garbage, at a call site that has nothing to do with the actual
+problem.</p>
+
+<p>Two mechanisms prevent it:</p>
+
+<ul>
+  <li><strong>The library records a <code>SONAME</code>.</strong> That is what lets the loader recognise an
+  already-loaded copy and reuse it rather than mapping a second one.</li>
+  <li><strong><code>amber_arrow</code> loads <code>libamber.so</code> from inside the installed
+  <code>amber</code> package, with <code>RTLD_GLOBAL</code>, before it loads
+  <code>libamber_arrow.so</code>.</strong> Getting the right one in first is this module's actual job.</li>
+</ul>
+
+<p>And one diagnostic: <code>amber_arrow.library_path()</code> tells you which one you got. Call it first
+when anything is strange.</p>
+
+<h2>Why only <code>amber_*</code> is exported</h2>
+
+<p>Amber's internal C is written in a terse K-derived idiom. The engine's own globals are called
+<code>mr</code>, <code>su</code>, <code>us</code>, <code>err</code>, <code>run</code>, <code>add</code>,
+<code>sub</code>, <code>pk</code>, <code>cpl</code>.</p>
+
+<p>Inside one static binary those names are perfect — short, consistent, and the compiler resolves them all
+at link time. Inside a shared library loaded next to NumPy, libarrow and libpython, a global symbol called
+<code>add</code> is a loaded gun.</p>
+
+<p>So <code>src/libamber.map</code> is an export map that makes everything except <code>amber_*</code> and
+<code>am_ext_*</code> genuinely <strong>absent</strong> from the dynamic symbol table. Not private by
+convention — absent. It cannot be bound to by accident and it cannot interpose on a host's symbol of the
+same name.</p>
+
+<p>There is a second, subtler consequence of building a <code>dlopen</code>-able library. The engine's
+allocator uses initial-exec TLS on its hot path, which is the fastest model and requires the loader to size
+the static TLS block before <code>main()</code>. A <code>dlopen</code>'d library cannot use it — it would
+have to borrow from glibc's small surplus reserve, which fails <em>nondeterministically</em>, with
+<code>cannot allocate memory in static TLS block</code>, depending on what else the host imported first. So
+the shared build drops to global-dynamic TLS, and the executable keeps initial-exec, and the two are
+compiled as separate object sets so neither pessimises the other.</p>
+
+<h2>Where the copies actually are, for real</h2>
+
+<p>An honest inventory of a full pipeline — engine to Grafana panel, engine to Polars, engine to a Flight
+client:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:34%">Path</th><th style="width:16%">Copies</th><th>Where</th></tr></thead>
+  <tbody>
+    <tr><td>Amber &rarr; NumPy</td><td>0</td><td>—</td></tr>
+    <tr><td>Amber &rarr; Arrow (numeric)</td><td>0</td><td>—</td></tr>
+    <tr><td>Amber &rarr; Arrow (symbol)</td><td>1</td><td>int32 ids &rarr; utf8 offsets + bytes</td></tr>
+    <tr><td>Amber &rarr; Polars / DuckDB</td><td>0</td><td>both consume the C Data Interface</td></tr>
+    <tr><td>Amber &rarr; pandas</td><td>0 or 1</td><td>pandas decides whether to consolidate blocks; version-dependent, so it is documented rather than promised</td></tr>
+    <tr><td>Amber &rarr; Flight (<code>embedded</code>)</td><td>0</td><td>the batch handed to gRPC points at the engine's buffers</td></tr>
+    <tr><td>Amber &rarr; Flight (<code>remote</code>)</td><td>1 + parse</td><td>fronts an <code>amberd</code> elsewhere; a real copy and a real parse</td></tr>
+    <tr><td>Amber &rarr; Grafana</td><td>1 + serialise</td><td>columnar JSON over TCP — unavoidable across a process boundary, and the payloads are marts, not tapes</td></tr>
+    <tr><td>Anything &rarr; Amber</td><td>1</td><td>the 32-byte header</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>The <code>remote</code> Flight backend is in that table on purpose. It is slower and it says so:
+"sometimes the engine genuinely is somewhere else — a tickerplant, an HDB node — and a slower path beats no
+path. Do not reach for it when the engine could have been in-process."</p>
+
+<h2>The one conversion that is not free and should not be automatic</h2>
+
+<p>Amber timestamps are nanoseconds since <strong>2000-01-01</strong>. pandas and Arrow count from 1970.
+<code>Table.from_pandas</code> maps <code>datetime64</code> columns to int64 nanoseconds <em>without</em>
+re-basing the epoch.</p>
+
+<p>That is a deliberate refusal. Silently shifting your data by thirty years is worse than handing you an
+integer and making you say what it means. The constant is
+<code>946_684_800_000_000_000</code>; add it going out, subtract it coming in, and put it in a named
+variable so the next person can see it.</p>
+
+<hr>
+
+<p class="small muted">The libraries: <a href="https://github.com/BonucciAndrea/python-amber" target="_blank" rel="noopener">python-amber</a>
+and <a href="https://github.com/BonucciAndrea/amber-arrow" target="_blank" rel="noopener">amber-arrow</a>. The step-by-step version
+of this post is the <a href="../tutorials/arrow-interop.html">Arrow interop tutorial</a>; the C API
+behind it is documented on <a href="../docs/capi.html">the C API page</a>.</p>
+
+  </article>
+</div>
+
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+        <p class="small muted" style="margin-top:14px">
+          <a class="scratchpad-link" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            Amber Notepad — scratchpad
+          </a>
+        </p>
+      </div>
+      <div>
+        <h5>Documentation</h5>
+        <a href="../docs/index.html">Introduction</a>
+        <a href="../docs/language.html">Language &amp; qSQL</a>
+        <a href="../docs/temporal.html">Temporal mechanics</a>
+        <a href="../docs/protocol.html">Wire protocol</a>
+        <a href="../docs/capi.html">C API</a>
+        <a href="../docs/benchmarks.html">Benchmarks</a>
+      </div>
+      <div>
+        <h5>Ecosystem</h5>
+        <a href="../ecosystem/python-amber.html">python-amber</a>
+        <a href="../ecosystem/amber-arrow.html">amber-arrow</a>
+        <a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
+        <a href="../ecosystem/amber-tick.html">amber-tick</a>
+        <a href="../ecosystem/grafana.html">Grafana datasource</a>
+        <a href="../ecosystem/vscode-amber.html">vscode-amber</a>
+        <a href="../ecosystem/amber-ai.html">amber-ai</a>
+      </div>
+      <div>
+        <h5>Learn</h5>
+        <a href="../tutorials/index.html">Tutorials</a>
+        <a href="../blog/index.html">Blog</a>
+        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+        <a href="https://github.com/BonucciAndrea" target="_blank" rel="noopener">All repositories</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+      <span>Not affiliated with kdb+ / KX Systems.</span>
+    </div>
+  </div>
+</footer>
+<script src="../assets/js/amber.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install & run Amber</title>
+<meta name="description" content="Build Amber from source on Linux, WSL2 and macOS. The shell configuration that actually works, the environment variables the engine reads, and why rlwrap must not be used.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Install & run Amber">
+<meta property="og:description" content="Build Amber from source on Linux, WSL2 and macOS. The shell configuration that actually works, the environment variables the engine reads, and why rlwrap must not be used.">
+<meta property="og:site_name" content="Amber">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/amber.css">
+<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v1.9.6</span></a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../docs/" class="active">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a>
+      <a href="https://github.com/BonucciAndrea/amber-notepad" rel="noopener" target="_blank" class="np-mobile">Scratchpad</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-btn scratchpad-nav" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener" title="Amber Notepad — browser scratchpad" aria-label="Amber Notepad scratchpad">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </a>
+      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+  </div>
+</header>
+<main id="main">
+<div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
+<div class="grp">Overview</div>
+<a href="../docs/index.html">Introduction</a>
+<a href="../docs/install.html" class="active">Install & run</a>
+<div class="grp">Reference</div>
+<a href="../docs/language.html">Language & qSQL</a>
+<a href="../docs/temporal.html">Temporal mechanics</a>
+<a href="../docs/protocol.html">Wire protocol</a>
+<a href="../docs/capi.html">C API & extensions</a>
+<div class="grp">Performance</div>
+<a href="../docs/benchmarks.html">Benchmarks</a>
+</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../docs/index.html">Docs</a> / Install</div>
+<h1>Install &amp; run</h1>
+<p class="lead">Amber compiles from source on first run. Nothing is installed system-wide, there is no
+package to add and no prefix to choose — the checkout <em>is</em> the installation.</p>
+
+<h2>Clone</h2>
+<div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/amber.git
+cd amber</code></pre></div>
+
+<h3>Linux / WSL2</h3>
+<div class="code"><pre><code class="lang-sh">sudo apt-get update &amp;&amp; sudo apt-get install -y build-essential   # one-time
+chmod +x a build.sh install.sh    # restore exec bits if the copy dropped them
+./a                               # builds, then opens the REPL</code></pre></div>
+
+<h3>macOS (Intel or Apple Silicon)</h3>
+<div class="code"><pre><code class="lang-sh">xcode-select --install            # installs the Command Line Tools (clang); one-time
+chmod +x a build.sh install.sh
+./a</code></pre></div>
+
+<p><code>./a</code> compiles the interpreter with portable <code>-O3</code> and drops you at the
+prompt. It recompiles automatically whenever the C sources change, so you never run a stale build.
+If <code>./a</code> prints <strong><code>Permission denied</code></strong>, the executable bit was
+lost in transfer — the <code>chmod +x</code> line fixes it, or just run <code>bash a</code>.</p>
+
+<h2>Machine-tuned builds</h2>
+<p>The default build is portable C99 and always includes <code>-pthread</code> (needed by the
+multithreaded vector engine) plus the scalar SIMD fallback. For a build that turns on
+<strong>AVX2</strong> (x86_64) or <strong>NEON</strong> (aarch64), set <code>AMBER_NATIVE=1</code>:</p>
+
+<div class="code"><pre><code class="lang-sh">AMBER_NATIVE=1 ./build.sh         # machine-tuned</code></pre></div>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">`simd 0        / prints which backend was selected: scalar / avx2 / neon</code></pre></div>
+
+<p>NEON activates unconditionally on Apple Silicon regardless of the flag, since <code>aarch64</code>
+implies it. The tuning flag itself is <strong>probed, not assumed</strong>: <code>-march=native</code>
+is x86 syntax that Apple clang rejects outright, so <code>build.sh</code> falls back to
+<code>-mcpu=native</code> and, failing both, to a portable build.</p>
+
+<h2>One command instead of all of the above</h2>
+<div class="code"><pre><code class="lang-sh">./install.sh                      # or: bash install.sh  (if the +x bit was lost)
+AMBER_NATIVE=1 ./install.sh       # ... with a machine-tuned build</code></pre></div>
+
+<p><code>install.sh</code> checks you have a C compiler (and prints the exact package command for
+your distro if you do not), repairs the executable bit on every script, builds, runs the self-test,
+and writes a managed shell block into the rc file <em>your login shell actually reads</em> —
+<code>~/.zshrc</code> for zsh, <code>~/.bash_profile</code> on macOS bash, <code>~/.bashrc</code> on
+Linux bash, <code>~/.profile</code> otherwise. Re-running it replaces that block rather than
+appending a second copy.</p>
+
+<h2>Shell configuration</h2>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">~/.zshrc</span></div><pre><code class="lang-sh"># === Amber - native engine configuration ===================================
+# AMBER_HOME is the Amber checkout ITSELF. Amber is one self-contained folder:
+# there is no bin/ directory, nothing is copied anywhere, and deleting the
+# folder uninstalls it completely.
+export AMBER_HOME="$HOME/amber"
+
+# amber  -&gt; the full REPL: repl.k, the q/kdb+ vocabulary and the stdlib.
+alias amber='AMBER_NATIVE=1 "$AMBER_HOME/a"'
+
+# amberx -&gt; the bare interpreter for scripts and pipes: no REPL, no stdlib.
+alias amberx='"$AMBER_HOME/amber"'
+
+# Pin the vector engine to your physical cores; omit to use every core.
+# alias amber='AMBER_NATIVE=1 AMBER_THREADS=8 "$AMBER_HOME/a"'
+
+# Aliases do not exist in non-interactive shells. For scripts, cron and CI,
+# symlink the launcher instead of putting the repo root on PATH:
+#     mkdir -p ~/.local/bin &amp;&amp; ln -sf "$AMBER_HOME/a" ~/.local/bin/amber</code></pre></div>
+
+<h3>Three variants that look right and are not</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:32%">Looks like</th><th>Why it does not work</th></tr></thead>
+  <tbody>
+    <tr><td><code>PATH="$AMBER_HOME/bin:$PATH"</code></td>
+        <td>Amber has no <code>bin/</code>, <code>lib/</code> or <code>share/</code> split and installs
+        nothing outside its folder. That path does not exist. <code>$AMBER_HOME</code> is the checkout,
+        not a prefix.</td></tr>
+    <tr><td><code>alias amber='$AMBER_HOME/amber'</code></td>
+        <td>The bare <code>amber</code> binary is the interpreter with <strong>no</strong> stdlib:
+        <code>select</code>, <code>aj</code> and <code>sum</code> are undefined there. Alias the
+        launcher <code>a</code>, which loads <code>repl.k</code>, which loads everything else.</td></tr>
+    <tr><td><code>AMBER_NATIVE=1 ./amber</code></td>
+        <td><code>AMBER_NATIVE</code> is a <em>build</em>-time variable read by <code>build.sh</code>,
+        not by the interpreter. It belongs on the <code>a</code> alias — which may rebuild — and does
+        nothing on <code>amberx</code>.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Environment variables the engine reads at run time</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Variable</th><th>Default</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>AMBER_THREADS</code></td><td>online CPU count (cap 64)</td><td>Vector-engine lanes and <code>peach</code> worker count. <code>=1</code> forces serial.</td></tr>
+    <tr><td><code>AMBER_DIAG</code></td><td>off</td><td>Render the full Rust-style <code>error[…]</code> report alongside the terse caret line.</td></tr>
+    <tr><td><code>AMBER_NO_EDIT</code></td><td>off</td><td>Disable the native line editor; Amber reads whole lines instead.</td></tr>
+    <tr><td><code>AMBER_NO_RLWRAP</code></td><td>off</td><td>Suppress the rlwrap fallback that <code>AMBER_NO_EDIT=1</code> would otherwise use.</td></tr>
+    <tr><td><code>AMBER_HOME</code></td><td>—</td><td>Where satellites (python-amber, amberd) load the <code>.k</code> standard library from.</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small muted">There is no <code>AMBER_MEM_MB</code>: the heap is <code>mmap</code>'d with
+<code>MAP_NORESERVE</code> and sized lazily by the OS, so there is nothing to tune.</p>
+
+<h2>Do not use <code>rlwrap</code></h2>
+<div class="note note-warn">
+  <span class="note-title">Line editing is built in since 1.9.5</span>
+  <p>rlwrap runs the wrapped program on a pty and speaks readline on its behalf, which only works for
+  a program that reads whole lines in <em>canonical</em> mode. Amber puts the terminal into raw mode
+  and reads single keypresses, so rlwrap is doing nothing useful — and says so, mid-session, while the
+  two editors fight over one cursor and garble the redraw. <code>./a</code> execs the interpreter
+  directly.</p>
+</div>
+
+<p>The native editor (<code>src/ln.c</code>, ~700 lines of C99 + POSIX <code>termios</code>, no
+readline, no curses, no dependency) gives you:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:38%">Key</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td><kbd>&larr;</kbd> <kbd>&rarr;</kbd>, <kbd>Ctrl-B</kbd> / <kbd>Ctrl-F</kbd></td><td>move by character</td></tr>
+    <tr><td><kbd>Ctrl-A</kbd> / <kbd>Ctrl-E</kbd>, <kbd>Home</kbd> / <kbd>End</kbd></td><td>start / end of line</td></tr>
+    <tr><td><kbd>&uarr;</kbd> <kbd>&darr;</kbd>, <kbd>Ctrl-P</kbd> / <kbd>Ctrl-N</kbd></td><td>history, persisted in <code>~/.amber_history</code></td></tr>
+    <tr><td><kbd>Backspace</kbd>, <kbd>Del</kbd>, <kbd>Ctrl-W</kbd> / <kbd>Ctrl-U</kbd> / <kbd>Ctrl-K</kbd></td><td>delete char / word / to start / to end</td></tr>
+    <tr><td><kbd>Tab</kbd></td><td>complete globals, table columns, <code>\</code> commands, the vocabulary, and whole lines you already ran</td></tr>
+    <tr><td><kbd>Ctrl-L</kbd> · <kbd>Ctrl-C</kbd> · <kbd>Ctrl-D</kbd></td><td>clear screen · abandon the line · exit on an empty line</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>The editor degrades to a plain line read whenever stdin/stdout are not a terminal, so
+<code>echo '2+2' | ./a</code>, here-docs and CI runs behave byte-for-byte as they always did. If you
+genuinely need the fallback (a dumb terminal, an editor subshell, a screen reader):</p>
+
+<div class="code"><pre><code class="lang-sh">AMBER_NO_EDIT=1 ./a                      # Amber reads whole lines; ./a wraps it in: rlwrap -n -a
+AMBER_NO_RLWRAP=1 AMBER_NO_EDIT=1 ./a    # ... or not even that</code></pre></div>
+
+<h2>Verify the install</h2>
+<div class="code"><pre><code class="lang-sh">./amber --version            # amber 1.9.6
+./amber --help               # options + the full \-command reference
+
+./amber examples/tour.k      # a worked example of EVERY function
+./amber examples/basics.k    # a 2-minute intro
+./amber examples/tick.k      # trades &amp; quotes: as-of/window joins, VWAP, OHLC
+./amber examples/hft.k       # the finance module walkthrough
+
+./amber test.k               # core suite (163)
+tests/run_tests.sh           # build + all K suites + C unit tests + fuzz pass
+tests/run_tests.sh --asan    # ... and again under AddressSanitizer + UBSan</code></pre></div>
+
+<h2>The showcase demo</h2>
+<p>One command builds Amber with maximum optimization and runs the Mega Demo: a 5,000,000-row HFT
+tick session (VWAP, a tacit 50-period EMA, a native as-of join), a 10,000,000-element vector-op
+benchmark, and a couple of <code>\ast</code>/<code>\disasm</code> samples straight from the real
+parser and compiler.</p>
+
+<div class="code"><pre><code class="lang-sh">./demo.sh                    # portable -O3 build
+AMBER_NATIVE=1 ./demo.sh     # -march=native build (fastest on this machine)</code></pre></div>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">benchmark summary</span></div><pre><code class="lang-out">== benchmark summary =======================================
+stage      ms
+----------
+gentq   2381.9
+vwap     151.2
+ema        0.1
+asof     704.0
+------------------------------------------------------------
+total: ~3.2 s end-to-end for 500,000 trades</code></pre></div>
+
+<h2>The shared library</h2>
+<p>Every satellite — <code>python-amber</code>, <code>amber-arrow</code>, <code>amberd</code> —
+links <code>libamber.so</code> rather than the executable. Build it explicitly:</p>
+
+<div class="code"><pre><code class="lang-sh">./build.sh                 # ./amber           (unchanged; identical binary, zero new cost)
+./build.sh --shared        # ./amber  +  libamber.so
+./build.sh --shared-only   # libamber.so only
+AMBER_SHARED=1 ./build.sh  # same as --shared, for callers that cannot pass a flag</code></pre></div>
+
+<div class="note">
+  <span class="note-title">Isolation</span>
+  <p>Amber is a single self-contained folder. The interpreter is named <code>amber</code> (never
+  <code>k</code> or <code>q</code>), built only inside the folder, never placed on your
+  <code>PATH</code>. It reads and writes no config, no <code>QHOME</code>, no dotfiles. Your kdb+,
+  kona and other k/q installs are untouched.</p>
+</div>
+
+<div class="pager">
+  <a href="../docs/index.html"><span class="dir">Previous</span><span class="ttl">Introduction</span></a>
+  <a class="next" href="../docs/language.html"><span class="dir">Next</span><span class="ttl">Language &amp; qSQL</span></a>
+</div>
+</article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+        <p class="small muted" style="margin-top:14px">
+          <a class="scratchpad-link" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            Amber Notepad — scratchpad
+          </a>
+        </p>
+      </div>
+      <div>
+        <h5>Documentation</h5>
+        <a href="../docs/index.html">Introduction</a>
+        <a href="../docs/language.html">Language &amp; qSQL</a>
+        <a href="../docs/temporal.html">Temporal mechanics</a>
+        <a href="../docs/protocol.html">Wire protocol</a>
+        <a href="../docs/capi.html">C API</a>
+        <a href="../docs/benchmarks.html">Benchmarks</a>
+      </div>
+      <div>
+        <h5>Ecosystem</h5>
+        <a href="../ecosystem/python-amber.html">python-amber</a>
+        <a href="../ecosystem/amber-arrow.html">amber-arrow</a>
+        <a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
+        <a href="../ecosystem/amber-tick.html">amber-tick</a>
+        <a href="../ecosystem/grafana.html">Grafana datasource</a>
+        <a href="../ecosystem/vscode-amber.html">vscode-amber</a>
+        <a href="../ecosystem/amber-ai.html">amber-ai</a>
+      </div>
+      <div>
+        <h5>Learn</h5>
+        <a href="../tutorials/index.html">Tutorials</a>
+        <a href="../blog/index.html">Blog</a>
+        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+        <a href="https://github.com/BonucciAndrea" target="_blank" rel="noopener">All repositories</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+      <span>Not affiliated with kdb+ / KX Systems.</span>
+    </div>
+  </div>
+</footer>
+<script src="../assets/js/amber.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amber — a low-latency array language for market data</title>
+<meta name="description" content="Amber is a C99 columnar in-memory array engine with the working vocabulary of q/kdb+: tables, the full join family including native as-of, qSQL select/by, C-level column attributes and a zero-copy Arrow bridge.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="./assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Amber — a low-latency array language for market data">
+<meta property="og:description" content="Amber is a C99 columnar in-memory array engine with the working vocabulary of q/kdb+: tables, the full join family including native as-of, qSQL select/by, C-level column attributes and a zero-copy Arrow bridge.">
+<meta property="og:site_name" content="Amber">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./assets/css/amber.css">
+<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="./index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v1.9.6</span></a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="./docs/">Docs</a><a href="./ecosystem/">Ecosystem</a><a href="./tutorials/">Tutorials</a><a href="./blog/">Blog</a>
+      <a href="https://github.com/BonucciAndrea/amber-notepad" rel="noopener" target="_blank" class="np-mobile">Scratchpad</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-btn scratchpad-nav" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener" title="Amber Notepad — browser scratchpad" aria-label="Amber Notepad scratchpad">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </a>
+      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <a class="announce" href="./docs/capi.html">
+          <span class="tag">v1.9.6</span>
+          <span>libamber.so — the dynamic C API seam</span>
+          <span class="arrow">&rarr;</span>
+        </a>
+        <h1>The array language<br><span class="grad">markets run on.</span></h1>
+        <p class="lead">
+          Amber is a small, fast, self-contained engine written in portable <strong>C99</strong>: columnar,
+          vectorised, in-memory, with the working vocabulary of <strong>q/kdb+</strong> — dictionaries,
+          tables and keyed tables, the full join family including a native as-of kernel, qSQL
+          <code>select</code>/<code>by</code>, and column attributes implemented in C that turn search from
+          <code>O(n)</code> into <code>O(log n)</code>.
+        </p>
+        <div class="row" style="margin-top:26px">
+          <a class="btn btn-primary" href="./docs/install.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Get started
+          </a>
+          <a class="btn btn-ghost" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg>
+            View source
+          </a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat"><div class="n">2261&times;</div><div class="l">find, 5M rows, sorted attribute</div></div>
+          <div class="stat"><div class="n">0.70&times;</div><div class="l">of C&nbsp;-O3 on 10M reductions</div></div>
+          <div class="stat"><div class="n">287</div><div class="l">tests passing</div></div>
+                  </div>
+      </div>
+
+      <div>
+        <div class="terminal">
+          <div class="terminal-head">
+            <span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span>
+            <span class="t">amber &mdash; 1-minute VWAP over 5,000,000 trades</span>
+            <span class="badge">live</span>
+          </div>
+          <div class="terminal-body" id="hero-term" aria-label="Animated Amber REPL session"></div>
+        </div>
+        <div class="install-bar" style="margin-top:16px">
+          <span class="p">$</span>
+          <span>git clone https://github.com/BonucciAndrea/amber.git &amp;&amp; cd amber &amp;&amp; ./a</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="marquee-strip" style="margin-top:52px;border-top:1px solid var(--border);padding-top:22px">
+      <span><span class="pill pill-accent pill-dot"></span>C99 · gcc + clang</span><span class="sep">/</span>
+      <span>AVX2 · ARM NEON · scalar</span><span class="sep">/</span>
+      <span>Apache Arrow C Data Interface</span><span class="sep">/</span>
+      <span>amberd TCP wire protocol</span><span class="sep">/</span>
+      <span>AGPLv3</span>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FEATURES ==================== -->
+<section class="section" id="features">
+  <div class="wrap">
+    <div style="max-width:64ch;margin-bottom:36px">
+      <div class="eyebrow">Engine</div>
+      <h2 style="margin-top:0">Built for the shape data actually has</h2>
+      <p class="lead">A tick is not a row. It is one value in each of nine columns, and every question you
+      ask of a trading day is a question about columns. Amber is columnar all the way down — storage,
+      evaluation, the wire, and the handoff to Arrow.</p>
+    </div>
+
+    <div class="grid grid-3">
+      <div class="card reveal">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="18" rx="1"/><rect x="10.5" y="3" width="6" height="18" rx="1"/><path d="M20 3v18"/></svg></div>
+        <h3>Zero-copy memory layout</h3>
+        <p class="small">A column is one contiguous, cache-line-aligned payload. <code>amber_get_vector_ptr()</code>
+        hands you that pointer — not a copy of it. NumPy's <code>base</code>, Arrow's data buffer and the
+        engine's column are the same address, asserted by pointer equality in the test suites.</p>
+      </div>
+
+      <div class="card reveal">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M6 14h.01"/><path d="M11 12h7"/></svg></div>
+        <h3>Native TCP wire protocol</h3>
+        <p class="small"><code>amberd</code> is ~450 lines of C: one engine, many connections, a one-line
+        request and a length-prefixed reply in <code>text</code>, <code>json</code>, <code>jsonc</code> or
+        <code>raw</code>. Small enough to reimplement in an afternoon — which Go, TypeScript and Python
+        clients all have.</p>
+      </div>
+
+      <div class="card reveal">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg></div>
+        <h3>Array evaluation, not row loops</h3>
+        <p class="small">Every expression compiles to a flat opcode array and runs on a real stack VM.
+        Vector ops dispatch into AVX2 / NEON kernels and split across cores above 100,000 elements.
+        <code>\disasm</code> decodes the bytecode the compiler actually emitted.</p>
+      </div>
+
+      <div class="card reveal">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></div>
+        <h3>Columnar storage &amp; attributes</h3>
+        <p class="small">All four kdb-style attributes are implemented in C — <code>`s</code> sorted,
+        <code>`u</code> unique, <code>`p</code> parted, <code>`g</code> grouped. Sorted turns
+        <code>?</code> into a binary search: <strong>1.73 s &rarr; 1.4 ms</strong> on 2M rows, same answer.</p>
+      </div>
+
+      <div class="card reveal">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div>
+        <h3>Native as-of join</h3>
+        <p class="small"><code>aj</code> matches each trade to its most recent quote with a branch-free
+        <code>lower_bound</code> over each symbol group's sorted nanosecond slice, off a thread-local
+        16&nbsp;MB bump arena that keeps <code>malloc</code> jitter out of the hot path.</p>
+      </div>
+
+      <div class="card reveal">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg></div>
+        <h3>Diagnostics that read like Rust</h3>
+        <p class="small">An <code>error[E0104]</code> line, a <code>--&gt;</code> locator, a gutter-aligned
+        source line, <code>^^^</code> underlines and a <code>= help:</code> note. One report, never two —
+        and switchable at runtime so a trap loop stays quiet.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== LANGUAGE ==================== -->
+<section class="section-tight" id="language">
+  <div class="wrap">
+    <div class="split">
+      <div>
+        <div class="eyebrow">Language</div>
+        <h2 style="margin-top:0">q vocabulary, K notation</h2>
+        <p>If you have written q, you already know most of Amber: <code>select … by … from … where …</code>,
+        <code>aj</code>, <code>wj</code>, <code>xbar</code>, <code>wavg</code>, <code>meta</code>,
+        <code>([]…)</code> table literals and keyed tables all mean what you expect. Bare qSQL works at the
+        prompt with no <code>sel"…"</code> wrapper.</p>
+        <p>The notation underneath is terse array grammar. Dyadic library functions take brackets
+        (<code>aj[c;x;y]</code>), there is no <code>&gt;=</code> or <code>&lt;=</code>, and symbols cannot
+        contain <code>_</code> — because <code>_</code> is a verb.</p>
+        <div class="row" style="margin-top:20px">
+          <a class="btn btn-ghost btn-sm" href="./docs/language.html">Language reference &rarr;</a>
+          <a class="btn btn-ghost btn-sm" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener">Try it in the browser &rarr;</a>
+        </div>
+      </div>
+      <div>
+        <div class="code">
+          <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">session.k</span></div>
+<pre><code class="lang-q">/ tables are first-class and render without `show`
+t:([]sym:`AAPL`MSFT`AAPL; px:187.3 411.2 187.4; sz:100 250 50)
+
+/ qSQL, typed bare at the prompt
+select vwap:wavg[sz;px] by sym from t
+
+/ 1-minute OHLCV bars — the classic tickerplant query
+tb:+@[+trades; ,`time; minbar[1]@]
+qby[tb; `sym`time;
+    `o`h`l`c`v!({first x`px};{max x`px};{min x`px};{last x`px};{sum x`sz})]
+
+/ TAQ: the prevailing quote for every print
+m:aj[`sym`time; trades; quotes]
+
+/ sorted attribute =&gt; O(log n) lookups
+v:asc 2000000?1000000000
+`at v                       / `s
+v ? 12345 67890             / binary search, ~1244x faster
+
+/ zero-copy Arrow C Data Interface, no libarrow linkage
+p:arrow.export t            / (schemaAddr; arrayAddr)</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== TICK GRAPH ==================== -->
+<section class="section" id="tick">
+  <div class="wrap">
+    <div class="split">
+      <div>
+        <div class="eyebrow">amber-tick</div>
+        <h2 style="margin-top:0">A whole market, generated and stored</h2>
+        <p><a href="./ecosystem/amber-tick.html">amber-tick</a> writes a partitioned, splayed column
+        store the engine reads natively — 38M prints, 89M quotes, ten-level book snapshots and LULD halts
+        across five sessions and 500 names, from a simulator whose realism is <em>checked</em>: twenty-one
+        published stylized facts, all passing on every generated store.</p>
+        <dl class="kv" style="margin:22px 0">
+          <dt>arrivals</dt><dd>discrete-time Hawkes process — bursts, not flat Poisson</dd>
+          <dt>quotes first</dt><dd>so a print can never fall outside the NBBO</dd>
+          <dt>epoch</dt><dd>nanoseconds since 2000-01-01 — Amber's own, not Unix</dd>
+          <dt>files</dt><dd>each column is one <code>-8!</code> value, byte-identical to the engine's</dd>
+        </dl>
+        <a class="btn btn-ghost btn-sm" href="./tutorials/tick-store.html">Build a 5M-row store in 60 seconds &rarr;</a>
+      </div>
+      <div>
+        <div class="tickchart" id="tickchart">
+          <div class="tickchart-head">
+            <span class="sym">AAPL</span>
+            <span class="px">187.32</span>
+            <span class="pill pill-accent pill-dot" style="margin-left:auto">tape</span>
+            <span class="pill">1s · lit + TRF</span>
+          </div>
+          <canvas aria-label="Simulated live trade tape: price line with volume bars"></canvas>
+        </div>
+        <p class="small muted center" style="margin-top:10px">Simulated tape: mean-reverting tick returns (bid-ask bounce) with clustered arrivals.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== ARCHITECTURE ==================== -->
+<section class="section-tight">
+  <div class="wrap">
+    <div class="eyebrow center">Architecture</div>
+    <h2 class="center" style="margin-top:0">One engine, three seams</h2>
+    <p class="lead center" style="max-width:60ch;margin:0 auto 30px">Everything that consumes Amber lives
+    outside the engine repository and reaches it through <code>libamber.so</code>, the in-process
+    <code>ext/</code> registry, or a TCP socket. The engine gained one build flag, one export map and one
+    header section for all of it.</p>
+    <div class="diagram" id="arch-diagram">
+<svg viewBox="0 0 960 430" role="img" aria-label="Amber architecture: the C99 engine exposes three seams — libamber.so, the in-process ext/ registry, and the amberd TCP socket — which the satellite projects consume.">
+  <defs>
+    <linearGradient id="ax" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFD98A"/><stop offset=".5" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/>
+    </linearGradient>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--text-faint)"/>
+    </marker>
+  </defs>
+  <style>
+    .bx  { fill: var(--surface-2); stroke: var(--border); stroke-width: 1; }
+    .bxa { fill: var(--accent-glow); stroke: var(--accent); stroke-width: 1; stroke-opacity:.45 }
+    .ttl { fill: var(--text); font: 600 15.5px var(--font-sans); }
+    .sub { fill: var(--text-faint); font: 400 12.5px var(--font-mono); }
+    .seam{ fill: var(--accent); font: 600 13px var(--font-mono); }
+    .ln  { stroke: var(--border-strong); stroke-width: 1.1; fill: none; marker-end: url(#arw); }
+    .core{ fill: var(--text); font: 600 17px var(--font-sans); }
+  </style>
+
+  <!-- engine core -->
+  <rect class="bxa" x="24" y="118" width="248" height="194" rx="14"/>
+  <text class="core" x="48" y="150">Amber engine</text>
+  <text class="sub"  x="48" y="170">portable C99 · gcc + clang</text>
+  <line x1="48" y1="184" x2="248" y2="184" stroke="var(--border)"/>
+  <text class="sub" x="48" y="205">a.c b.c  evaluator + VM</text>
+  <text class="sub" x="48" y="223">simd.c parallel.c  kernels</text>
+  <text class="sub" x="48" y="241">arena.c  16 MB HFT arena</text>
+  <text class="sub" x="48" y="259">ser.c  -8! / -9! binary</text>
+  <text class="sub" x="48" y="277">ar.c  Arrow C Data Interface</text>
+  <text class="sub" x="48" y="295">ext.h  the extension seam</text>
+
+  <!-- seams -->
+  <rect class="bx" x="344" y="60" width="196" height="52" rx="11"/>
+  <text class="seam" x="360" y="84">libamber.so</text>
+  <text class="sub"  x="360" y="101">~60 amber_* entry points</text>
+
+  <rect class="bx" x="344" y="190" width="196" height="52" rx="11"/>
+  <text class="seam" x="360" y="214">ext/ registry</text>
+  <text class="sub"  x="360" y="231">in-process · runtime verbs</text>
+
+  <rect class="bx" x="344" y="320" width="196" height="52" rx="11"/>
+  <text class="seam" x="360" y="344">amberd :5010</text>
+  <text class="sub"  x="360" y="361">TCP · text json jsonc raw</text>
+
+  <path class="ln" d="M272 176 C 310 176 306 86 340 86"/>
+  <path class="ln" d="M272 215 L 340 215"/>
+  <path class="ln" d="M272 254 C 310 254 306 346 340 346"/>
+
+  <!-- consumers -->
+  <rect class="bx" x="616" y="20" width="336" height="40" rx="10"/>
+  <text class="ttl" x="634" y="45">python-amber<tspan class="sub">  — NumPy · pandas · Polars</tspan></text>
+
+  <rect class="bx" x="616" y="70" width="336" height="40" rx="10"/>
+  <text class="ttl" x="634" y="95">amber-arrow<tspan class="sub">  — ArrowArrayStream · Flight</tspan></text>
+
+  <rect class="bx" x="616" y="120" width="336" height="40" rx="10"/>
+  <text class="ttl" x="634" y="145">amber-jupyter<tspan class="sub">  — one process, one heap</tspan></text>
+
+  <rect class="bx" x="616" y="196" width="336" height="40" rx="10"/>
+  <text class="ttl" x="634" y="221">amber-ai<tspan class="sub">  — local co-pilot, loopback only</tspan></text>
+
+  <rect class="bx" x="616" y="290" width="336" height="40" rx="10"/>
+  <text class="ttl" x="634" y="315">grafana-amber<tspan class="sub">  — Go backend, columnar</tspan></text>
+
+  <rect class="bx" x="616" y="340" width="336" height="40" rx="10"/>
+  <text class="ttl" x="634" y="365">vscode-amber<tspan class="sub">  — LSP, \parse only</tspan></text>
+
+  <rect class="bx" x="616" y="390" width="336" height="40" rx="10"/>
+  <text class="ttl" x="634" y="415">amber-tick<tspan class="sub">  — tickerplant · RDB · HDB</tspan></text>
+
+  <path class="ln" d="M540 86 C 578 86 578 40 612 40"/>
+  <path class="ln" d="M540 86 L 612 90"/>
+  <path class="ln" d="M540 86 C 578 86 578 140 612 140"/>
+  <path class="ln" d="M540 216 L 612 216"/>
+  <path class="ln" d="M540 346 C 578 346 578 310 612 310"/>
+  <path class="ln" d="M540 346 L 612 360"/>
+  <path class="ln" d="M540 346 C 578 346 578 410 612 410"/>
+</svg>
+
+    </div>
+  </div>
+</section>
+
+<!-- ==================== BENCHMARKS ==================== -->
+<section class="section-tight" id="benchmarks">
+  <div class="wrap">
+    <div class="eyebrow">Benchmarks</div>
+    <h2 style="margin-top:0">Measured against C, and against everyone else</h2>
+    <p class="lead" style="max-width:66ch">Ten engines, four workloads, one specification. Every answer is
+    an integer that fits float64 exactly, so summation order cannot change it — the harness compares
+    answers <strong>bit-exactly</strong> against the C reference and prints <code>WRONG</code> instead of a
+    time for any engine that disagrees.</p>
+    <div class="table-wrap" style="margin-top:26px">
+      <table>
+        <thead><tr>
+          <th>Workload (10M rows unless noted)</th>
+          <th class="num">C -O3</th><th class="num">Amber</th><th class="num">Amber qSQL</th>
+          <th class="num">CBQN</th><th class="num">NumPy</th><th class="num">DuckDB</th><th class="num">ngn/k</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>Vector arithmetic + mask</td><td class="num">8.22</td><td class="num best">54.56</td><td class="num">65.73</td><td class="num">30.91</td><td class="num">27.47</td><td class="num">22.00</td><td class="num">254.82</td></tr>
+          <tr><td>Reductions — sum + max + dot</td><td class="num">21.92</td><td class="num best">15.40</td><td class="num">52.46</td><td class="num">4.09</td><td class="num">8.62</td><td class="num">29.00</td><td class="num">237.93</td></tr>
+          <tr><td>Group-by — 100 groups</td><td class="num">6.41</td><td class="num best">61.45</td><td class="num">119.63</td><td class="num">28.83</td><td class="num">11.54</td><td class="num">14.00</td><td class="num">276.51</td></tr>
+          <tr><td>Inner join — 1M &times; 1,000 sparse keys</td><td class="num">0.83</td><td class="num best">3.42</td><td class="num">9.85</td><td class="num">1.80</td><td class="num">11.34</td><td class="num">9.00</td><td class="num">364.13</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted">Median of 5 timed runs after 2 warm-ups, milliseconds, kernel time only.
+    Amber is reported twice on purpose: array-primitive code is the fair peer of ngn/k and CBQN;
+    the qSQL layer is the fair peer of DuckDB's planner. The gap between the rows <em>is</em> the query
+    layer's overhead, and it is meant to be visible.
+    <a href="./docs/benchmarks.html">Full results &rarr;</a></p>
+  </div>
+</section>
+
+<!-- ==================== ECOSYSTEM ==================== -->
+<section class="section" id="ecosystem">
+  <div class="wrap">
+    <div style="max-width:62ch;margin-bottom:34px">
+      <div class="eyebrow">Ecosystem</div>
+      <h2 style="margin-top:0">Nothing here patches the engine</h2>
+      <p class="lead">Each satellite reaches Amber through a published seam and nothing else. Delete any of
+      them and the engine is byte-for-byte what it was.</p>
+    </div>
+
+    <div class="grid grid-3">
+      <a class="card card-link eco-card reveal" href="./ecosystem/python-amber.html">
+        <div class="card-title-row"><h3>python-amber</h3><span class="pill">libamber.so</span></div>
+        <p class="desc">The engine in your Python process. <code>pip install amber</code>, then NumPy views
+        that point at the engine's own column buffers — no server, no socket, no serialisation.</p>
+        <div class="repo"><span class="arrow">Read more &rarr;</span></div>
+      </a>
+
+      <a class="card card-link eco-card reveal" href="./ecosystem/amber-arrow.html">
+        <div class="card-title-row"><h3>amber-arrow</h3><span class="pill">libamber.so</span></div>
+        <p class="desc">An <code>ArrowArrayStream</code> whose batches are <em>windows</em> onto one export,
+        not slices of it. Plus <code>amberd</code>, the TCP query server, and an Arrow Flight daemon.</p>
+        <div class="repo"><span class="arrow">Read more &rarr;</span></div>
+      </a>
+
+      <a class="card card-link eco-card reveal" href="./ecosystem/amber-jupyter.html">
+        <div class="card-title-row"><h3>amber-jupyter</h3><span class="pill">python-amber</span></div>
+        <p class="desc">Amber cells and <code>%%python</code> cells in one process, so a column crosses the
+        boundary as a pointer. HTML grids with type tags, capped at 500 rows on purpose.</p>
+        <div class="repo"><span class="arrow">Read more &rarr;</span></div>
+      </a>
+
+      <a class="card card-link eco-card reveal" href="./ecosystem/amber-tick.html">
+        <div class="card-title-row"><h3>amber-tick</h3><span class="pill">store + runtime</span></div>
+        <p class="desc">A US-equity simulator, a splayed partitioned store, TAQ analytics, and a live
+        tickerplant &rarr; RDB &rarr; HDB pipeline with a replayable sequenced log.</p>
+        <div class="repo"><span class="arrow">Read more &rarr;</span></div>
+      </a>
+
+      <a class="card card-link eco-card reveal" href="./ecosystem/grafana.html">
+        <div class="card-title-row"><h3>grafana-amber</h3><span class="pill">amberd socket</span></div>
+        <p class="desc">Live dashboards over bare qSQL, column-oriented on the wire. A Go backend, a
+        <code>mage</code> build, and time macros that speak Amber's epoch rather than Unix's.</p>
+        <div class="repo"><span class="arrow">Read more &rarr;</span></div>
+      </a>
+
+      <a class="card card-link eco-card reveal" href="./ecosystem/vscode-amber.html">
+        <div class="card-title-row"><h3>vscode-amber</h3><span class="pill">LSP</span></div>
+        <p class="desc">qSQL-aware completion where the clause decides the vocabulary, hovers that explain
+        idioms like <code>x@&lt;x</code>, and diagnostics that never evaluate your code.</p>
+        <div class="repo"><span class="arrow">Read more &rarr;</span></div>
+      </a>
+
+      <a class="card card-link eco-card reveal" href="./ecosystem/amber-ai.html">
+        <div class="card-title-row"><h3>amber-ai</h3><span class="pill">ext/ seam</span></div>
+        <p class="desc">A schema-aware co-pilot that reads your live tables before it answers, talks only to
+        <code>127.0.0.1:11434</code>, and cannot hang or break the REPL.</p>
+        <div class="repo"><span class="arrow">Read more &rarr;</span></div>
+      </a>
+
+      <a class="card card-link eco-card reveal" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener">
+        <div class="card-title-row"><h3>Amber Notepad</h3><span class="pill">WebAssembly</span></div>
+        <p class="desc">The real C interpreter compiled to <code>wasm32</code> with plain clang — editor,
+        AST and bytecode panes, twelve bundled programs, entirely offline.</p>
+        <div class="repo"><span class="arrow">Open the scratchpad &rarr;</span></div>
+      </a>
+
+      <a class="card card-link eco-card reveal" href="./tutorials/index.html">
+        <div class="card-title-row"><h3>Tutorials</h3><span class="pill pill-accent">start here</span></div>
+        <p class="desc">Three end-to-end walkthroughs: a 5-million-row tick store, a Grafana dashboard
+        pipeline, and Arrow record batches into Python without a copy.</p>
+        <div class="repo"><span class="arrow">Read more &rarr;</span></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== CTA ==================== -->
+<section class="section-tight">
+  <div class="wrap">
+    <div class="card card-solid reveal" style="padding:44px;text-align:center">
+      <h2 style="margin-top:0">One command. No install.</h2>
+      <p class="lead" style="max-width:56ch;margin:0 auto 24px">Amber compiles from source on first run and
+      installs nothing system-wide. There is no <code>bin/</code>, no <code>QHOME</code>, no dotfile —
+      deleting the folder uninstalls it completely.</p>
+      <div class="code" style="max-width:640px;margin:0 auto 22px;text-align:left">
+        <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">bash</span></div>
+<pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/amber.git
+cd amber
+chmod +x a build.sh install.sh
+./a                      # builds with -O3, then opens the REPL</code></pre>
+      </div>
+      <div class="row" style="justify-content:center">
+        <a class="btn btn-primary" href="./docs/install.html">Installation guide</a>
+        <a class="btn btn-ghost" href="./blog/index.html">Read the blog</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="./index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+        <p class="small muted" style="margin-top:14px">
+          <a class="scratchpad-link" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            Amber Notepad — scratchpad
+          </a>
+        </p>
+      </div>
+      <div>
+        <h5>Documentation</h5>
+        <a href="./docs/index.html">Introduction</a>
+        <a href="./docs/language.html">Language &amp; qSQL</a>
+        <a href="./docs/temporal.html">Temporal mechanics</a>
+        <a href="./docs/protocol.html">Wire protocol</a>
+        <a href="./docs/capi.html">C API</a>
+        <a href="./docs/benchmarks.html">Benchmarks</a>
+      </div>
+      <div>
+        <h5>Ecosystem</h5>
+        <a href="./ecosystem/python-amber.html">python-amber</a>
+        <a href="./ecosystem/amber-arrow.html">amber-arrow</a>
+        <a href="./ecosystem/amber-jupyter.html">amber-jupyter</a>
+        <a href="./ecosystem/amber-tick.html">amber-tick</a>
+        <a href="./ecosystem/grafana.html">Grafana datasource</a>
+        <a href="./ecosystem/vscode-amber.html">vscode-amber</a>
+        <a href="./ecosystem/amber-ai.html">amber-ai</a>
+      </div>
+      <div>
+        <h5>Learn</h5>
+        <a href="./tutorials/index.html">Tutorials</a>
+        <a href="./blog/index.html">Blog</a>
+        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+        <a href="https://github.com/BonucciAndrea" target="_blank" rel="noopener">All repositories</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+      <span>Not affiliated with kdb+ / KX Systems.</span>
+    </div>
+  </div>
+</footer>
+<script src="./assets/js/amber.js" defer></script>
+</body>
+</html>

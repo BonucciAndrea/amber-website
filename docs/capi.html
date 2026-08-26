@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C API & extensions — libamber.so and the ext/ seam</title>
+<meta name="description" content="The two seams for extending Amber: the in-process ext/ registry with its constructor hooks, and libamber.so with ~60 amber_* entry points including the zero-copy vector seam.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="C API & extensions — libamber.so and the ext/ seam">
+<meta property="og:description" content="The two seams for extending Amber: the in-process ext/ registry with its constructor hooks, and libamber.so with ~60 amber_* entry points including the zero-copy vector seam.">
+<meta property="og:site_name" content="Amber">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/amber.css">
+<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v1.9.6</span></a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../docs/" class="active">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a>
+      <a href="https://github.com/BonucciAndrea/amber-notepad" rel="noopener" target="_blank" class="np-mobile">Scratchpad</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-btn scratchpad-nav" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener" title="Amber Notepad — browser scratchpad" aria-label="Amber Notepad scratchpad">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </a>
+      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+  </div>
+</header>
+<main id="main">
+<div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
+<div class="grp">Overview</div>
+<a href="../docs/index.html">Introduction</a>
+<a href="../docs/install.html">Install & run</a>
+<div class="grp">Reference</div>
+<a href="../docs/language.html">Language & qSQL</a>
+<a href="../docs/temporal.html">Temporal mechanics</a>
+<a href="../docs/protocol.html">Wire protocol</a>
+<a href="../docs/capi.html" class="active">C API & extensions</a>
+<div class="grp">Performance</div>
+<a href="../docs/benchmarks.html">Benchmarks</a>
+</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../docs/index.html">Docs</a> / C API</div>
+<h1>C API &amp; extensions</h1>
+<p class="lead">Amber has exactly two seams, and both live in one header. <code>src/ext.h</code>
+sections 1–5 are the <strong>in-process</strong> registry: drop a <code>.c</code> file into
+<code>ext/</code>, rebuild, and it plugs itself in without a line of <code>src/</code> being patched.
+Section 6 is the <strong>out-of-process</strong> API on the front of <code>libamber.so</code>.</p>
+
+<h2>The in-process seam — <code>ext/</code></h2>
+<p><code>ext/</code> is empty in a stock checkout. An out-of-tree package installs itself by dropping
+<code>.c</code> files there and re-running <code>./build.sh</code>; they are compiled with the same
+flags, linked into the same binary, and register themselves from a constructor.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:28%">Hook</th><th>What it lets an extension do</th></tr></thead>
+  <tbody>
+    <tr><td><code>am_ext_verb("xyz", fn)</code></td><td>register a backtick verb — <code>`xyz x</code> — at runtime</td></tr>
+    <tr><td><code>am_ext_bs</code></td><td>claim a <code>\</code>-command before the "unknown <code>\cmd</code> is a shell command" fallback</td></tr>
+    <tr><td><code>am_ext_hint</code></td><td>offer inline ghost text in the editor — never inserted until accepted</td></tr>
+    <tr><td><code>am_ext_complete</code></td><td>add Tab candidates ahead of the built-in lexical sources</td></tr>
+    <tr><td><code>am_ext_startup</code></td><td>run once, lazily, when the REPL first reads a line</td></tr>
+    <tr><td><code>am_ext_usage</code> / <code>am_ext_banner</code></td><td>append to <code>--help</code> and to the banner</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>The Amber-level half goes in <code>lib/</code>; <code>repl.k</code> loads <code>lib/ext.k</code>
+whole-file at startup if it exists, fully trapped, and an extension may define the optional
+<code>ext.pre</code> / <code>ext.post</code> / <code>ext.err</code> / <code>ext.raw</code> /
+<code>ext.tag</code> hooks.</p>
+
+<div class="note">
+  <span class="note-title">Why this exists</span>
+  <p>Pulling a new Amber release must never conflict with a package you installed, and a user who
+  installs nothing must pay nothing — every hook is a null pointer and every call site is a
+  predictable branch. <code>tests/ext_probe.c</code> is a complete worked example;
+  <code>tests/test_ext_seam.sh</code> installs it, checks every hook, and uninstalls it again.</p>
+</div>
+
+<p><a href="../ecosystem/amber-ai.html">amber-ai</a> is installed exactly this way:</p>
+<div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/amber-ai.git
+cd amber-ai &amp;&amp; ./install.sh /path/to/amber</code></pre></div>
+
+<h2>The out-of-process seam — <code>libamber.so</code></h2>
+<div class="code"><pre><code class="lang-sh">./build.sh                 # ./amber          (unchanged; identical binary, zero new cost)
+./build.sh --shared        # ./amber  +  libamber.so
+./build.sh --shared-only   # libamber.so only
+AMBER_SHARED=1 ./build.sh  # same as --shared, for callers that cannot pass a flag</code></pre></div>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">host.c</span></div><pre><code class="lang-py">#include "ext.h"                       /* section 6 -- nothing else from src/ */
+
+amber_init("/path/to/amber");          /* boots the engine, loads the .k stdlib */
+amber_value t = amber_eval_qsql("select vwap:wavg[sz;px] by sym from trades");
+
+int type; long long n; int bits;
+const void *px = amber_get_vector_ptr(amber_table_column(t, 2), &amp;type, &amp;n, &amp;bits);
+/* `px` IS the engine's column payload. Not a copy of it. */</code></pre></div>
+
+<p><strong>~60 entry points, all named <code>amber_*</code>.</strong> Boot and evaluate
+(<code>amber_init</code>, <code>amber_eval_str</code>, <code>amber_eval_qsql</code>,
+<code>amber_call</code>), reference counting (<code>amber_retain</code> / <code>amber_release</code>),
+the zero-copy vector seam (<code>amber_get_vector_ptr</code>), tables and dictionaries, constructors
+for pushing data back in, the Arrow C Data Interface, rendering, and <code>amber_plugin_load</code>
+for dlopening a native plugin into a running engine.</p>
+
+<h2>What the shared build changes — and what it deliberately does not</h2>
+
+<h3>The executable is untouched</h3>
+<p><code>./build.sh</code> with no flags produces byte-for-byte what it produced before, from the same
+objects, with the same flags. The shared library is a <em>separate</em> object set
+(<code>-fPIC -Dshared</code>): position-independent code and the global-dynamic TLS model a
+<code>dlopen</code>'d library needs both change code generation, and sharing objects between the two
+would silently pessimise <code>./amber</code>.</p>
+
+<h3>Only <code>amber_*</code> and <code>am_ext_*</code> are exported</h3>
+<p>Amber's internal C is written in a terse K-derived idiom — the engine's own globals are called
+<code>mr</code>, <code>su</code>, <code>us</code>, <code>err</code>, <code>run</code>, <code>add</code>,
+<code>sub</code>, <code>pk</code>, <code>cpl</code>. Those are perfect inside one static binary and
+actively dangerous inside a library loaded next to NumPy, libarrow and libpython. An export map
+(<code>src/libamber.map</code>) makes everything else genuinely <strong>absent</strong> from the
+dynamic symbol table, so it cannot be bound to by accident and cannot interpose on a host's symbol of
+the same name.</p>
+
+<h3>The library records a <code>SONAME</code></h3>
+<div class="note note-warn">
+  <span class="note-title">Two copies of the library means two engines</span>
+  <p>A satellite that <code>dlopen</code>s a <em>second</em> copy of <code>libamber.so</code> gets a
+  second <strong>engine</strong>: two heaps, two symbol tables, two global namespaces, and values from
+  one that are meaningless to the other — with no error, because nothing is technically wrong. The
+  SONAME is what lets the loader recognise an already-loaded copy and reuse it, so
+  <code>python-amber</code>, <code>libamber_arrow.so</code> and any plugin in one process share one
+  engine.</p>
+  <p><code>amber_arrow.library_path()</code> tells you which one you got.</p>
+</div>
+
+<h3>TLS drops to global-dynamic in the shared build only</h3>
+<p><code>./amber</code> keeps the initial-exec model on the allocator's hot path. A
+<code>dlopen</code>'d library cannot: it is resolved out of the static TLS block the loader sizes
+before <code>main()</code>, and borrowing from glibc's small surplus reserve fails
+<em>nondeterministically</em> — with <code>cannot allocate memory in static TLS block</code> —
+depending on what else the host imported first.</p>
+
+<h2>Apache Arrow C Data Interface</h2>
+<p>The engine exports Arrow directly, in about ninety lines (<code>src/ar.c</code>), with no
+<code>libarrow</code> linkage at all. Export is zero-copy.</p>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">p:arrow.export t                    / table  -&gt; (schemaAddr; arrayAddr)  64-bit C-ABI pointers
+arrow.import p                      / (schemaAddr; arrayAddr) -&gt; Amber table</code></pre></div>
+
+<p>That is exactly the right amount of Arrow for a 10,000-line C runtime to own: it covers "hand me
+this table" completely. What it does not cover is <em>"hand me this 400-million-row table in batches,
+and stop when I stop asking"</em> — the <code>ArrowArrayStream</code> — and that lives out in
+<a href="../ecosystem/amber-arrow.html">amber-arrow</a>, where it can grow.</p>
+
+<h2>Verification</h2>
+<div class="code"><pre><code class="lang-sh">tests/test_capi.sh              # release build, then ASan + UBSan
+tests/run_tests.sh --asan       # the whole suite, the C API included</code></pre></div>
+
+<p><code>tests/test_capi.c</code> is the only consumer of <code>libamber.so</code> inside the engine
+repository, and it is written the way a satellite would write it: it includes <code>src/ext.h</code>
+and nothing else from <code>src/</code>, never dereferences an <code>amber_value</code>, and links the
+shared library rather than the objects. <strong>If it ever needs a second <code>-I</code>, the API is
+wrong.</strong></p>
+
+<div class="note note-ok">
+  <span class="note-title">78 assertions, clean under ASan + UBSan with leak detection</span>
+  <p>Because a C API whose ownership rules are only documented is a C API whose ownership rules are
+  wrong, and LeakSanitizer is what checks the prose.</p>
+</div>
+
+<div class="pager">
+  <a href="../docs/protocol.html"><span class="dir">Previous</span><span class="ttl">Wire protocol</span></a>
+  <a class="next" href="../docs/benchmarks.html"><span class="dir">Next</span><span class="ttl">Benchmarks</span></a>
+</div>
+</article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+        <p class="small muted" style="margin-top:14px">
+          <a class="scratchpad-link" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            Amber Notepad — scratchpad
+          </a>
+        </p>
+      </div>
+      <div>
+        <h5>Documentation</h5>
+        <a href="../docs/index.html">Introduction</a>
+        <a href="../docs/language.html">Language &amp; qSQL</a>
+        <a href="../docs/temporal.html">Temporal mechanics</a>
+        <a href="../docs/protocol.html">Wire protocol</a>
+        <a href="../docs/capi.html">C API</a>
+        <a href="../docs/benchmarks.html">Benchmarks</a>
+      </div>
+      <div>
+        <h5>Ecosystem</h5>
+        <a href="../ecosystem/python-amber.html">python-amber</a>
+        <a href="../ecosystem/amber-arrow.html">amber-arrow</a>
+        <a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
+        <a href="../ecosystem/amber-tick.html">amber-tick</a>
+        <a href="../ecosystem/grafana.html">Grafana datasource</a>
+        <a href="../ecosystem/vscode-amber.html">vscode-amber</a>
+        <a href="../ecosystem/amber-ai.html">amber-ai</a>
+      </div>
+      <div>
+        <h5>Learn</h5>
+        <a href="../tutorials/index.html">Tutorials</a>
+        <a href="../blog/index.html">Blog</a>
+        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+        <a href="https://github.com/BonucciAndrea" target="_blank" rel="noopener">All repositories</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+      <span>Not affiliated with kdb+ / KX Systems.</span>
+    </div>
+  </div>
+</footer>
+<script src="../assets/js/amber.js" defer></script>
+</body>
+</html>

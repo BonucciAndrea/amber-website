@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Amber ecosystem</title>
+<meta name="description" content="Every project that consumes Amber and the seam it reaches the engine through: python-amber, amber-arrow, amber-jupyter, amber-tick, the Grafana datasource, vscode-amber and amber-ai.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="The Amber ecosystem">
+<meta property="og:description" content="Every project that consumes Amber and the seam it reaches the engine through: python-amber, amber-arrow, amber-jupyter, amber-tick, the Grafana datasource, vscode-amber and amber-ai.">
+<meta property="og:site_name" content="Amber">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/amber.css">
+<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v1.9.6</span></a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../docs/">Docs</a><a href="../ecosystem/" class="active">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a>
+      <a href="https://github.com/BonucciAndrea/amber-notepad" rel="noopener" target="_blank" class="np-mobile">Scratchpad</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-btn scratchpad-nav" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener" title="Amber Notepad — browser scratchpad" aria-label="Amber Notepad scratchpad">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </a>
+      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+  </div>
+</header>
+<main id="main">
+<div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
+<div class="grp">Ecosystem</div>
+<a href="../ecosystem/index.html" class="active">Overview</a>
+<div class="grp">Data & interop</div>
+<a href="../ecosystem/python-amber.html">python-amber</a>
+<a href="../ecosystem/amber-arrow.html">amber-arrow</a>
+<a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
+<div class="grp">Market data</div>
+<a href="../ecosystem/amber-tick.html">amber-tick</a>
+<a href="../ecosystem/grafana.html">Grafana datasource</a>
+<div class="grp">Tooling</div>
+<a href="../ecosystem/vscode-amber.html">vscode-amber</a>
+<a href="../ecosystem/amber-ai.html">amber-ai</a>
+</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / Ecosystem</div>
+<h1>Ecosystem</h1>
+<p class="lead">Everything that consumes Amber lives <strong>outside</strong> the engine repository and
+reaches it through one of three seams: <code>libamber.so</code>, the in-process <code>ext/</code>
+registry, or a TCP socket. Nothing below is mentioned anywhere in <code>src/</code>, and none of it is
+compiled, linked or configured by the engine's build.</p>
+
+<div class="diagram">
+<svg viewBox="0 0 960 430" role="img" aria-label="Amber architecture: the C99 engine exposes three seams — libamber.so, the in-process ext/ registry, and the amberd TCP socket — which the satellite projects consume.">
+  <defs>
+    <linearGradient id="ax" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFD98A"/><stop offset=".5" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/>
+    </linearGradient>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--text-faint)"/>
+    </marker>
+  </defs>
+  <style>
+    .bx  { fill: var(--surface-2); stroke: var(--border); stroke-width: 1; }
+    .bxa { fill: var(--accent-glow); stroke: var(--accent); stroke-width: 1; stroke-opacity:.45 }
+    .ttl { fill: var(--text); font: 600 15.5px var(--font-sans); }
+    .sub { fill: var(--text-faint); font: 400 12.5px var(--font-mono); }
+    .seam{ fill: var(--accent); font: 600 13px var(--font-mono); }
+    .ln  { stroke: var(--border-strong); stroke-width: 1.1; fill: none; marker-end: url(#arw); }
+    .core{ fill: var(--text); font: 600 17px var(--font-sans); }
+  </style>
+
+  <!-- engine core -->
+  <rect class="bxa" x="24" y="118" width="248" height="194" rx="14"/>
+  <text class="core" x="48" y="150">Amber engine</text>
+  <text class="sub"  x="48" y="170">portable C99 · gcc + clang</text>
+  <line x1="48" y1="184" x2="248" y2="184" stroke="var(--border)"/>
+  <text class="sub" x="48" y="205">a.c b.c  evaluator + VM</text>
+  <text class="sub" x="48" y="223">simd.c parallel.c  kernels</text>
+  <text class="sub" x="48" y="241">arena.c  16 MB HFT arena</text>
+  <text class="sub" x="48" y="259">ser.c  -8! / -9! binary</text>
+  <text class="sub" x="48" y="277">ar.c  Arrow C Data Interface</text>
+  <text class="sub" x="48" y="295">ext.h  the extension seam</text>
+
+  <!-- seams -->
+  <rect class="bx" x="344" y="60" width="196" height="52" rx="11"/>
+  <text class="seam" x="360" y="84">libamber.so</text>
+  <text class="sub"  x="360" y="101">~60 amber_* entry points</text>
+
+  <rect class="bx" x="344" y="190" width="196" height="52" rx="11"/>
+  <text class="seam" x="360" y="214">ext/ registry</text>
+  <text class="sub"  x="360" y="231">in-process · runtime verbs</text>
+
+  <rect class="bx" x="344" y="320" width="196" height="52" rx="11"/>
+  <text class="seam" x="360" y="344">amberd :5010</text>
+  <text class="sub"  x="360" y="361">TCP · text json jsonc raw</text>
+
+  <path class="ln" d="M272 176 C 310 176 306 86 340 86"/>
+  <path class="ln" d="M272 215 L 340 215"/>
+  <path class="ln" d="M272 254 C 310 254 306 346 340 346"/>
+
+  <!-- consumers -->
+  <rect class="bx" x="616" y="20" width="336" height="40" rx="10"/>
+  <text class="ttl" x="634" y="45">python-amber<tspan class="sub">  — NumPy · pandas · Polars</tspan></text>
+
+  <rect class="bx" x="616" y="70" width="336" height="40" rx="10"/>
+  <text class="ttl" x="634" y="95">amber-arrow<tspan class="sub">  — ArrowArrayStream · Flight</tspan></text>
+
+  <rect class="bx" x="616" y="120" width="336" height="40" rx="10"/>
+  <text class="ttl" x="634" y="145">amber-jupyter<tspan class="sub">  — one process, one heap</tspan></text>
+
+  <rect class="bx" x="616" y="196" width="336" height="40" rx="10"/>
+  <text class="ttl" x="634" y="221">amber-ai<tspan class="sub">  — local co-pilot, loopback only</tspan></text>
+
+  <rect class="bx" x="616" y="290" width="336" height="40" rx="10"/>
+  <text class="ttl" x="634" y="315">grafana-amber<tspan class="sub">  — Go backend, columnar</tspan></text>
+
+  <rect class="bx" x="616" y="340" width="336" height="40" rx="10"/>
+  <text class="ttl" x="634" y="365">vscode-amber<tspan class="sub">  — LSP, \parse only</tspan></text>
+
+  <rect class="bx" x="616" y="390" width="336" height="40" rx="10"/>
+  <text class="ttl" x="634" y="415">amber-tick<tspan class="sub">  — tickerplant · RDB · HDB</tspan></text>
+
+  <path class="ln" d="M540 86 C 578 86 578 40 612 40"/>
+  <path class="ln" d="M540 86 L 612 90"/>
+  <path class="ln" d="M540 86 C 578 86 578 140 612 140"/>
+  <path class="ln" d="M540 216 L 612 216"/>
+  <path class="ln" d="M540 346 C 578 346 578 310 612 310"/>
+  <path class="ln" d="M540 346 L 612 360"/>
+  <path class="ln" d="M540 346 C 578 346 578 410 612 410"/>
+</svg>
+
+</div>
+
+<h2>The satellites</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:22%">Repository</th><th style="width:18%">Seam</th><th>What it is</th></tr></thead>
+  <tbody>
+    <tr><td><a href="../ecosystem/python-amber.html">python-amber</a></td><td><code>libamber.so</code></td>
+        <td><code>pip install amber</code>. Zero-copy NumPy views of Amber columns, pandas and Arrow bridges, dynamic dispatch (<code>am.gentq(10_000_000)</code>).</td></tr>
+    <tr><td><a href="../ecosystem/amber-arrow.html">amber-arrow</a></td><td><code>libamber.so</code></td>
+        <td><code>ArrowArrayStream</code> over an Amber table — batches that are <em>windows</em> onto one export, not slices of it. Plus <code>amberd</code>, the TCP query server, and an Arrow Flight daemon.</td></tr>
+    <tr><td><a href="../ecosystem/amber-jupyter.html">amber-jupyter</a></td><td><code>python-amber</code></td>
+        <td>A Jupyter kernel. Amber cells and <code>%%python</code> cells in <strong>one process</strong>, so a column crosses as a pointer.</td></tr>
+    <tr><td><a href="../ecosystem/amber-tick.html">amber-tick</a></td><td>store + runtime</td>
+        <td>A US-equity market simulator, a partitioned column store the engine reads natively, TAQ analytics, a live tickerplant/RDB/HDB pipeline and provisioned dashboards.</td></tr>
+    <tr><td><a href="../ecosystem/grafana.html">grafana-amber</a></td><td><code>amberd</code> socket</td>
+        <td>Live dashboards. Bare qSQL panels, column-oriented on the wire, with time macros in both epochs.</td></tr>
+    <tr><td><a href="../ecosystem/vscode-amber.html">vscode-amber</a></td><td><code>amberd</code> socket</td>
+        <td>Syntax highlighting, and a standalone LSP daemon with qSQL-aware completion, idiom hovers and diagnostics that never evaluate.</td></tr>
+    <tr><td><a href="../ecosystem/amber-ai.html">amber-ai</a></td><td><code>ext/</code> registry</td>
+        <td>A local, offline co-pilot that reads your live tables before it answers. One endpoint, <code>127.0.0.1</code>, and it cannot hang or break the REPL.</td></tr>
+    <tr><td><a href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener">amber-notepad</a></td><td>WebAssembly</td>
+        <td>The real C interpreter compiled to <code>wasm32</code> with plain clang. A split-pane editor with Result / AST / Bytecode tabs, twelve bundled programs, fully offline.</td></tr>
+    <tr><td><a href="https://github.com/BonucciAndrea/amber-flame" target="_blank" rel="noopener">amber-flame</a></td><td><code>python-amber</code> / <code>amberd</code></td>
+        <td>A visual profiler — flamegraphs, Speedscope and Chrome tracing, built on the engine's own <code>\trace</code>.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note note-ok">
+  <span class="note-title">The engine gained one build flag for all of it</span>
+  <p>One build flag (<code>--shared</code>), one export map (<code>src/libamber.map</code>) and one
+  section of <code>ext.h</code>. Delete every satellite and <code>./build.sh</code> produces
+  byte-for-byte what it produced before.</p>
+</div>
+
+<h2>Picking a seam</h2>
+<div class="grid grid-3" style="margin-top:22px">
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--text)"><code>libamber.so</code></h4>
+    <p class="small">Same process, same heap, same address space. This is the only seam where a query
+    result crosses as a <strong>pointer</strong>. Use it whenever the data is large and the consumer can
+    be in-process.</p>
+    <p class="small mb-0 muted">python-amber · amber-arrow · amber-jupyter</p>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--text)"><code>ext/</code> registry</h4>
+    <p class="small">Compiled into the binary you already had, plugged in from a constructor. Use it
+    when you are extending the <em>language or the REPL</em> — new verbs, new <code>\</code>-commands,
+    editor behaviour.</p>
+    <p class="small mb-0 muted">amber-ai</p>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0;color:var(--text)">TCP socket</h4>
+    <p class="small">A different process, possibly a different machine, definitely a different
+    language. Results are serialised. Use it for dashboards, editors and anything that must survive the
+    engine restarting.</p>
+    <p class="small mb-0 muted">grafana-amber · vscode-amber</p>
+  </div>
+</div>
+
+<h2>Version compatibility</h2>
+<p>Every satellite that links the engine checks <code>amber_abi_version()</code> at load time and
+refuses politely on a mismatch, naming both numbers. The <code>ext/</code>-seam installer additionally
+checks the target's version before it copies a single file, so an install against the wrong engine
+fails before it touches anything.</p>
+
+<div class="pager">
+  <a href="../docs/benchmarks.html"><span class="dir">Previous</span><span class="ttl">Benchmarks</span></a>
+  <a class="next" href="../ecosystem/python-amber.html"><span class="dir">Next</span><span class="ttl">python-amber</span></a>
+</div>
+</article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+        <p class="small muted" style="margin-top:14px">
+          <a class="scratchpad-link" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            Amber Notepad — scratchpad
+          </a>
+        </p>
+      </div>
+      <div>
+        <h5>Documentation</h5>
+        <a href="../docs/index.html">Introduction</a>
+        <a href="../docs/language.html">Language &amp; qSQL</a>
+        <a href="../docs/temporal.html">Temporal mechanics</a>
+        <a href="../docs/protocol.html">Wire protocol</a>
+        <a href="../docs/capi.html">C API</a>
+        <a href="../docs/benchmarks.html">Benchmarks</a>
+      </div>
+      <div>
+        <h5>Ecosystem</h5>
+        <a href="../ecosystem/python-amber.html">python-amber</a>
+        <a href="../ecosystem/amber-arrow.html">amber-arrow</a>
+        <a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
+        <a href="../ecosystem/amber-tick.html">amber-tick</a>
+        <a href="../ecosystem/grafana.html">Grafana datasource</a>
+        <a href="../ecosystem/vscode-amber.html">vscode-amber</a>
+        <a href="../ecosystem/amber-ai.html">amber-ai</a>
+      </div>
+      <div>
+        <h5>Learn</h5>
+        <a href="../tutorials/index.html">Tutorials</a>
+        <a href="../blog/index.html">Blog</a>
+        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+        <a href="https://github.com/BonucciAndrea" target="_blank" rel="noopener">All repositories</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+      <span>Not affiliated with kdb+ / KX Systems.</span>
+    </div>
+  </div>
+</footer>
+<script src="../assets/js/amber.js" defer></script>
+</body>
+</html>
