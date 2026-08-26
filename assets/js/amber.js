@@ -267,7 +267,8 @@
   var SCRIPT = [
     { p: "amber> ", t: "gentq 5000000", d: 26,
       o: ["<span class=\"tok-out\">/ 5,000,000 trades + 10,000,000 quotes generated in 2.38s</span>"] },
-    { p: "amber> ", t: "select vwap:wavg[sz;px] by time:1m xbar time from trades", d: 17,
+    { p: "amber> ", t: "bars: update tb: xbar[600; time] from trades", d: 17,
+      p: "amber> ", t: "select vwap: wavg[sz; px] by tb from bars", d: 17,
       o: [
         "<span class=\"tok-out\">time         vwap    </span>",
         "<span class=\"tok-out\">---------------------</span>",
