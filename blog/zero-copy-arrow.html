@@ -142,7 +142,8 @@ can hand data to each other without either linking the other.</p>
 <p>The engine implements the export in about ninety lines, in <code>src/ar.c</code>, with
 <strong>no <code>libarrow</code> linkage at all</strong>:</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">p:arrow.export t                    / table  -&gt; (schemaAddr; arrayAddr)
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">t:([]sym:`AAPL`MSFT`AAPL; px:187.3 411.2 187.4; sz:100 250 50)
+p:arrow.export t                    / table  -&gt; (schemaAddr; arrayAddr)
 arrow.import p                      / and back</code></pre></div>
 
 <p>The <code>ArrowArray</code>'s data buffer <em>is</em> the Amber column's payload, and the release

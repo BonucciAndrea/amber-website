@@ -235,16 +235,17 @@ def _read(f):
 <p>The engine's own client is a raw-socket text protocol, and an in-process tickerplant sits beside
 it in the same module.</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">h:hopen `::5010                       / connect
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">h:hopen ":5010"                       / connect — the argument is a STRING,
+                                      / "host:port" or ":port"
 hsync[h; "select from trades where sym=`AAPL"]
 hsend[h; "t:1"]                       / fire and forget
 hclose h
 
-/ in-process pub/sub
-u.def[`trades; cols trades]           / declare a table
-u.sub[`trades; `]                     / subscribe (all symbols)
-u.pub[`trades; batch]                 / publish a batch
-u.end[date]                           / end of day</code></pre></div>
+/ in-process pub/sub — runs with no server at all
+u.def[`trade; ([]sym:0#`; px:0#0.0)]  / declare a table by its schema
+u.sub[`trade; {[nm;d]`0:"got ",($#d)," rows\n"}]   / subscribe: a callback
+u.pub[`trade; ([]sym:`a`b; px:10 20.0)]            / publish a batch
+u.end[`trade]                         / end-of-day snapshot: the accumulated table</code></pre></div>
 
 <h2>Streaming: Arrow Flight and <code>ArrowArrayStream</code></h2>
 <p>The line protocol is right for dashboards and editors — small results, human-readable, trivially

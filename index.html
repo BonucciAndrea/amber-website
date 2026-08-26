@@ -190,6 +190,7 @@ t:([]sym:`AAPL`MSFT`AAPL; px:187.3 411.2 187.4; sz:100 250 50)
 select vwap:wavg[sz;px] by sym from t
 
 / 1-minute OHLCV bars — the classic tickerplant query
+gentq 100000                / sets the globals: trades, quotes
 tb:+@[+trades; ,`time; minbar[1]@]
 qby[tb; `sym`time;
     `o`h`l`c`v!({first x`px};{max x`px};{min x`px};{last x`px};{sum x`sz})]

@@ -310,22 +310,22 @@ and whether to substitute the panel's time range.</p>
 
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">Market overview — consolidated notional per minute</span></div><pre><code class="lang-q">select
   notional: sum notional
-by time: $__interval_ms xbar time
+by time: xbar[$__interval_ms;time]
 from mktminute
-where time within ($__fromNs; $__toNs)</code></pre></div>
+where within[time;($__fromNs;$__toNs)]</code></pre></div>
 
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">Symbol microstructure — 1m bars vs VWAP</span></div><pre><code class="lang-q">select
   o, h, l, c, vwap
 by time
 from bars1m
-where sym = `$"$sym", time within ($__fromNs; $__toNs)</code></pre></div>
+where sym = `$"$sym", within[time;($__fromNs;$__toNs)]</code></pre></div>
 
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">Execution quality — effective spread by venue</span></div><pre><code class="lang-q">select
   effbps: 10000 * wavg[notional; eff % mid],
   pibps:  10000 * wavg[notional; pi % mid]
 by venue
 from venueday
-where date within ($__fromNs; $__toNs)</code></pre></div>
+where within[date;($__fromNs;$__toNs)]</code></pre></div>
 
 <div class="note note-info">
   <span class="note-title">Every panel query runs at the prompt too</span>

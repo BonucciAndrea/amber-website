@@ -337,13 +337,14 @@ xbar[w; x]        / plain bucketing of any integer column</code></pre></div>
 
 <p>The classic tickerplant OHLCV query, unchanged from how a q shop would write it:</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">tb: +@[+trade; ,`time; minbar[1]@]
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">gentq 100000                     / sets the globals: trades, quotes
+tb: +@[+trades; ,`time; minbar[1]@]
 qby[tb; `sym`time;
     `open`high`low`close`vol!({first x`px};{max x`px};{min x`px};{last x`px};{sum x`sz})]</code></pre></div>
 
 <p>Or, at the prompt, bare:</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">select vwap:wavg[sz;px] by time:1m xbar time from trades</code></pre></div>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">select vwap:wavg[sz;px] by time:minbar[1;time] from trades</code></pre></div>
 
 <div class="note note-info">
   <span class="note-title">Bucketing does not care about the epoch</span>

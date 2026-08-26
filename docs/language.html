@@ -153,11 +153,12 @@ first <code>CROWS</code> rows (default 20) then <code>..</code> — and the cap 
 <h2>qSQL — select, exec, update, delete</h2>
 <p>At the prompt, type the query. Bare column names like <code>wavg[sz;px]</code> just work.</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">select from trades where px&gt;150
-select sym, px from trades where sym in `AAPL`MSFT
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">gentq 100000                               / sets the globals: trades, quotes
+select from trades where px&gt;150
+select sym, px from trades where in[sym;`AAPL`MSFT]   / brackets: in is a library verb, not infix
 select last px by sym from trades
 select vwap:wavg[sz;px], n:#px by sym from trades where px&gt;0
-select vwap:wavg[sz;px] by time:1m xbar time from trades
+select vwap:wavg[sz;px] by time:minbar[1;time] from trades
 
 exec px from trades where sym=`AAPL        / a plain vector, not a table
 update px:px*1.01 from trades where sym=`AAPL
@@ -166,14 +167,16 @@ delete from trades where sz&lt;100</code></pre></div>
 <p>Inside a <code>.k</code> script the line-level rewrite does not run, so use the string form or the
 functional forms directly:</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">script.k</span></div><pre><code class="lang-q">sel"select vwap:wavg[sz;px] by sym from trades"     / string form; also exq"…" upd"…" del"…"
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">script.k</span></div><pre><code class="lang-q">t:([]sym:`AAPL`MSFT`AAPL; px:187.3 411.2 187.4; sz:100 250 50)
 
-qwhere[t; …]                                        / filter
-qselect[t; …]                                       / project
+sel"select vwap:wavg[sz;px] by sym from t"          / string form; also exq"…" upd"…" del"…"
+
+qwhere[t; t[`px]&gt;200]                               / filter: table + boolean mask
+qselect[t; (,`v)!,{x[`px]*x`sz}]                    / project: name -&gt; function
 qby[t; `sym; (,`vwap)!,{wavg[x`sz;x`px]}]           / group + aggregate
 xgroup[`sym; t]                                     / group into a keyed table of lists
-ungroup t                                           / and flatten it back
-fby[…]                                              / aggregate-by within a where clause</code></pre></div>
+ungroup xgroup[`sym; t]                             / and flatten it back
+qexec[t; t[`px]&gt;100; ,`sym; (,`n)!,{#x`px}]         / where + by + aggregate, in one call</code></pre></div>
 
 <div class="note">
   <span class="note-title">A grouped aggregate, spelled out</span>
@@ -194,7 +197,7 @@ fby[…]                                              / aggregate-by within a wh
     <tr><td><code>pj[t;kt]</code></td><td>plus join — numeric columns are added, not replaced</td></tr>
     <tr><td><code>ej[c;x;y]</code></td><td>equi join on the named columns</td></tr>
     <tr><td><code>aj[c;x;y]</code> · <code>aj0[c;x;y]</code></td><td><strong>as-of</strong> — for each left row, the most recent right row at or before it</td></tr>
-    <tr><td><code>wj[w;c;x;(y;a)]</code></td><td><strong>window</strong> — aggregate right rows inside a window around each left row</td></tr>
+    <tr><td><code>wj[w;c;x;y;a]</code></td><td><strong>window</strong> — aggregate right rows inside a window around each left row</td></tr>
     <tr><td><code>asof[x;y]</code></td><td>the scalar as-of lookup</td></tr>
   </tbody>
 </table>
@@ -228,8 +231,10 @@ m:aj[`sym`time; trades; quotes]     / 5M trades against 10M quotes: ~704 ms</cod
 
 <h3>Window join</h3>
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">/ aggregate quotes inside [-1s, +1s] around every trade
+gentq 100000                / sets the globals: trades, quotes
 w:(-1000000000 1000000000)+\:trades`time
-wj[w; `sym`time; trades; (quotes; (`mbid`mask)!({max x};{min x}))]</code></pre></div>
+/ each aggregate is a triple: (result-name; function; quote column)
+wj[w; `sym`time; trades; quotes; ((`mbid;max;`bid);(`mask;min;`ask))]</code></pre></div>
 <p>See <code>examples/wj.k</code> for a full walkthrough.</p>
 
 <h2>Attributes — the C-level change</h2>

@@ -154,7 +154,8 @@ depending on what else the host imported first.</p>
 <p>The engine exports Arrow directly, in about ninety lines (<code>src/ar.c</code>), with no
 <code>libarrow</code> linkage at all. Export is zero-copy.</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">p:arrow.export t                    / table  -&gt; (schemaAddr; arrayAddr)  64-bit C-ABI pointers
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">t:([]sym:`AAPL`MSFT`AAPL; px:187.3 411.2 187.4; sz:100 250 50)
+p:arrow.export t                    / table  -&gt; (schemaAddr; arrayAddr)  64-bit C-ABI pointers
 arrow.import p                      / (schemaAddr; arrayAddr) -&gt; Amber table</code></pre></div>
 
 <p>That is exactly the right amount of Arrow for a 10,000-line C runtime to own: it covers "hand me

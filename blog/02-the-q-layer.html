@@ -379,7 +379,7 @@ order is a promise the kernel relies on had better be a promise you can <em>see<
 <div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;  meta trades</span></div><pre><code class="l-out">c     | t a
 ------|-----
 sym   | s p
-time  | j s
+time  | i s
 px    | f
 sz    | i</code></pre></div>
 
@@ -400,7 +400,7 @@ of the host grammar, and rather than fight it I documented it and moved on.</p>
     <tr><td><code>pj[t;kt]</code></td><td>plus join: numeric columns are <em>added</em>, not replaced</td></tr>
     <tr><td><code>ej[c;x;y]</code></td><td>equi join on named columns</td></tr>
     <tr><td><code>aj[c;x;y]</code> · <code>aj0</code></td><td><strong>as-of</strong> — the most recent right row at or before each left row</td></tr>
-    <tr><td><code>wj[w;c;t;(q;a)]</code></td><td><strong>window</strong> — aggregate right rows inside a window around each left row</td></tr>
+    <tr><td><code>wj[w;c;t;q;a]</code></td><td><strong>window</strong> — aggregate right rows inside a window around each left row</td></tr>
     <tr><td><code>asof[t;d]</code></td><td>the scalar as-of lookup</td></tr>
   </tbody>
 </table>
@@ -527,8 +527,10 @@ query is the whole language, with no separate grammar to maintain.</p>
 
 <p>Underneath sit three functions that do the actual work, and they are usable directly:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">qwhere[t; mask]                                     / filter
-qselect[t; …]                                       / project
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">t:([]sym:`AAPL`MSFT`AAPL; px:187.3 411.2 187.4; sz:100 250 50)
+
+qwhere[t; t[`px]&gt;200]                               / filter: table + boolean mask
+qselect[t; (,`v)!,{x[`px]*x`sz}]                    / project: name -&gt; function
 qby[t; `sym; (,`vwap)!,{wavg[x`sz;x`px]}]           / group + aggregate</code></pre></div>
 
 <p><code>qby</code> takes a table, one or more grouping columns, and a dictionary from output name to
@@ -546,9 +548,10 @@ reminder that you are talking to a K interpreter wearing a q costume.</p>
 If the line looks like a query, it becomes the matching <code>sel</code>/<code>exq</code>/<code>upd</code>/<code>del</code>
 call. If it does not, it is passed through untouched.</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">select from trades where px&gt;150
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">gentq 100000                     / sets the globals: trades, quotes
+select from trades where px&gt;150
 select vwap:wavg[sz;px], n:#px by sym from trades
-select vwap:wavg[sz;px] by time:1m xbar time from trades
+select vwap:wavg[sz;px] by time:minbar[1;time] from trades
 exec px from trades where sym=`AAPL
 update px:px*1.01 from trades where sym=`AAPL
 delete from trades where sz&lt;100</code></pre></div>

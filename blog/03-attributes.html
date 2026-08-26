@@ -597,13 +597,14 @@ you will slice the same table by the same key many times, and a scan is fine if 
 <p>A promise you cannot inspect is a promise nobody will trust. Attributes are visible from the first
 release, in two places.</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">`at v                            / read the attribute: `s `u `p `g or `
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">v:`sa 2000000?1000000000         / any vector, here stamped `s
+`at v                            / read the attribute: `s `u `p `g or `
 meta trades                      / the `a` column of the metadata table</code></pre></div>
 
 <div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;  meta trades</span></div><pre><code class="l-out">c     | t a
 ------|-----
 sym   | s p
-time  | j s
+time  | i s
 px    | f
 sz    | i</code></pre></div>
 

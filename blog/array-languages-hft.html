@@ -139,7 +139,8 @@ whole-array and there are enough of them to need short names — not the other w
 
 <p>Here is a complete intraday VWAP in Amber:</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">select vwap:wavg[sz;px] by time:1m xbar time from trades</code></pre></div>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">gentq 5000000                                        / sets the globals: trades, quotes
+select vwap:wavg[sz;px] by time:minbar[1;time] from trades</code></pre></div>
 
 <p>Read it right to left as a pipeline: bucket <code>time</code> onto one-minute boundaries, group by the
 bucket, and within each group compute the size-weighted average of price. Every step is a whole-column

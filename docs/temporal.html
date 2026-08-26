@@ -164,12 +164,13 @@ xbar[w; x]        / plain bucketing of any integer column</code></pre></div>
 
 <p>The classic 1-minute OHLCV query, exactly as a q tickerplant would write it:</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">tb: +@[+trade; ,`time; minbar[1]@]        / snap the time column onto 1-minute bars
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">gentq 100000                              / sets the globals: trades, quotes
+tb: +@[+trades; ,`time; minbar[1]@]       / snap the time column onto 1-minute bars
 qby[tb; `sym`time;
     `open`high`low`close`vol!({first x`px};{max x`px};{min x`px};{last x`px};{sum x`sz})]</code></pre></div>
 
 <p>Or, at the prompt, in bare qSQL:</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">select vwap:wavg[sz;px] by time:1m xbar time from trades</code></pre></div>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">select vwap:wavg[sz;px] by time:minbar[1;time] from trades</code></pre></div>
 
 <h2>Why 2000-01-01 at all</h2>
 <p>Three reasons, in descending order of how much they matter.</p>
@@ -214,8 +215,9 @@ us:86400 * ud                      / 1753833600
 / timestamp -&gt; unix nanoseconds
 un:(`i$2026.07.30D09:30:00.000000000) + UNIXNS
 
-/ and back
-`p$ un - UNIXNS</code></pre></div>
+/ and back  (`mkp builds a timestamp from raw ns; `p$ is a kdb spelling Amber
+/ does not have — the constructors are `mkd `mkt `mkp)
+`mkp un - UNIXNS</code></pre></div>
 
 <h3>Amber &harr; pandas / NumPy</h3>
 <div class="note note-info">

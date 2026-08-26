@@ -61,9 +61,10 @@ AMBER_NATIVE=1 ./a           # build machine-tuned, then open the REPL</code></p
 <code>trades</code> and <code>quotes</code>, with realistic microstructure — an efficient price, a
 spread state, and prints that sit inside the standing quote.</p>
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">\ts gentq 5000000</code></pre></div>
-<div class="code"><pre><code class="lang-out">2381 1258291200        / milliseconds, bytes</code></pre></div>
-<p><code>\ts</code> times an expression and reports the space it used. About 2.4 seconds and 1.2 GB
-for five million trades and ten million quotes.</p>
+<div class="code"><pre><code class="lang-out">2381                   / milliseconds</code></pre></div>
+<p><code>\ts</code> is accepted as a spelling of <code>\t</code>, Amber's timer, and reports the
+elapsed milliseconds. About 2.4 seconds for five million trades and ten million quotes; use
+<code>\v</code> if you also want the workspace footprint.</p>
 </div>
 
 <div class="step"><span class="n">2</span>
@@ -73,31 +74,35 @@ count quotes                       / 10000000
 meta trades</code></pre></div>
 <div class="code"><pre><code class="lang-out">c     | t a
 ------|-----
-sym   | s
-time  | j
+sym   | s p
+time  | i s
 px    | f
 sz    | i</code></pre></div>
-<p>The <code>a</code> column is empty — no attributes yet. That is the single most important thing to
-fix, and it is the next step.</p>
+<p>The <code>a</code> column is already populated: <code>gentq</code> hands back a table laid out the
+way the as-of kernel wants it. The next step is what you would have to do yourself for data that
+arrived from anywhere else.</p>
 </div>
 
 <div class="step"><span class="n">3</span>
 <h3>Sort and stamp the attributes</h3>
 <p>The as-of kernel binary-searches each symbol group's <code>time</code> slice. For that to be legal
-the rows must be sorted by <code>(sym, time)</code> and <code>time</code> must carry the
-<code>`s</code> attribute. <code>xasc</code> does both.</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">trades:xasc[`sym`time; trades]
-quotes:xasc[`sym`time; quotes]
+the rows must be sorted by <code>(sym, time)</code>, <code>sym</code> must carry <code>`p</code>
+(parted — equal values are contiguous) and <code>time</code> must carry <code>`s</code> (sorted
+within each group). That is three steps, not one: <code>xasc</code> orders the rows and stamps only
+the leading column, so <code>partcol</code> and <code>sortcol</code> put the attributes on. This is
+exactly what <code>gentq</code> itself does.</p>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">trades:sortcol[`time; partcol[`sym; xasc[`sym`time; trades]]]
+quotes:sortcol[`time; partcol[`sym; xasc[`sym`time; quotes]]]
 meta trades</code></pre></div>
 <div class="code"><pre><code class="lang-out">c     | t a
 ------|-----
 sym   | s p
-time  | j s
+time  | i s
 px    | f
 sz    | i</code></pre></div>
-<p><code>sym</code> picked up <code>`p</code> (parted — equal values are contiguous) and
-<code>time</code> picked up <code>`s</code> (sorted). Together those are what make the join
-<code>O(log n)</code> per row instead of <code>O(n)</code>.</p>
+<p>Together those are what make the join <code>O(log n)</code> per row instead of <code>O(n)</code>.
+<code>xasc</code> on its own is not enough — it leaves <code>sym</code> marked <code>`s</code> and
+<code>time</code> with no attribute at all, and the kernel then falls back to the scan.</p>
 <div class="note note-info">
   <span class="note-title">Want <code>O(1)</code> symbol slicing too?</span>
   <p>Add the grouped attribute and the group index: <code>`ga trades`sym</code>, then
@@ -113,15 +118,16 @@ the whole layout exists to serve.</p>
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">\ts m:aj[`sym`time; trades; quotes]
 count m                            / 5000000
 5#m</code></pre></div>
-<div class="code"><pre><code class="lang-out">704 402653184
+<div class="code"><pre><code class="lang-out">704
 
-sym  time                px      sz  bid     ask
--------------------------------------------------
-AAPL 34200000000000      187.31  100 187.30  187.32
-AAPL 34200004120000      187.31  200 187.30  187.32
-AAPL 34200011870000      187.32   50 187.31  187.33
-AAPL 34200019330000      187.32  300 187.31  187.33
-AAPL 34200026010000      187.31  100 187.30  187.33</code></pre></div>
+sym          time     px  sz    bid    ask bsz asz
+--------------------------------------------------
+AAPL 09:30:00.000 187.31 100 187.30 187.32 300 300
+AAPL 09:30:00.004 187.31 200 187.30 187.32 300 300
+AAPL 09:30:00.011 187.32  50 187.31 187.33 100 200
+AAPL 09:30:00.019 187.32 300 187.31 187.33 100 200
+AAPL 09:30:00.026 187.31 100 187.30 187.33 200 100
+[5 rows x 8 cols]</code></pre></div>
 <p>704 milliseconds for five million binary searches over a ten-million-row quote table. The kernel is
 in <code>src/a.c</code>, marshalled from <code>amber.k</code>, and it runs off a thread-local 16 MB bump
 arena so <code>malloc</code> jitter stays out of the path.</p>
@@ -144,15 +150,15 @@ GOOG |  918884 0.0102    0.722
 <div class="step"><span class="n">6</span>
 <h3>One-minute VWAP and OHLCV bars</h3>
 <p>The headline query, bare at the prompt:</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">\ts select vwap:wavg[sz;px] by time:1m xbar time from trades</code></pre></div>
-<div class="code"><pre><code class="lang-out">151 8388608
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">\ts select vwap:wavg[sz;px] by time:minbar[1;time] from trades</code></pre></div>
+<div class="code"><pre><code class="lang-out">151
 
-time         vwap
----------------------
-09:30:00.000 187.2841
-09:31:00.000 187.3106
-09:32:00.000 187.2955
-09:33:00.000 187.4012
+        time|     vwap
+----------------------
+09:30:00.000| 187.2841
+09:31:00.000| 187.3106
+09:32:00.000| 187.2955
+09:33:00.000| 187.4012
 ..
 [390 rows x 2 cols]</code></pre></div>
 
@@ -208,8 +214,8 @@ splay["/tmp/store/trades"; trades]
 t2:dload "/tmp/store/trades"
 
 / compact binary — byte-exact including attributes, nulls and infinities
-`:/tmp/trades.bin 1: -8!trades
-t3:-9! read1 `:/tmp/trades.bin
+`"/tmp/trades.bin" 1: -8!trades           / x 1: y writes bytes
+t3:-9! 1: `"/tmp/trades.bin"              / 1: x reads them back
 t3~trades                                  / 1b</code></pre></div>
 <p>The binary form is what <a href="../ecosystem/amber-tick.html">amber-tick</a>'s partitioned
 store writes, one file per column, so a query for <code>px</code> and <code>sz</code> reads two files

@@ -237,9 +237,9 @@ is the time axis, a row cap, and whether to substitute the panel's time range.</
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">panel query</span></div><pre><code class="lang-q">select
   t:time,
   notional:sum px*sz
-by time:$__interval_ms xbar time
+by time:xbar[$__interval_ms;time]
 from bars1m
-where time within ($__fromNs; $__toNs)</code></pre></div>
+where within[time;($__fromNs;$__toNs)]</code></pre></div>
 
 <h3>Macros</h3>
 <p>Available when <strong>Apply time range</strong> is enabled. They come in both epochs, named so you

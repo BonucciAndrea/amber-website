@@ -267,14 +267,14 @@
   var SCRIPT = [
     { p: "amber> ", t: "gentq 5000000", d: 26,
       o: ["<span class=\"tok-out\">/ 5,000,000 trades + 10,000,000 quotes generated in 2.38s</span>"] },
-    { p: "amber> ", t: "select vwap:wavg[sz;px] by time:1m xbar time from trades", d: 17,
+    { p: "amber> ", t: "select vwap:wavg[sz;px] by time:minbar[1;time] from trades", d: 17,
       o: [
-        "<span class=\"tok-out\">time         vwap    </span>",
+        "<span class=\"tok-out\">        time|     vwap</span>",
         "<span class=\"tok-out\">---------------------</span>",
-        "09:30:00.000 <span class=\"tok-num\">187.2841</span>",
-        "09:31:00.000 <span class=\"tok-num\">187.3106</span>",
-        "09:32:00.000 <span class=\"tok-num\">187.2955</span>",
-        "09:33:00.000 <span class=\"tok-num\">187.4012</span>",
+        "09:30:00.000| <span class=\"tok-num\">187.2841</span>",
+        "09:31:00.000| <span class=\"tok-num\">187.3106</span>",
+        "09:32:00.000| <span class=\"tok-num\">187.2955</span>",
+        "09:33:00.000| <span class=\"tok-num\">187.4012</span>",
         "<span class=\"tok-out\">..</span>",
         "<span class=\"tok-out\">[390 rows x 2 cols]   151.2 ms</span>"
       ] },
