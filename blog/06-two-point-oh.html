@@ -326,12 +326,13 @@ t lj kt                 / left join    (was: lj[t;kt])
 &quot;/&quot; sv `a`b`c           / join         (was: sv[&quot;/&quot;;`a`b`c])
 1 2 3 except 2          / 1 3          (was: except[1 2 3;2])</code></pre></div>
 
-<p>The infix set is a curated list of Amber's two-argument dyads —
-<code>in within like lj ij uj aj aj0 wj wj1 pj ej cross inter union except ss sv vs xasc xdesc</code> —
-and nothing else. The mechanism is not new: ngn/k has always treated every <em>unicode</em>-named
-identifier as infix. All this release does is extend that same rule to a fixed list of ASCII names,
-so the ergonomics of the join family finally match the ergonomics they already had for the symbolic
-primitives.</p>
+<p>The rule applies to <strong>any two-argument function</strong> — the join and set/search dyads
+(<code>in within like lj ij uj aj aj0 wj wj1 pj ej cross inter union except ss sv vs xasc xdesc</code>)
+and your own functions alike: <code>f:{x+y}; 3 f 4</code> is <code>7</code>. The mechanism is not new:
+ngn/k has always treated every <em>unicode</em>-named identifier as infix. All this release does is
+extend that same rule to ASCII-named dyads, so the ergonomics of the join family finally match the
+ergonomics they already had for the symbolic primitives. The one thing held back is an <em>inline</em>
+lambda literal between two args (see below).</p>
 
 <p>The important word is <strong>additive</strong>. The bracket form still works unchanged —
 <code>f[x;y]</code> and the one-argument <code>f x</code> too — and a name is left an ordinary lvalue
@@ -463,11 +464,12 @@ bug that turns a typo into a mystery. It now raises a clean parse error. Properl
 <code>/ … \</code> blocks and trailing <code>/ …</code> line comments are unchanged; covered by
 <code>tests/test_comments.sh</code>.</p>
 
-<h2>The REPL — bracketed paste and an optional status bar</h2>
+<h2>The REPL — bracketed paste and a status bar</h2>
 
 <p>The native line editor from 1.9.5 (<code>src/ln.c</code>) — the one that
-<a href="05-platform.html">retired rlwrap</a> — got two additions, both opt-in in spirit: the default
-REPL is byte-for-byte unchanged and every terminal test still passes.</p>
+<a href="05-platform.html">retired rlwrap</a> — got two additions: passive bracketed paste, and a
+Claude-Code-style status bar that is now <strong>on by default</strong> (<code>\sb</code> toggles it off).
+Every terminal test still passes.</p>
 
 <h3>Bracketed paste</h3>
 
@@ -483,14 +485,17 @@ execution is what makes comments and qSQL rewriting behave identically to typing
 down on every exit path, so a paste interrupted midway never leaves the terminal in a strange state.
 Driven over a real pty by <code>tests/test_paste.py</code>.</p>
 
-<h3>An optional status bar — <code>\sb</code></h3>
+<h3>The status bar — <code>\sb</code></h3>
 
-<p>Off by default. Type <code>\sb</code> and the editor sets a DECSTBM scroll region and paints a
-Claude-Code-style bar on the bottom row — version, live memory, key hints — that stays put while your
-session scrolls above it. <code>\sb</code> again clears it.</p>
+<p>On by default. The editor sets a DECSTBM scroll region and paints a
+Claude-Code-style bar on the bottom row — version, live memory, execution time, key hints — inside a
+rounded input box that stays locked while your session scrolls above it. The wheel scrolls back up
+through the transcript with the box staying put, and the whole thing runs in the alternate screen so
+quitting leaves the terminal exactly as it was. Type <code>\sb</code> to turn it off; <code>\sb</code>
+again restores it.</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">\sb                             / paint the bottom-row status bar
-\sb                             / clear it; back to the plain prompt</code></pre></div>
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">\sb                             / turn the status bar off; back to the plain prompt
+\sb                             / turn it back on</code></pre></div>
 
 <p>The property that matters here is the same one that made the line editor trustworthy in the first
 place: <code>src/ln.c</code>'s <code>atexit</code> hook resets the scroll region on <strong>every</strong>

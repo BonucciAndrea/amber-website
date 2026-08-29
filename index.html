@@ -176,8 +176,10 @@
         <code>aj</code>, <code>wj</code>, <code>xbar</code>, <code>wavg</code>, <code>meta</code>,
         <code>([]…)</code> table literals and keyed tables all mean what you expect. Bare qSQL works at the
         prompt with no <code>sel"…"</code> wrapper.</p>
-        <p>The notation underneath is terse array grammar. Dyadic library functions take brackets
-        (<code>aj[c;x;y]</code>), there is no <code>&gt;=</code> or <code>&lt;=</code>, and symbols cannot
+        <p>The notation underneath is terse array grammar. Any two-argument function can be applied
+        infix (<code>sz wavg px</code>, <code>2 3 in 2 4 5</code>) or with brackets
+        (<code>wavg[sz;px]</code>); three-argument functions like <code>aj[c;x;y]</code> use brackets.
+        There is no <code>&gt;=</code> or <code>&lt;=</code>, and symbols cannot
         contain <code>_</code> — because <code>_</code> is a verb.</p>
         <div class="row" style="margin-top:20px">
           <a class="btn btn-ghost btn-sm" href="./docs/language.html">Language reference &rarr;</a>

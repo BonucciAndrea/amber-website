@@ -58,10 +58,12 @@ grammar shows through, and they are properties of the host, not bugs.</p>
 <div class="note note-warn">
   <span class="note-title">Five rules that will bite you exactly once each</span>
   <ul style="margin:8px 0 0">
-    <li><strong>Dyadic library functions take brackets, not infix.</strong> Amber does not allow a
-    user-defined function to be applied infix — <code>x f y</code> parses as two nouns. Write
-    <code>lj[t;kt]</code>, <code>in[x;y]</code>, <code>except[a;b]</code>, <code>xasc[`sym;t]</code>.
-    Built-in verbs (<code>+ - * % ! &amp; | &lt; &gt; = ~ , ^ # _ $ ? @ .</code>) <em>are</em> infix as usual.</li>
+    <li><strong>Any two-argument function can be applied infix, right-to-left.</strong> Built-in verbs,
+    library dyads and your own functions alike: <code>f:{x+y}; 3 f 4</code> is <code>7</code>,
+    <code>2 3 in 2 4 5</code> works, and <code>`sym xasc t</code> sorts. The one exception is an
+    <em>inline</em> lambda literal between two args — <code>x {x+y} y</code> does not go infix, so assign
+    it first (<code>f:{x+y}; x f y</code>). Bracket form always works too:
+    <code>lj[t;kt]</code>, <code>in[x;y]</code>, <code>except[a;b]</code>, <code>xasc[`sym;t]</code>.</li>
     <li><strong>No <code>&gt;=</code> or <code>&lt;=</code>.</strong> Write <code>~a&lt;b</code> for
     <code>a&gt;=b</code> and <code>~a&gt;b</code> for <code>a&lt;=b</code>.</li>
     <li><strong>Symbols cannot contain <code>_</code>.</strong> <code>`a_b</code> is a parse error
@@ -155,7 +157,7 @@ first <code>CROWS</code> rows (default 20) then <code>..</code> — and the cap 
 
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">gentq 100000                               / sets the globals: trades, quotes
 select from trades where px&gt;150
-select sym, px from trades where in[sym;`AAPL`MSFT]   / brackets: in is a library verb, not infix
+select sym, px from trades where in[sym;`AAPL`MSFT]   / brackets (infix sym in `AAPL`MSFT works too)
 select last px by sym from trades
 select vwap:wavg[sz;px], n:#px by sym from trades where px&gt;0
 select vwap:wavg[sz;px] by time:minbar[1;time] from trades
@@ -213,11 +215,13 @@ binary search over each symbol group's sorted nanosecond timestamp slice. The pu
 quote:([]sym:`a`a`b`a; time:1 5 2 8; bid:10 11 20 12)
 
 aj[`sym`time; trade; quote]
-/  sym time px  bid
-/  ------------------
-/  a   3    100 10
-/  b   4    200 20
-/  a   9    300 12
+/  ╭─────┬──────────────┬─────┬─────╮   (a `time` column prints as a time-of-day)
+/  │ sym │         time │  px │ bid │
+/  ├─────┼──────────────┼─────┼─────┤
+/  │ a   │ 00:00:00.003 │ 100 │  10 │
+/  │ b   │ 00:00:00.004 │ 200 │  20 │
+/  │ a   │ 00:00:00.009 │ 300 │  12 │
+/  ╰─────┴──────────────┴─────┴─────╯
 
 m:aj[`sym`time; trades; quotes]     / 5M trades against 10M quotes: ~704 ms</code></pre></div>
 

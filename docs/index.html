@@ -133,11 +133,14 @@ small footprint and layers on:</p>
 <h2>A two-minute taste</h2>
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">/ tables are first-class and render without `show` at the interactive prompt
 ([]sym:`a`b`c; px:100 200 300)
-/  sym px
-/  -------
-/  a   100
-/  b   200
-/  c   300
+/  ╭─────┬─────╮       tables render as a rounded box by default
+/  │ sym │  px │       (\grid clean|rounded|sharp|heavy switches the style)
+/  ├─────┼─────┤
+/  │ a   │ 100 │
+/  │ b   │ 200 │
+/  │ c   │ 300 │
+/  ╰─────┴─────╯
+/  [3 rows x 2 cols]
 
 meta ([]sym:`a`b; px:1.5 2.5)      / column types + attributes (c | t a)
 
