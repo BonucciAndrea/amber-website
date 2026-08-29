@@ -27,9 +27,25 @@
     var burger = document.getElementById("nav-toggle");
     var links = document.getElementById("nav-links");
     if (burger && links) {
-      burger.addEventListener("click", function () {
-        var open = links.classList.toggle("open");
+      var setOpen = function (open) {
+        links.classList.toggle("open", open);
         burger.setAttribute("aria-expanded", open ? "true" : "false");
+      };
+      burger.addEventListener("click", function (e) {
+        e.stopPropagation();
+        setOpen(!links.classList.contains("open"));
+      });
+      /* Dismiss the menu on any interaction, so it can never sit on top of the
+         page while you scroll or after you pick a destination. */
+      links.addEventListener("click", function (e) { if (e.target.closest("a")) setOpen(false); });
+      window.addEventListener("scroll", function () {
+        if (links.classList.contains("open")) setOpen(false);
+      }, { passive: true });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && links.classList.contains("open")) setOpen(false);
+      });
+      document.addEventListener("click", function (e) {
+        if (links.classList.contains("open") && !links.contains(e.target) && e.target !== burger) setOpen(false);
       });
     }
   }

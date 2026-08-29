@@ -265,6 +265,11 @@ html[data-theme="light"] #theme-toggle .moon { display: none; }
     backdrop-filter: blur(18px);
     border-bottom: 1px solid var(--border);
     padding: 12px 18px 18px; margin: 0;
+    /* never taller than the viewport below the bar, and scroll its own overflow
+       so a long menu can't blanket the whole page; a shadow lifts it off the
+       content it drops over. */
+    max-height: calc(100dvh - var(--nav-h)); overflow-y: auto;
+    box-shadow: 0 18px 40px color-mix(in srgb, var(--bg) 40%, #000);
   }
   .nav-links.open a { padding: 10px 12px; }
   .nav-links.open a.active::after { display: none; }

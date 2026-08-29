@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Benchmarks — Amber vs kdb+/q, C, DuckDB, CBQN, NumPy and more</title>
-<meta name="description" content="A direct like-for-like run against real kdb+/q — Amber beats kdb on sort and reductions and closes the group-by gap 19x in 2.0.0 — plus ten engines on four workloads with a bit-exact correctness gate against a C reference.">
+<meta name="description" content="A direct like-for-like run against real kdb+/q — Amber beats kdb on sort and reductions and closes the group-by gap 17x in 2.0.0 — plus ten engines on four workloads with a bit-exact correctness gate against a C reference.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Benchmarks — Amber vs kdb+/q, C, DuckDB, CBQN, NumPy and more">
-<meta property="og:description" content="A direct like-for-like run against real kdb+/q — Amber beats kdb on sort and reductions and closes the group-by gap 19x in 2.0.0 — plus ten engines on four workloads with a bit-exact correctness gate against a C reference.">
+<meta property="og:description" content="A direct like-for-like run against real kdb+/q — Amber beats kdb on sort and reductions and closes the group-by gap 17x in 2.0.0 — plus ten engines on four workloads with a bit-exact correctness gate against a C reference.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -79,7 +79,7 @@ symbol</em>, the query an actual tick desk writes.</p>
   interned 4-byte id instead — equal symbols have equal ids, so the partition and the
   first-appearance key order are byte-for-byte identical, just found without the string sort.
   <code>select … by sym</code> went from <strong>587&nbsp;ms to 34&nbsp;ms</strong>, and the whole
-  group-by row below moved <strong>~19&times;</strong>.</p>
+  group-by row below moved <strong>~17&times;</strong>.</p>
 </div>
 
 <h3>The fix, in one picture (1M rows, group by symbol)</h3>
