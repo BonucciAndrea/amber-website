@@ -82,21 +82,21 @@ symbol</em>, the query an actual tick desk writes.</p>
   group-by row below moved <strong>~19&times;</strong>.</p>
 </div>
 
-<h3>The fix, in one picture (1M rows, group-by-sum by symbol)</h3>
+<h3>The fix, in one picture (1M rows, group by symbol)</h3>
 <figure class="fig">
-<svg viewBox="0 0 720 176" role="img" aria-label="Group-by-sum by symbol at 1M rows: Amber before 2.0.0 was 692 ms, Amber 2.0.0 is 32 ms, kdb+/q is 3.2 ms." font-family="var(--font-mono)">
+<svg viewBox="0 0 720 176" role="img" aria-label="Group by symbol at 1M rows: Amber before 2.0.0 was 587 ms, Amber 2.0.0 is 34 ms, kdb+/q is 3.2 ms." font-family="var(--font-mono)">
   <g font-size="13" fill="var(--text)">
     <text x="170" y="40" text-anchor="end">Amber &lt; 2.0.0</text>
     <text x="170" y="88" text-anchor="end">Amber 2.0.0</text>
     <text x="170" y="136" text-anchor="end">kdb+/q</text>
   </g>
   <!-- linear scale 0..700 ms over 520px (x 180..700): 0.743 px/ms -->
-  <rect x="180" y="26" width="514" height="22" rx="4" fill="var(--red)" opacity="0.9"/>
-  <rect x="180" y="74" width="24"  height="22" rx="4" fill="var(--green)"/>
+  <rect x="180" y="26" width="436" height="22" rx="4" fill="var(--red)" opacity="0.9"/>
+  <rect x="180" y="74" width="25"  height="22" rx="4" fill="var(--green)"/>
   <rect x="180" y="122" width="3" height="22" rx="1.5" fill="var(--accent)"/>
   <g font-size="12.5" font-weight="600">
-    <text x="700" y="41"  text-anchor="end" fill="#fff">692 ms</text>
-    <text x="212" y="89"  fill="var(--green)">32 ms &nbsp;(19&times; faster)</text>
+    <text x="622" y="41"  fill="var(--text)">587 ms</text>
+    <text x="213" y="89"  fill="var(--green)">34 ms &nbsp;(17&times; faster)</text>
     <text x="192" y="137" fill="var(--accent)">3.2 ms</text>
   </g>
 </svg>
@@ -302,14 +302,17 @@ not. Results are identical; only the time differs.</p>
   <tbody>
     <tr><td><strong>1.9.1</strong></td><td>the <code>select … by … from</code> layer groups and probes on <strong>raw column vectors</strong> instead of boxing one K object per row</td><td class="num">group-by <span class="best">24.7&times;</span><br>inner join <span class="best">19.3&times;</span></td></tr>
     <tr><td><strong>1.9.2</strong></td><td>integer <code>?</code> (find) builds an index over its left argument instead of scanning it per probe</td><td class="num">180.95 ms &rarr; 5.66 ms<br><span class="best">32&times;</span></td></tr>
-    <tr><td><strong>1.9.2</strong></td><td>float <code>+/</code> uses four independent accumulators so it vectorises; array payloads are cache-line aligned</td><td class="num">—</td></tr>
-    <tr><td><strong>1.9.3</strong></td><td><code>peach</code> ships worker results over the <code>-8!</code> binary wire instead of formatting and reparsing text</td><td class="num">—</td></tr>
-    <tr><td><strong>1.9.5</strong></td><td>sliding windows + radix sort</td><td class="num">—</td></tr>
+    <tr><td><strong>1.9.2</strong></td><td>float <code>+/</code> uses four independent accumulators so it vectorises; array payloads are cache-line aligned</td><td class="num">8.9 ms &rarr; 6.3 ms<br>1.41&times;</td></tr>
+    <tr><td><strong>1.9.3</strong></td><td><code>peach</code> ships worker results over the <code>-8!</code> binary wire instead of formatting and reparsing text</td><td class="num">500k @ 4 threads<br>~23 ms</td></tr>
+    <tr><td><strong>1.9.5</strong></td><td>single-pass O(<em>N</em>) sliding windows + a key-carrying LSD radix sort</td><td class="num">moving windows <span class="best">up to 273.9&times;</span><br>multi-col sort <span class="best">29.6&times;</span> · as-of join <span class="best">16.0&times;</span></td></tr>
+    <tr><td><strong>2.0.0</strong></td><td>table group-by keys on the interned 4-byte <strong>symbol id</strong> instead of a per-character string sort</td><td class="num">587 ms &rarr; 34 ms<br><span class="best">17&times;</span></td></tr>
   </tbody>
 </table>
 </div>
 <p class="small muted">After 1.9.1 both group-by and inner join sit within ~1.1–1.5&times; of
-hand-written Amber array code.</p>
+hand-written Amber array code. Each figure shares one machine and one dataset within its row;
+rows are not comparable across machines. Full before/after tables live in
+<a href="https://github.com/BonucciAndrea/amber/blob/main/docs/BENCHMARKS.md">docs/BENCHMARKS.md</a>.</p>
 
 <h2>A real HFT run</h2>
 <p><code>demo/hft_demo.k</code>, on 500,000 trades and a million quotes. Row counts and timings vary by
