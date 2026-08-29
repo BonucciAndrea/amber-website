@@ -5,48 +5,305 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Navigating temporal offsets: why Amber counts days and nanoseconds from 2000-01-01</title>
 <meta name="description" content="A thirty-year offset is the most boring kind of bug and the hardest to see. Where the epoch choice comes from, what it buys, and how to make the conversion impossible to forget silently.">
+<meta name="author" content="Andrea Bonucci">
 <meta name="color-scheme" content="dark light">
-<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
-<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0F'/%3E%3Cpath d='M16 5 26.6 23.4a1.1 1.1 0 0 1-1 1.7h-3.9L16 14.9l-5.7 10.2H6.4a1.1 1.1 0 0 1-1-1.7L16 5Z' fill='%23FFB020'/%3E%3C/svg%3E">
+<meta property="og:type" content="article">
 <meta property="og:title" content="Navigating temporal offsets: why Amber counts days and nanoseconds from 2000-01-01">
 <meta property="og:description" content="A thirty-year offset is the most boring kind of bug and the hardest to see. Where the epoch choice comes from, what it buys, and how to make the conversion impossible to forget silently.">
-<meta property="og:site_name" content="Amber">
+<meta property="article:published_time" content="2026-07-29">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/css/amber.css">
-<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   Amber — standalone essay. Everything inline; no assets, no build step.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root{
+  --bg:#08080b; --bg2:#0c0c11;
+  --surface:rgba(255,255,255,.028); --surface2:rgba(255,255,255,.058);
+  --border:rgba(255,255,255,.085); --border2:rgba(255,255,255,.17);
+  --text:#eceef3; --dim:#a4a6b2; --faint:#71737f;
+  --amber:#ffb020; --amber2:#ffcb6b; --amber3:#ff7a18;
+  --hue:#7aa2f7; --hue2:#a78bfa;
+  --glow:color-mix(in srgb, var(--hue) 15%, transparent);
+  --code-bg:#0a0a10; --code-br:rgba(255,255,255,.07);
+  --green:#5ddba0; --red:#ff6b6b; --blue:#6aa6ff; --violet:#a78bfa; --cyan:#56d4dd;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --measure:44rem;
+}
+html[data-theme="light"]{
+  --bg:#fcfbf9; --bg2:#f5f3ef;
+  --surface:rgba(20,18,26,.028); --surface2:rgba(20,18,26,.055);
+  --border:rgba(20,18,26,.11); --border2:rgba(20,18,26,.22);
+  --text:#15151b; --dim:#54555f; --faint:#83848e;
+  --amber:#b06400; --amber2:#8a5100; --amber3:#c9590a;
+  --glow:color-mix(in srgb, var(--hue) 13%, transparent);
+  --green:#12734a; --red:#bf3232; --blue:#2159bd;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:90px;-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--sans);font-size:17px;line-height:1.72;letter-spacing:-.004em;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(900px 560px at 82% -6%, color-mix(in srgb,var(--hue) 16%,transparent), transparent 64%),
+    radial-gradient(720px 460px at 4% 2%, color-mix(in srgb,var(--hue2) 12%,transparent), transparent 62%),
+    linear-gradient(180deg,var(--bg2),var(--bg) 44%);
+}
+main,header,footer,.topbar{position:relative;z-index:1}
+
+/* ── reading progress ─────────────────────────────────────────────────── */
+#progress{position:fixed;top:0;left:0;height:2px;width:0;z-index:90;
+  background:linear-gradient(90deg,var(--hue),var(--hue2));
+  box-shadow:0 0 12px color-mix(in srgb,var(--hue) 60%,transparent);transition:width .08s linear}
+
+/* ── top bar ──────────────────────────────────────────────────────────── */
+.topbar{position:sticky;top:0;z-index:60;height:58px;display:flex;align-items:center;
+  backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);
+  background:color-mix(in srgb,var(--bg) 74%,transparent);
+  border-bottom:1px solid transparent;transition:border-color .2s var(--ease)}
+.topbar.scrolled{border-bottom-color:var(--border)}
+.topbar-in{width:100%;max-width:76rem;margin:0 auto;padding:0 24px;display:flex;align-items:center;gap:12px}
+.mark{display:flex;align-items:center;gap:9px;color:var(--text);text-decoration:none;font-weight:600;letter-spacing:-.02em}
+.mark svg{width:21px;height:21px}
+.mark .sub{color:var(--faint);font-weight:450;font-size:.86rem;border-left:1px solid var(--border);padding-left:11px;margin-left:2px}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:7px}
+.ibtn{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);
+  color:var(--dim);display:grid;place-items:center;cursor:pointer;padding:0;transition:all .16s var(--ease)}
+.ibtn:hover{color:var(--text);border-color:var(--border2);background:var(--surface2)}
+.ibtn svg{width:16px;height:16px}
+#themeBtn .sun{display:none}
+html[data-theme="light"] #themeBtn .sun{display:block}
+html[data-theme="light"] #themeBtn .moon{display:none}
+
+/* ── layout ───────────────────────────────────────────────────────────── */
+.wrap{width:100%;max-width:76rem;margin:0 auto;padding:0 24px}
+.col{max-width:var(--measure);margin:0 auto}
+
+/* ── hero ─────────────────────────────────────────────────────────────── */
+.hero{padding:76px 0 42px;position:relative}
+.hero .col{position:relative}
+.series{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:.72rem;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--hue);margin-bottom:26px}
+.series .bar{width:26px;height:1px;background:linear-gradient(90deg,var(--hue),transparent)}
+.postno{
+  font-family:var(--mono);font-size:clamp(3.6rem, 2rem + 6vw, 6.2rem);font-weight:600;line-height:.82;
+  letter-spacing:-.05em;margin:0 0 6px;
+  background:linear-gradient(150deg,var(--hue) 6%,var(--hue2) 92%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  opacity:.92;
+}
+h1{font-size:clamp(2rem, 1.2rem + 2.7vw, 3.05rem);font-weight:600;letter-spacing:-.032em;line-height:1.1;margin:.15em 0 .5em}
+.dek{font-family:var(--serif);font-size:clamp(1.12rem, 1rem + .5vw, 1.34rem);line-height:1.62;color:var(--dim);
+  font-style:italic;margin:0 0 30px;max-width:38ch}
+.meta{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-family:var(--mono);font-size:.76rem;color:var(--faint);
+  padding-top:22px;border-top:1px solid var(--border)}
+.meta .sep{opacity:.4}
+.tag{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;
+  border:1px solid color-mix(in srgb,var(--hue) 30%,transparent);
+  background:color-mix(in srgb,var(--hue) 12%,transparent);color:var(--hue);font-size:.72rem}
+
+/* ── prose ────────────────────────────────────────────────────────────── */
+article{padding:26px 0 30px}
+article p{margin:0 0 1.24em;color:var(--dim)}
+article > .col > p:first-of-type::first-letter{
+  float:left;font-family:var(--serif);font-size:3.55em;line-height:.84;font-weight:500;
+  padding:.06em .1em 0 0;color:var(--text);
+}
+article strong{color:var(--text);font-weight:600}
+article em{color:var(--dim)}
+h2{font-size:clamp(1.44rem, 1.15rem + .9vw, 1.82rem);font-weight:600;letter-spacing:-.026em;line-height:1.24;
+  margin:2.5em 0 .7em;color:var(--text);scroll-margin-top:88px;position:relative}
+h2::before{content:"";position:absolute;left:-22px;top:.52em;width:9px;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,var(--hue),transparent);opacity:0}
+@media (min-width:1100px){h2:hover::before{opacity:1}}
+h3{font-size:1.1rem;font-weight:600;letter-spacing:-.018em;margin:2em 0 .55em;color:var(--text);scroll-margin-top:88px}
+h4{font-size:.95rem;font-weight:600;margin:1.5em 0 .4em;color:var(--text)}
+a{color:var(--hue);text-decoration:none;transition:color .16s}
+article a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;
+  text-decoration-color:color-mix(in srgb,var(--hue) 34%,transparent)}
+article a:hover{color:var(--hue2);text-decoration-color:currentColor}
+ul,ol{margin:0 0 1.3em;padding-left:1.3em;color:var(--dim)}
+li{margin:.44em 0}
+li::marker{color:var(--faint)}
+hr{border:0;height:1px;background:linear-gradient(90deg,transparent,var(--border) 18%,var(--border) 82%,transparent);margin:3.2rem 0}
+
+:not(pre)>code{font-family:var(--mono);font-size:.845em;padding:.14em .38em;border-radius:5px;
+  background:var(--surface2);border:1px solid var(--border);color:var(--amber2);white-space:nowrap}
+kbd{font-family:var(--mono);font-size:.78em;border:1px solid var(--border2);border-bottom-width:2px;
+  border-radius:5px;padding:.1em .42em;background:var(--surface2);color:var(--text)}
+
+/* ── pull quote ───────────────────────────────────────────────────────── */
+blockquote{margin:2.1em 0;padding:0 0 0 26px;border-left:2px solid var(--hue);
+  font-family:var(--serif);font-size:1.22rem;line-height:1.58;color:var(--text)}
+blockquote p{color:inherit;margin-bottom:.5em}
+blockquote p:last-child{margin-bottom:0}
+blockquote cite{display:block;font-family:var(--mono);font-size:.74rem;font-style:normal;color:var(--faint);margin-top:10px}
+
+/* ── code ─────────────────────────────────────────────────────────────── */
+.code{position:relative;background:var(--code-bg);border:1px solid var(--code-br);border-radius:13px;
+  margin:1.7em 0;box-shadow:0 22px 54px -24px rgba(0,0,0,.8);overflow:hidden}
+.code-head{display:flex;align-items:center;gap:9px;padding:9px 14px;border-bottom:1px solid var(--code-br);
+  background:rgba(255,255,255,.02);min-width:0;overflow:hidden}
+.code-head .d{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.13);flex:none}
+.code-head .nm{font-family:var(--mono);font-size:.72rem;color:#8a8b96;margin-left:5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.code pre{margin:0;padding:16px 18px;overflow-x:auto;font-family:var(--mono);
+  font-size:.805rem;line-height:1.74;color:#d5d8e0;tab-size:2}
+.code pre code{background:none;border:0;padding:0;color:inherit;white-space:pre;font-family:inherit}
+.copy{position:absolute;top:8px;right:9px;z-index:2;display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--sans);font-size:.71rem;font-weight:500;padding:5px 9px;border-radius:7px;
+  border:1px solid rgba(255,255,255,.12);background:rgba(16,16,22,.9);color:#9a9ba6;cursor:pointer;
+  opacity:0;transition:opacity .18s var(--ease),color .16s;backdrop-filter:blur(6px)}
+.code:hover .copy,.copy:focus-visible{opacity:1}
+.copy:hover{color:#eceef3;border-color:rgba(255,255,255,.24)}
+.copy.ok{color:var(--green);border-color:color-mix(in srgb,var(--green) 42%,transparent)}
+.copy svg{width:12px;height:12px}
+.t-c{color:#5f6270;font-style:italic}.t-s{color:#ffb98a}.t-n{color:#9ee493}.t-y{color:#f0d074}
+.t-k{color:#7cb7ff}.t-f{color:#6fdbe3}.t-o{color:#d4a2ff}.t-d{color:#75788a}
+
+/* ── callouts ─────────────────────────────────────────────────────────── */
+.note{border:1px solid var(--border);border-left:3px solid var(--hue);background:var(--surface);
+  border-radius:0 11px 11px 0;padding:15px 19px;margin:1.8em 0;font-size:.95rem}
+.note p:last-child{margin-bottom:0}
+.note b{display:block;font-size:.72rem;letter-spacing:.11em;text-transform:uppercase;color:var(--hue);margin-bottom:5px}
+.note.warn{border-left-color:var(--red)}.note.warn b{color:var(--red)}
+.note.ok{border-left-color:var(--green)}.note.ok b{color:var(--green)}
+.note.info{border-left-color:var(--blue)}.note.info b{color:var(--blue)}
+
+/* ── figures & tables ─────────────────────────────────────────────────── */
+figure{margin:2.3em 0}
+figure.wide{width:min(50rem,92vw);max-width:none;margin-left:50%;transform:translateX(-50%)}
+@media (max-width:900px){figure.wide{width:auto;max-width:100%;margin-left:0;transform:none}}
+.frame{border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:26px 22px;overflow-x:auto}
+.frame svg{display:block;width:100%;height:auto}
+figcaption{font-size:.8rem;color:var(--faint);text-align:center;margin-top:12px;line-height:1.55}
+.tbl{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--surface);margin:1.8em 0}
+table{border-collapse:collapse;width:100%;font-size:.87rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-weight:600;font-size:.71rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text);
+  background:var(--surface2);white-space:nowrap}
+td{color:var(--dim)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--surface)}
+.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.hi{color:var(--hue);font-weight:600}
+
+/* ── stat strip ───────────────────────────────────────────────────────── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:2px;margin:2.1em 0;
+  border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--border)}
+.stats>div{background:var(--bg);padding:18px 18px 16px}
+.stats .v{font-family:var(--mono);font-size:1.5rem;font-weight:600;letter-spacing:-.03em;color:var(--text)}
+.stats .l{font-size:.76rem;color:var(--faint);margin-top:3px;line-height:1.4}
+
+/* ── inline TOC ───────────────────────────────────────────────────────── */
+.toc{position:fixed;top:50%;transform:translateY(-50%);right:max(22px,calc(50vw - 40rem));
+  width:14rem;font-size:.78rem;z-index:40;display:none}
+@media (min-width:1360px){.toc{display:block}
+  body.post main .wrap,body.post footer .wrap{padding-right:16rem}}
+.toc .h{font-family:var(--mono);font-size:.66rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--faint);margin-bottom:11px}
+.toc a{display:block;padding:4px 0 4px 13px;color:var(--faint);border-left:1px solid var(--border);
+  line-height:1.4;transition:color .16s,border-color .16s}
+.toc a:hover{color:var(--dim)}
+.toc a.on{color:var(--hue);border-left-color:var(--hue)}
+
+/* ── series nav ───────────────────────────────────────────────────────── */
+.endnote{margin-top:52px;padding-top:26px;border-top:1px solid var(--border);font-size:.9rem;color:var(--faint)}
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:34px}
+@media (max-width:640px){.pager{grid-template-columns:1fr}}
+.pager a{display:block;padding:17px 19px;border:1px solid var(--border);border-radius:13px;background:var(--surface);
+  transition:all .2s var(--ease);text-decoration:none}
+.pager a:hover{border-color:var(--border2);transform:translateY(-2px);background:var(--surface2)}
+.pager .d{display:block;font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--faint);margin-bottom:5px}
+.pager .t{color:var(--text);font-weight:550;font-size:.95rem;line-height:1.4}
+.pager .nx{text-align:right}
+.pager .ph{border-style:dashed;opacity:.45;pointer-events:none}
+
+footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
+  background:color-mix(in srgb,var(--bg) 55%,transparent)}
+.foot{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:.83rem;color:var(--faint)}
+.foot a{color:var(--faint)}.foot a:hover{color:var(--hue)}
+
+/* ── index page ───────────────────────────────────────────────────────── */
+.idx-hero{padding:96px 0 20px}
+.idx-list{padding-bottom:20px}
+.idx{display:grid;grid-template-columns:auto 1fr;gap:0 26px;padding:28px 0;border-bottom:1px solid var(--border);
+  text-decoration:none;transition:all .2s var(--ease)}
+.idx:hover{border-bottom-color:var(--border2)}
+.idx .no{font-family:var(--mono);font-size:1.5rem;font-weight:600;letter-spacing:-.03em;line-height:1.1;
+  background:linear-gradient(150deg,var(--i1),var(--i2));-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;padding-top:2px}
+.idx h3{margin:0 0 7px;font-size:1.2rem;transition:color .16s}
+.idx:hover h3{color:var(--i1)}
+.idx p{margin:0 0 10px;font-size:.93rem;color:var(--dim)}
+.idx .m{font-family:var(--mono);font-size:.72rem;color:var(--faint);display:flex;gap:10px;flex-wrap:wrap}
+@media (max-width:560px){.idx{grid-template-columns:1fr;gap:10px}}
+
+:focus-visible{outline:2px solid var(--hue);outline-offset:3px;border-radius:4px}
+::selection{background:color-mix(in srgb,var(--hue) 34%,transparent);color:var(--text)}
+.skip{position:absolute;left:-9999px;top:0;background:var(--hue);color:#0b0b0f;padding:10px 16px;
+  border-radius:0 0 8px 0;font-weight:600;z-index:100}
+.skip:focus{left:0}
+@media (max-width:640px){
+  body{font-size:16px}
+  .hero{padding:52px 0 32px}
+  article > .col > p:first-of-type::first-letter{font-size:3.1em}
+  .wrap{padding:0 18px}
+  :not(pre)>code{white-space:normal;overflow-wrap:anywhere}
+}
+</style>
+<script>document.documentElement.className+=" js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
 </head>
-<body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="nav">
-  <div class="nav-inner">
-    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v1.9.6</span></a>
-    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../docs/">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/" class="active">Blog</a>
-      <a href="https://github.com/BonucciAndrea/amber-notepad" rel="noopener" target="_blank" class="np-mobile">Scratchpad</a>
-    </nav>
-    <div class="nav-right">
-      <a class="icon-btn scratchpad-nav" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener" title="Amber Notepad — browser scratchpad" aria-label="Amber Notepad scratchpad">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+<body class="post">
+<a class="skip" href="#main">Skip to content</a>
+<div id="progress"></div>
+
+<div class="topbar" id="topbar">
+  <div class="topbar-in">
+    <a class="mark" href="index.html">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="mg" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#mg)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#mg)" opacity=".62"/></svg>
+      <span>Amber</span><span class="sub">Essay</span>
+    </a>
+    <div class="tb-right">
+      <a class="ibtn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" aria-label="Repository">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg>
       </a>
-      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
-      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
-      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <button class="ibtn" id="themeBtn" type="button" aria-label="Toggle theme">
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
     </div>
   </div>
-</header>
+</div>
+
+<nav class="toc" id="toc" aria-label="On this page"><div class="h">Contents</div><div id="tocList"></div></nav>
+
 <main id="main">
-<div class="wrap wrap-narrow">
-  <div class="post-hero">
-    <div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../blog/index.html">Blog</a> / Temporal offsets</div>
-    <h1>Navigating temporal offsets: why Amber counts days and nanoseconds from 2000-01-01</h1>
-    <p class="lead">The most boring kind of bug, and the hardest to see.</p>
-    <div class="post-meta" style="margin-top:18px"><span>2026-07-29</span><span>·</span><span>13 min read</span><span>·</span><span class="pill">temporal</span></div>
+<header class="hero"><div class="wrap"><div class="col">
+  <div class="series"><span class="bar"></span>On temporal epochs</div>
+  <h1>Navigating temporal offsets: why Amber counts days and nanoseconds from 2000-01-01</h1>
+  <p class="dek">A thirty-year offset is the most boring kind of bug and the hardest to see. Where the epoch choice comes from, what it buys, and how every integration in the ecosystem is built so the conversion is impossible to forget silently.</p>
+  <div class="meta">
+    <span class="tag">temporal</span>
+    <span>2026-07-29</span><span class="sep">·</span><span>13 min read</span>
+    <span class="sep">·</span><span>Andrea Bonucci</span>
   </div>
-
-  <article class="prose prose-toc-source" style="padding-bottom:70px">
-
+</div></div></header><article><div class="col">
 <p>Here is a chart that looks fine.</p>
 
 <p>It has a time axis. The axis has dates on it. The line moves the way a price moves. Nothing about it is
@@ -57,37 +314,37 @@ join it against a table that got the offset right.</p>
 <p>This is the failure mode that epoch mismatches actually have. They do not crash. They do not throw. They
 produce plausible output, which is the worst thing a bug can do.</p>
 
-<div class="diagram">
+<figure class="wide"><div class="frame">
 <svg viewBox="0 0 920 250" role="img" aria-label="Timeline showing the Unix epoch at 1970-01-01 and the Amber epoch at 2000-01-01, separated by 10,957 days or 946,684,800,000,000,000 nanoseconds.">
   <style>
-    .ax { stroke: var(--border-strong); stroke-width: 1.4 }
-    .tk { stroke: var(--border-strong); stroke-width: 1 }
-    .lb { fill: var(--text); font: 600 15px var(--font-sans) }
-    .sm { fill: var(--text-faint); font: 400 12.5px var(--font-mono) }
-    .ac { fill: var(--accent); font: 600 13.5px var(--font-mono) }
-    .gap{ fill: none; stroke: var(--accent); stroke-width: 1.3; stroke-dasharray: 4 4 }
+    .ax { stroke: var(--border2); stroke-width: 1.4 }
+    .tk { stroke: var(--border2); stroke-width: 1 }
+    .lb { fill: var(--text); font: 600 15px var(--sans) }
+    .sm { fill: var(--faint); font: 400 12.5px var(--mono) }
+    .ac { fill: var(--hue); font: 600 13.5px var(--mono) }
+    .gap{ fill: none; stroke: var(--hue); stroke-width: 1.3; stroke-dasharray: 4 4 }
   </style>
 
   <line class="ax" x1="40" y1="150" x2="880" y2="150"/>
-  <polygon points="880,150 870,145 870,155" fill="var(--border-strong)"/>
+  <polygon points="880,150 870,145 870,155" fill="var(--border2)"/>
 
   <!-- unix -->
   <line class="tk" x1="120" y1="132" x2="120" y2="168"/>
-  <circle cx="120" cy="150" r="5" fill="var(--text-dim)"/>
+  <circle cx="120" cy="150" r="5" fill="var(--dim)"/>
   <text class="lb" x="120" y="118" text-anchor="middle">1970-01-01</text>
   <text class="sm" x="120" y="190" text-anchor="middle">Unix epoch</text>
   <text class="sm" x="120" y="206" text-anchor="middle">t = 0</text>
 
   <!-- amber -->
   <line class="tk" x1="470" y1="132" x2="470" y2="168"/>
-  <circle cx="470" cy="150" r="6" fill="var(--accent)"/>
+  <circle cx="470" cy="150" r="6" fill="var(--hue)"/>
   <text class="lb" x="470" y="118" text-anchor="middle">2000-01-01</text>
   <text class="ac" x="470" y="190" text-anchor="middle">Amber epoch</text>
   <text class="sm" x="470" y="206" text-anchor="middle">d = 0 · p = 0</text>
 
   <!-- today -->
   <line class="tk" x1="770" y1="136" x2="770" y2="164"/>
-  <circle cx="770" cy="150" r="4.5" fill="var(--text-dim)"/>
+  <circle cx="770" cy="150" r="4.5" fill="var(--dim)"/>
   <text class="lb" x="770" y="118" text-anchor="middle">2026-08-21</text>
   <text class="sm" x="770" y="190" text-anchor="middle">d = 9729</text>
 
@@ -98,15 +355,13 @@ produce plausible output, which is the worst thing a bug can do.</p>
 
   <text class="sm" x="640" y="66" text-anchor="middle">int64 ns range: ±292.47 years from the epoch</text>
   <text class="ac" x="640" y="84" text-anchor="middle">1707 … 2292   (Unix ns: 1677 … 2262)</text>
-</svg>
-
-</div>
+</svg></div></figure>
 
 <h2>What Amber actually stores</h2>
 
 <p>Three temporal types, three integers.</p>
 
-<div class="table-wrap">
+<div class="tbl">
 <table>
   <thead><tr><th style="width:12%">Type</th><th style="width:26%">Literal</th><th style="width:24%">Stored as</th><th>Zero point</th></tr></thead>
   <tbody>
@@ -125,13 +380,13 @@ as-of kernel binary-search it.</p>
 
 <p>And the three constants that follow from the epoch choice are:</p>
 
-<div class="table-wrap">
+<div class="tbl">
 <table>
   <thead><tr><th style="width:34%">Interval</th><th>Value</th></tr></thead>
   <tbody>
-    <tr><td>1970-01-01 &rarr; 2000-01-01, days</td><td class="mono">10,957</td></tr>
-    <tr><td>… seconds</td><td class="mono">946,684,800</td></tr>
-    <tr><td>… nanoseconds</td><td class="mono">946,684,800,000,000,000</td></tr>
+    <tr><td>1970-01-01 &rarr; 2000-01-01, days</td><td class="n">10,957</td></tr>
+    <tr><td>… seconds</td><td class="n">946,684,800</td></tr>
+    <tr><td>… nanoseconds</td><td class="n">946,684,800,000,000,000</td></tr>
   </tbody>
 </table>
 </div>
@@ -149,12 +404,12 @@ checking.</p>
 <p>An <code>int64</code> nanosecond counter spans ±292.47 years. Where you put the zero decides which 585
 years you get.</p>
 
-<div class="table-wrap">
+<div class="tbl">
 <table>
   <thead><tr><th style="width:34%">Epoch</th><th>Representable range</th></tr></thead>
   <tbody>
-    <tr><td>1970-01-01 (Unix ns)</td><td class="mono">1677 &hellip; 2262</td></tr>
-    <tr><td>2000-01-01 (Amber)</td><td class="mono">1707 &hellip; 2292</td></tr>
+    <tr><td>1970-01-01 (Unix ns)</td><td class="n">1677 &hellip; 2262</td></tr>
+    <tr><td>2000-01-01 (Amber)</td><td class="n">1707 &hellip; 2292</td></tr>
   </tbody>
 </table>
 </div>
@@ -194,8 +449,8 @@ since 2000</strong> is thirteen, and a column of <strong>microseconds of day</st
 are handling data from more than one source, the magnitudes overlap in ways that no heuristic gets right
 every time, and the value that gets it wrong is not the one you eyeballed.</p>
 
-<div class="note note-warn">
-  <span class="note-title">The rule that follows</span>
+<div class="note warn">
+  <b>The rule that follows</b>
   <p>Every boundary in the ecosystem makes the unit an <strong>explicit setting</strong> rather than an
   inference. Nothing guesses. Where a guess would be needed, there is a config field with a default and a
   comment explaining what the default is for.</p>
@@ -208,7 +463,7 @@ every time, and the value that gets it wrong is not the one you eyeballed.</p>
 <p>Grafana's time axis is Unix milliseconds. The Go backend converts, and the unit is a datasource setting
 so a new panel is right before anyone touches it:</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">provisioning/datasources/amber.yaml</span></div><pre><code class="lang-yaml">jsonData:
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">provisioning/datasources/amber.yaml</span></div><pre><code>jsonData:
   host: amberd
   port: 5012
   # The store's `time` columns are nanoseconds since 2000-01-01 -- Amber's own
@@ -219,7 +474,7 @@ so a new panel is right before anyone touches it:</p>
 <p>And the query macros come in both flavours, named so that picking the wrong one is a visible choice
 rather than an omission:</p>
 
-<div class="table-wrap">
+<div class="tbl">
 <table>
   <thead><tr><th style="width:30%">Macro</th><th>Substituted with</th></tr></thead>
   <tbody>
@@ -246,7 +501,7 @@ in a library's documentation you did not read.</p>
 
 <p>So the conversion is yours, and it is visible:</p>
 
-<div class="code"><pre><code class="lang-py">import numpy as np, pandas as pd, amber as am
+<div class="code"><pre><code class="l-py">import numpy as np, pandas as pd, amber as am
 
 AMBER_EPOCH_NS = 946_684_800_000_000_000       # 2000-01-01T00:00:00Z
 
@@ -271,7 +526,7 @@ downstream consumer would believe it.</p>
 <p>The export therefore leaves the column typed as an integer unless you say otherwise. An honest
 <code>int64</code> is better than a mistyped timestamp:</p>
 
-<div class="code"><pre><code class="lang-py">import pyarrow as pa, amber_arrow as aa
+<div class="code"><pre><code class="l-py">import pyarrow as pa, amber_arrow as aa
 
 tbl = aa.query("select time, px from trades").read_all()
 ts  = pa.compute.add(tbl.column("time"), 946_684_800_000_000_000)
@@ -285,7 +540,7 @@ partition directory name <em>is</em> the date. The Arrow IPC copy of the store i
 from the same arrays, so the two views cannot drift apart — a class of bug that "we'll regenerate the Arrow
 files nightly" would have introduced.</p>
 
-<div class="code"><pre><code class="lang-out">store/
+<div class="code"><pre><code class="l-out">store/
   sym                       the symbol enumeration domain
   par.txt                   the partition list
   2026.08.21/               &lt;- the partition name IS the date
@@ -301,7 +556,7 @@ is presentational; the bytes on disk are unchanged and still binary-searchable.<
 
 <p>None of the above is visible day to day, because the types do the right thing:</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">2026.07.30                          / a date
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">2026.07.30                          / a date
 2026.08.15 - 2026.07.30             / 16  (days)
 2026.07.30 + 16                     / 2026.08.15
 10:00:00.000 + 00:00:05.000         / 10:00:05.000
@@ -314,7 +569,7 @@ dow  2026.07.30                     / day of week
 
 <p>The accessors map onto q's dotted forms one for one, with one rename worth knowing:</p>
 
-<div class="table-wrap">
+<div class="tbl">
 <table>
   <thead><tr><th style="width:22%">q</th><th style="width:22%">Amber</th><th>Meaning</th></tr></thead>
   <tbody>
@@ -331,23 +586,23 @@ dow  2026.07.30                     / day of week
 <p>Almost every question about a trading day is a question about buckets. Amber has three functions and
 they compose:</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">minbar[w; t]      / w-minute bar, returned as a time (ms)
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">minbar[w; t]      / w-minute bar, returned as a time (ms)
 bar[w; u; t]      / generic: w buckets of u ms — bar[5;60000;t] = 5-minute bars
 xbar[w; x]        / plain bucketing of any integer column</code></pre></div>
 
 <p>The classic tickerplant OHLCV query, unchanged from how a q shop would write it:</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">gentq 100000                     / sets the globals: trades, quotes
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">gentq 100000                     / sets the globals: trades, quotes
 tb: +@[+trades; ,`time; minbar[1]@]
 qby[tb; `sym`time;
     `open`high`low`close`vol!({first x`px};{max x`px};{min x`px};{last x`px};{sum x`sz})]</code></pre></div>
 
 <p>Or, at the prompt, bare:</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">select vwap:wavg[sz;px] by time:minbar[1;time] from trades</code></pre></div>
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">select vwap:wavg[sz;px] by time:minbar[1;time] from trades</code></pre></div>
 
-<div class="note note-info">
-  <span class="note-title">Bucketing does not care about the epoch</span>
+<div class="note info">
+  <b>Bucketing does not care about the epoch</b>
   <p><code>xbar</code> is integer arithmetic on whatever the column holds. That is why it works identically
   on milliseconds-of-day and on nanoseconds-since-2000 — and also why it will happily bucket a column whose
   epoch you got wrong, into perfectly regular buckets, in the wrong place.</p>
@@ -370,63 +625,143 @@ qby[tb; `sym`time;
   trust. Thirty years is invisible on a zoomed-in intraday axis.</li>
 </ul>
 
-<hr>
-
-<p class="small muted">The reference version of this material, with the full accessor table and every
+<div class="endnote">The reference version of this material, with the full accessor table and every
 conversion, is on the <a href="../docs/temporal.html">Temporal mechanics</a> page. The store layout is
 described in <a href="../ecosystem/amber-tick.html">amber-tick</a>, and the Grafana time macros in
-<a href="../ecosystem/grafana.html">the datasource guide</a>.</p>
-
-  </article>
-</div>
-
+<a href="../ecosystem/grafana.html">the datasource guide</a>.</div>
+</div></article>
 </main>
+
 <footer>
-  <div class="wrap">
-    <div class="foot-grid">
-      <div>
-        <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
-        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
-        <p class="small muted" style="margin-top:14px">
-          <a class="scratchpad-link" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-            Amber Notepad — scratchpad
-          </a>
-        </p>
-      </div>
-      <div>
-        <h5>Documentation</h5>
-        <a href="../docs/index.html">Introduction</a>
-        <a href="../docs/language.html">Language &amp; qSQL</a>
-        <a href="../docs/temporal.html">Temporal mechanics</a>
-        <a href="../docs/protocol.html">Wire protocol</a>
-        <a href="../docs/capi.html">C API</a>
-        <a href="../docs/benchmarks.html">Benchmarks</a>
-      </div>
-      <div>
-        <h5>Ecosystem</h5>
-        <a href="../ecosystem/python-amber.html">python-amber</a>
-        <a href="../ecosystem/amber-arrow.html">amber-arrow</a>
-        <a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
-        <a href="../ecosystem/amber-tick.html">amber-tick</a>
-        <a href="../ecosystem/grafana.html">Grafana datasource</a>
-        <a href="../ecosystem/vscode-amber.html">vscode-amber</a>
-        <a href="../ecosystem/amber-ai.html">amber-ai</a>
-      </div>
-      <div>
-        <h5>Learn</h5>
-        <a href="../tutorials/index.html">Tutorials</a>
-        <a href="../blog/index.html">Blog</a>
-        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
-        <a href="https://github.com/BonucciAndrea" target="_blank" rel="noopener">All repositories</a>
-      </div>
+  <div class="wrap"><div class="col">
+    <div class="foot">
+      <span>Amber is licensed <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">AGPLv3</a>. Interpreter core derived from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+      <span><a href="index.html">All posts</a> · <a href="https://github.com/BonucciAndrea" target="_blank" rel="noopener">github.com/BonucciAndrea</a></span>
     </div>
-    <div class="foot-bottom">
-      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
-      <span>Not affiliated with kdb+ / KX Systems.</span>
-    </div>
-  </div>
+  </div></div>
 </footer>
-<script src="../assets/js/amber.js" defer></script>
+
+<script>
+(function(){
+"use strict";
+var root=document.documentElement;
+var tb=document.getElementById("themeBtn");
+if(tb)tb.addEventListener("click",function(){
+  var t=root.getAttribute("data-theme")==="light"?"dark":"light";
+  root.setAttribute("data-theme",t);
+  try{localStorage.setItem("amber-theme",t)}catch(e){}
+});
+
+var bar=document.getElementById("progress"),top=document.getElementById("topbar");
+function onScroll(){
+  var h=document.documentElement.scrollHeight-window.innerHeight;
+  if(bar)bar.style.width=(h>0?Math.min(100,window.scrollY/h*100):0)+"%";
+  if(top)top.classList.toggle("scrolled",window.scrollY>6);
+}
+onScroll();window.addEventListener("scroll",onScroll,{passive:true});
+window.addEventListener("resize",onScroll);
+
+/* ── q / K highlighter ───────────────────────────────────────────────── */
+var W=("select exec update delete from where by within insert upsert asc desc iasc idesc "+
+"xasc xdesc xkey xcol xcols xgroup ungroup aj aj0 wj lj ij uj pj ej asof meta cols keys flip "+
+"enlist raze sum prd min max avg med var dev svar sdev cov cor wsum wavg count first last sums "+
+"prds mins maxs deltas ratios differ prev next distinct group til wavg xbar bar minbar hms stime "+
+"ptime year month day dow hh mm sec milli minute second vwap twap ema movavg movsum movmax movmin "+
+"rollstd rvol ret logret bars symstats gentq genopt taq tsign effspread mid spread spreadbps micro "+
+"imbal notional signedvol peach show plot candle string type value key null neg abs exp log sqrt "+
+"floor ceiling signum reciprocal reverse mod div round xlog like ss ssr sv vs trim ltrim rtrim lower "+
+"upper sublist cross rank xrank rotate xprev in except inter union qby qselect qwhere fby dset dget "+
+"splay dload partsave partload parts hopen hclose hsend hrecv hsync mcount msum mavg mprd mvar mdev "+
+"mmin mmax dot mmu parse eval reval ser deser protect cast long int float char sym bool import def "+
+"class return if else for while lambda True False None print len range").split(" ");
+var S=Object.create(null);W.forEach(function(w){S[w]=1});
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function sp(c,t){return'<span class="'+c+'">'+esc(t)+"</span>"}
+function hq(src){
+  var o="",i=0,n=src.length,pv="";
+  function val(c){return c&&/[A-Za-z0-9_\])}."`]/.test(c)}
+  while(i<n){
+    var c=src[i],ls=(i===0||src[i-1]==="\n");
+    if(c==="/"&&(ls||(!val(pv)&&/\s/.test(src[i-1]||" ")))){var j=src.indexOf("\n",i);if(j<0)j=n;o+=sp("t-c",src.slice(i,j));i=j;pv="";continue}
+    if(c==='"'){var k=i+1;while(k<n&&!(src[k]==='"'&&src[k-1]!=="\\"))k++;o+=sp("t-s",src.slice(i,Math.min(k+1,n)));pv='"';i=k+1;continue}
+    if(c==="`"){var m=i+1;if(src[m]==='"'){m++;while(m<n&&src[m]!=='"')m++;m++}else{while(m<n&&/[A-Za-z0-9.]/.test(src[m]))m++}o+=sp("t-y",src.slice(i,m));pv="`";i=m;continue}
+    if(/[0-9]/.test(c)&&!val(pv)){var p=i;while(p<n&&/[0-9a-fA-FxnNwW.:DT]/.test(src[p])){if(/[a-zA-Z]/.test(src[p])&&!/[nNwWxbDT]/.test(src[p]))break;p++}o+=sp("t-n",src.slice(i,p));pv="0";i=p;continue}
+    if(/[A-Za-z_]/.test(c)){var q=i;while(q<n&&/[A-Za-z0-9_.]/.test(src[q]))q++;var w=src.slice(i,q),b=w.indexOf(".")>-1?w.split(".").pop():w;
+      if(S[w]||S[b])o+=sp(/^(select|exec|update|delete|from|where|by|within|if|else|for|while|return|import|def|class|True|False|None)$/.test(w)?"t-k":"t-f",w);else o+=esc(w);
+      pv="a";i=q;continue}
+    if("+-*%!&|<>=~,^#_$?@.:;'\\".indexOf(c)>-1){o+=sp("t-o",c);pv=c;i++;continue}
+    o+=esc(c);if(!/\s/.test(c))pv=c;i++;
+  }
+  return o;
+}
+function hc(s){ /* C-ish */
+  return esc(s)
+   .replace(/(\/\*[\s\S]*?\*\/|\/\/[^\n]*)/g,'<span class="t-c">$1</span>')
+   .replace(/(&quot;[^&\n]*?&quot;)/g,'<span class="t-s">$1</span>')
+   .replace(/\b(if|else|for|while|switch|case|break|return|struct|typedef|static|const|void|char|int|long|unsigned|signed|double|float|size_t|uint\d+_t|int\d+_t|bool|inline|extern|define|include|sizeof|goto)\b/g,'<span class="t-k">$1</span>')
+   .replace(/\b(0x[0-9a-fA-F]+|\d+(?:\.\d+)?)\b/g,'<span class="t-n">$1</span>');
+}
+function hsh(s){
+  return esc(s)
+   .replace(/(^|\n|\s{2})(\s*)(#[^\n]*)/g,function(m,a,b,c){return a+b+'<span class="t-c">'+c+"</span>"})
+   .replace(/(&quot;[^&\n]*?&quot;|&#39;[^&\n]*?&#39;)/g,'<span class="t-s">$1</span>')
+   .replace(/(^|\n)(\s*)\b(git|cd|make|npm|pip|python3?|sudo|apt-get|brew|curl|docker|go|mage|export|chmod|bash|sh|ls|cat|grep|time|zip|open|nc)\b/g,'$1$2<span class="t-f">$3</span>')
+   .replace(/(\s)(--?[A-Za-z][\w-]*)/g,'$1<span class="t-o">$2</span>');
+}
+function hpy(s){
+  return esc(s)
+   .replace(/(#[^\n]*)/g,'<span class="t-c">$1</span>')
+   .replace(/(&quot;[^&\n]*?&quot;|&#39;[^&\n]*?&#39;)/g,'<span class="t-s">$1</span>')
+   .replace(/\b(import|from|as|def|class|return|if|elif|else|for|while|with|in|not|and|or|None|True|False|lambda|assert|print)\b/g,'<span class="t-k">$1</span>')
+   .replace(/\b(\d[\d_]*\.?\d*)\b/g,'<span class="t-n">$1</span>');
+}
+document.querySelectorAll("pre > code").forEach(function(el){
+  var c=el.className||"";
+  if(/l-q/.test(c))el.innerHTML=hq(el.textContent);
+  else if(/l-c/.test(c))el.innerHTML=hc(el.textContent);
+  else if(/l-sh/.test(c))el.innerHTML=hsh(el.textContent);
+  else if(/l-py/.test(c))el.innerHTML=hpy(el.textContent);
+  else if(/l-out/.test(c))el.innerHTML='<span class="t-d">'+esc(el.textContent)+"</span>";
+});
+
+/* ── copy buttons ────────────────────────────────────────────────────── */
+var IC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+var IO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+document.querySelectorAll(".code").forEach(function(bl){
+  var pre=bl.querySelector("pre");if(!pre)return;
+  var b=document.createElement("button");b.className="copy";b.type="button";b.setAttribute("aria-label","Copy code");
+  b.innerHTML=IC+"<span>Copy</span>";
+  b.addEventListener("click",function(){
+    var t=pre.innerText,done=function(){b.classList.add("ok");b.innerHTML=IO+"<span>Copied</span>";
+      setTimeout(function(){b.classList.remove("ok");b.innerHTML=IC+"<span>Copy</span>"},1600)};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,function(){fb(t,done)});
+    else fb(t,done);
+  });
+  bl.appendChild(b);
+});
+function fb(t,cb){var a=document.createElement("textarea");a.value=t;a.style.position="fixed";a.style.opacity="0";
+  document.body.appendChild(a);a.select();try{document.execCommand("copy");cb()}catch(e){}document.body.removeChild(a)}
+
+/* ── TOC ─────────────────────────────────────────────────────────────── */
+var art=document.querySelector("article"),list=document.getElementById("tocList");
+if(art&&list){
+  var hs=art.querySelectorAll("h2");
+  hs.forEach(function(h,i){
+    if(!h.id)h.id="s"+(i+1)+"-"+h.textContent.toLowerCase().replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"-").slice(0,40);
+    var a=document.createElement("a");a.href="#"+h.id;a.textContent=h.textContent;list.appendChild(a);
+  });
+  var links=[].slice.call(list.querySelectorAll("a"));
+  if(links.length&&"IntersectionObserver" in window){
+    var vis=new Set();
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){e.isIntersecting?vis.add(e.target.id):vis.delete(e.target.id)});
+      var first=null;hs.forEach(function(h){if(!first&&vis.has(h.id))first=h.id});
+      links.forEach(function(l){l.classList.toggle("on",l.getAttribute("href")==="#"+first)});
+    },{rootMargin:"-80px 0px -68% 0px"});
+    hs.forEach(function(h){io.observe(h)});
+  }
+} else if(document.getElementById("toc")){document.getElementById("toc").style.display="none"}
+})();
+</script>
 </body>
 </html>

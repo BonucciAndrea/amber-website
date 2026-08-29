@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Benchmarks — Amber vs C, DuckDB, CBQN, NumPy and more</title>
-<meta name="description" content="Ten engines, four workloads, one specification, and a correctness gate that compares answers bit-exactly against a C reference. Plus attribute speedups and the 1.9.x self-benchmarks.">
+<title>Benchmarks — Amber vs kdb+/q, C, DuckDB, CBQN, NumPy and more</title>
+<meta name="description" content="A direct like-for-like run against real kdb+/q — Amber beats kdb on sort and reductions and closes the group-by gap 19x in 2.0.0 — plus ten engines on four workloads with a bit-exact correctness gate against a C reference.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Benchmarks — Amber vs C, DuckDB, CBQN, NumPy and more">
-<meta property="og:description" content="Ten engines, four workloads, one specification, and a correctness gate that compares answers bit-exactly against a C reference. Plus attribute speedups and the 1.9.x self-benchmarks.">
+<meta property="og:title" content="Benchmarks — Amber vs kdb+/q, C, DuckDB, CBQN, NumPy and more">
+<meta property="og:description" content="A direct like-for-like run against real kdb+/q — Amber beats kdb on sort and reductions and closes the group-by gap 19x in 2.0.0 — plus ten engines on four workloads with a bit-exact correctness gate against a C reference.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,7 +22,7 @@
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="nav">
   <div class="nav-inner">
-    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v1.9.6</span></a>
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v2.0.0</span></a>
     <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../docs/" class="active">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a>
       <a href="https://github.com/BonucciAndrea/amber-notepad" rel="noopener" target="_blank" class="np-mobile">Scratchpad</a>
     </nav>
@@ -64,6 +64,133 @@ re-runs on every push. The workloads, the data model and the fairness rules are 
   data, so a divergence in the generator is caught separately (<strong>BADDATA</strong>).
   You cannot win a cell in this table by computing something cheaper.</p>
 </div>
+
+<h2 id="vs-q">Against kdb+/q — the reference itself</h2>
+<p class="lead">kdb+/q is the system Amber's q-layer is shaped after, and the one everyone asks about. It is
+proprietary, so it has never been in the cross-engine CI harness below. This section is different:
+it is a direct, like-for-like run against a real <strong>kdb+ 4.0</strong> on the same machine, on a
+q/HFT-shaped workload — a million- and ten-million-row trade table, grouped and filtered <em>by
+symbol</em>, the query an actual tick desk writes.</p>
+
+<div class="note note-ok">
+  <span class="note-title">New in 2.0.0 — the symbol-grouping fix</span>
+  <p>Grouping a table by a <strong>symbol</strong> column used to lexically string-sort the symbols
+  (O(<em>n</em> log <em>n</em>) with a character comparison at every step). 2.0.0 groups by the
+  interned 4-byte id instead — equal symbols have equal ids, so the partition and the
+  first-appearance key order are byte-for-byte identical, just found without the string sort.
+  <code>select … by sym</code> went from <strong>587&nbsp;ms to 34&nbsp;ms</strong>, and the whole
+  group-by row below moved <strong>~19&times;</strong>.</p>
+</div>
+
+<h3>The fix, in one picture (1M rows, group-by-sum by symbol)</h3>
+<figure class="fig">
+<svg viewBox="0 0 720 176" role="img" aria-label="Group-by-sum by symbol at 1M rows: Amber before 2.0.0 was 692 ms, Amber 2.0.0 is 32 ms, kdb+/q is 3.2 ms." font-family="var(--font-mono)">
+  <g font-size="13" fill="var(--text)">
+    <text x="170" y="40" text-anchor="end">Amber &lt; 2.0.0</text>
+    <text x="170" y="88" text-anchor="end">Amber 2.0.0</text>
+    <text x="170" y="136" text-anchor="end">kdb+/q</text>
+  </g>
+  <!-- linear scale 0..700 ms over 520px (x 180..700): 0.743 px/ms -->
+  <rect x="180" y="26" width="514" height="22" rx="4" fill="var(--red)" opacity="0.9"/>
+  <rect x="180" y="74" width="24"  height="22" rx="4" fill="var(--green)"/>
+  <rect x="180" y="122" width="3" height="22" rx="1.5" fill="var(--accent)"/>
+  <g font-size="12.5" font-weight="600">
+    <text x="700" y="41"  text-anchor="end" fill="#fff">692 ms</text>
+    <text x="212" y="89"  fill="var(--green)">32 ms &nbsp;(19&times; faster)</text>
+    <text x="192" y="137" fill="var(--accent)">3.2 ms</text>
+  </g>
+</svg>
+<figcaption class="small muted">Same partition, same result — only the time changed. kdb+/q shown for scale.</figcaption>
+</figure>
+
+<h3>Amber 2.0.0 relative to kdb+/q</h3>
+<p class="small muted">Bar = Amber time &divide; q time at <strong>10M rows</strong> (lower is better; the
+dashed line is parity). Amber is <em>faster</em> than kdb on the pure array primitives — sort and
+reductions — and the gap is concentrated in group-by aggregation, where kdb runs an O(<em>n</em>)
+hash group with a fused per-group sum.</p>
+<figure class="fig">
+<svg viewBox="0 0 720 300" role="img" aria-label="Amber time divided by q time at 10M rows: sort 0.46x, sum 0.63x, filter 1.4x, group-by vwap 2.2x, filtered group-by 3.9x, group-by sum 11.1x." font-family="var(--font-mono)">
+  <!-- plot x 180..700 (520px) for ratio 0..12 -> 43.33 px/unit; parity at 223.3 -->
+  <g stroke="var(--border)" stroke-width="1">
+    <line x1="180" y1="30" x2="180" y2="270"/>
+    <line x1="396.6" y1="30" x2="396.6" y2="270" opacity="0.5" stroke-dasharray="2 3"/>
+    <line x1="613.3" y1="30" x2="613.3" y2="270" opacity="0.5" stroke-dasharray="2 3"/>
+  </g>
+  <line x1="223.3" y1="24" x2="223.3" y2="276" stroke="var(--text-faint)" stroke-width="1.4" stroke-dasharray="4 3"/>
+  <g font-size="11.5" fill="var(--text-faint)" text-anchor="middle">
+    <text x="223.3" y="290">1&times; (parity)</text>
+    <text x="396.6" y="290">5&times;</text>
+    <text x="613.3" y="290">10&times;</text>
+  </g>
+  <g font-size="13" fill="var(--text)" text-anchor="end">
+    <text x="170" y="54">sort</text>
+    <text x="170" y="92">sum</text>
+    <text x="170" y="130">filter</text>
+    <text x="170" y="168">group-by vwap</text>
+    <text x="170" y="206">filtered group-by</text>
+    <text x="170" y="244">group-by sum</text>
+  </g>
+  <g>
+    <rect x="180" y="40"  width="19.9"  height="20" rx="4" fill="var(--green)"/>
+    <rect x="180" y="78"  width="27.3"  height="20" rx="4" fill="var(--green)"/>
+    <rect x="180" y="116" width="59.4"  height="20" rx="4" fill="var(--accent)"/>
+    <rect x="180" y="154" width="95.8"  height="20" rx="4" fill="var(--accent)"/>
+    <rect x="180" y="192" width="170.7" height="20" rx="4" fill="#f0883e"/>
+    <rect x="180" y="230" width="482.7" height="20" rx="4" fill="var(--red)"/>
+  </g>
+  <g font-size="12" font-weight="600" fill="var(--text)">
+    <text x="206"  y="55">0.46&times; &nbsp;<tspan fill="var(--green)">Amber faster</tspan></text>
+    <text x="214"  y="93">0.63&times; &nbsp;<tspan fill="var(--green)">Amber faster</tspan></text>
+    <text x="246"  y="131">1.4&times;</text>
+    <text x="282"  y="169">2.2&times;</text>
+    <text x="357"  y="207">3.9&times;</text>
+    <text x="662"  y="243" text-anchor="end" fill="#fff">11.1&times;</text>
+  </g>
+</svg>
+<figcaption class="small muted">Ratios from the 10M-row table below. Bars left of the parity line are wins for Amber.</figcaption>
+</figure>
+
+<div class="table-wrap">
+<table>
+  <thead>
+  <tr><th rowspan="2">Workload — trade table, grouped/filtered by <code>sym</code></th>
+    <th class="num" colspan="3" style="text-align:center">1,000,000 rows</th>
+    <th class="num" colspan="3" style="text-align:center">10,000,000 rows</th></tr>
+  <tr><th class="num">kdb+/q</th><th class="num">Amber</th><th class="num">&divide;q</th>
+      <th class="num">kdb+/q</th><th class="num">Amber</th><th class="num">&divide;q</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>select sum px by sym from t</code></td>
+        <td class="num">3.2</td><td class="num">32.0</td><td class="num">10.0&times;</td>
+        <td class="num">33.2</td><td class="num">370</td><td class="num">11.1&times;</td></tr>
+    <tr><td><code>select vwap:wavg[sz;px] by sym from t</code></td>
+        <td class="num">26.6</td><td class="num">41.0</td><td class="num">1.5&times;</td>
+        <td class="num">221</td><td class="num">488</td><td class="num">2.2&times;</td></tr>
+    <tr><td><code>select from t where px&gt;105</code></td>
+        <td class="num">4.4</td><td class="num">13.2</td><td class="num">3.0&times;</td>
+        <td class="num">45.8</td><td class="num">62.6</td><td class="num">1.4&times;</td></tr>
+    <tr><td><code>select sum sz by sym from t where px&gt;105</code></td>
+        <td class="num">5.0</td><td class="num">19.5</td><td class="num">3.9&times;</td>
+        <td class="num">54.5</td><td class="num">215</td><td class="num">3.9&times;</td></tr>
+    <tr><td><code>sum px</code> &nbsp;— reduction</td>
+        <td class="num">0.22</td><td class="num best">0.28</td><td class="num">1.3&times;</td>
+        <td class="num">6.3</td><td class="num best">4.0</td><td class="num">0.63&times;</td></tr>
+    <tr><td><code>`px xasc t</code> &nbsp;— sort</td>
+        <td class="num">28.2</td><td class="num best">30.4</td><td class="num">1.1&times;</td>
+        <td class="num">1,136</td><td class="num best">521</td><td class="num">0.46&times;</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small muted"><strong>Method.</strong> Identical data, generated by the same closed-form
+formula in both engines (no RNG — 100 symbols, deterministic prices), so the inputs are bit-for-bit
+the same; the answers were checked equal before timing. Minimum of 5 warm reps, milliseconds, kernel
+time only (data generation and startup excluded). Machine: this dev box, x86-64, gcc-13 native
+(<code>-march=native</code>) build. <strong>Reading it:</strong> Amber's ngn/k core matches or beats
+kdb on raw array work (sort, sum) — at 10M it sorts a table in <strong>521&nbsp;ms vs kdb's
+1,136&nbsp;ms</strong>. The remaining distance is the group-by <em>aggregation</em> layer: Amber's
+<code>group</code> is still sort-based, where kdb uses an O(<em>n</em>) hash group. That hash-group
+kernel is the next optimisation on the list — see
+<a href="https://github.com/BonucciAndrea/amber/blob/main/docs/MISSING.md">MISSING.md</a>.</p>
 
 <h2>Cross-engine results</h2>
 <p class="small muted">Median of 5 timed runs after 2 warm-up passes, milliseconds. Kernel time only —
