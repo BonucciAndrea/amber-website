@@ -72,12 +72,14 @@ elapsed milliseconds. About 2.4 seconds for five million trades and ten million 
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">count trades                       / 5000000
 count quotes                       / 10000000
 meta trades</code></pre></div>
-<div class="code"><pre><code class="lang-out">c     | t a
-------|-----
-sym   | s p
-time  | i s
-px    | f
-sz    | i</code></pre></div>
+<div class="code"><pre><code class="lang-out">╭──────┬───┬───╮
+│ c    │ t │ a │
+├──────┼───┼───┤
+│ sym  │ s │ p │
+│ time │ i │ s │
+│ px   │ f │   │
+│ sz   │ i │   │
+╰──────┴───┴───╯</code></pre></div>
 <p>The <code>a</code> column is already populated: <code>gentq</code> hands back a table laid out the
 way the as-of kernel wants it. The next step is what you would have to do yourself for data that
 arrived from anywhere else.</p>
@@ -94,12 +96,14 @@ exactly what <code>gentq</code> itself does.</p>
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">trades:sortcol[`time; partcol[`sym; xasc[`sym`time; trades]]]
 quotes:sortcol[`time; partcol[`sym; xasc[`sym`time; quotes]]]
 meta trades</code></pre></div>
-<div class="code"><pre><code class="lang-out">c     | t a
-------|-----
-sym   | s p
-time  | i s
-px    | f
-sz    | i</code></pre></div>
+<div class="code"><pre><code class="lang-out">╭──────┬───┬───╮
+│ c    │ t │ a │
+├──────┼───┼───┤
+│ sym  │ s │ p │
+│ time │ i │ s │
+│ px   │ f │   │
+│ sz   │ i │   │
+╰──────┴───┴───╯</code></pre></div>
 <p>Together those are what make the join <code>O(log n)</code> per row instead of <code>O(n)</code>.
 <code>xasc</code> on its own is not enough — it leaves <code>sym</code> marked <code>`s</code> and
 <code>time</code> with no attribute at all, and the kernel then falls back to the scan.</p>
@@ -120,13 +124,15 @@ count m                            / 5000000
 5#m</code></pre></div>
 <div class="code"><pre><code class="lang-out">704
 
-sym          time     px  sz    bid    ask bsz asz
---------------------------------------------------
-AAPL 09:30:00.000 187.31 100 187.30 187.32 300 300
-AAPL 09:30:00.004 187.31 200 187.30 187.32 300 300
-AAPL 09:30:00.011 187.32  50 187.31 187.33 100 200
-AAPL 09:30:00.019 187.32 300 187.31 187.33 100 200
-AAPL 09:30:00.026 187.31 100 187.30 187.33 200 100
+╭──────┬──────────────┬────────┬─────┬────────┬────────┬─────┬─────╮
+│ sym  │         time │     px │  sz │    bid │    ask │ bsz │ asz │
+├──────┼──────────────┼────────┼─────┼────────┼────────┼─────┼─────┤
+│ AAPL │ 09:30:00.000 │ 187.31 │ 100 │ 187.30 │ 187.32 │ 300 │ 300 │
+│ AAPL │ 09:30:00.004 │ 187.31 │ 200 │ 187.30 │ 187.32 │ 300 │ 300 │
+│ AAPL │ 09:30:00.011 │ 187.32 │  50 │ 187.31 │ 187.33 │ 100 │ 200 │
+│ AAPL │ 09:30:00.019 │ 187.32 │ 300 │ 187.31 │ 187.33 │ 100 │ 200 │
+│ AAPL │ 09:30:00.026 │ 187.31 │ 100 │ 187.30 │ 187.33 │ 200 │ 100 │
+╰──────┴──────────────┴────────┴─────┴────────┴────────┴─────┴─────╯
 [5 rows x 8 cols]</code></pre></div>
 <p>704 milliseconds for five million binary searches over a ten-million-row quote table. The kernel is
 in <code>src/a.c</code>, marshalled from <code>amber.k</code>, and it runs off a thread-local 16 MB bump
@@ -139,12 +145,14 @@ arena so <code>malloc</code> jitter stays out of the path.</p>
 m:update side:tsign m from m               / Lee-Ready: +1 buy, -1 sell
 m:update eff:effspread m from m            / 2 * |px - mid|
 select n:#px, eff:avg eff, bps:10000*avg eff%mid by sym from m</code></pre></div>
-<div class="code"><pre><code class="lang-out">sym  | n       eff       bps
------|---------------------------
-AAPL | 1284203 0.0121    0.646
-MSFT | 1091177 0.0184    0.447
-GOOG |  918884 0.0102    0.722
-...</code></pre></div>
+<div class="code"><pre><code class="lang-out">╭──────┬─────────┬────────┬───────╮
+│ sym  │       n │    eff │   bps │
+├──────┼─────────┼────────┼───────┤
+│ AAPL │ 1284203 │ 0.0121 │ 0.646 │
+│ MSFT │ 1091177 │ 0.0184 │ 0.447 │
+│ GOOG │  918884 │ 0.0102 │ 0.722 │
+│   .. │      .. │     .. │    .. │
+╰──────┴─────────┴────────┴───────╯</code></pre></div>
 </div>
 
 <div class="step"><span class="n">6</span>
@@ -153,13 +161,15 @@ GOOG |  918884 0.0102    0.722
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">\ts select vwap:wavg[sz;px] by time:minbar[1;time] from trades</code></pre></div>
 <div class="code"><pre><code class="lang-out">151
 
-        time|     vwap
-----------------------
-09:30:00.000| 187.2841
-09:31:00.000| 187.3106
-09:32:00.000| 187.2955
-09:33:00.000| 187.4012
-..
+╭──────────────┬──────────╮
+│         time │     vwap │
+├──────────────┼──────────┤
+│ 09:30:00.000 │ 187.2841 │
+│ 09:31:00.000 │ 187.3106 │
+│ 09:32:00.000 │ 187.2955 │
+│ 09:33:00.000 │ 187.4012 │
+│           .. │       .. │
+╰──────────────┴──────────╯
 [390 rows x 2 cols]</code></pre></div>
 
 <p>And the full OHLCV, spelled out with <code>qby</code> so you can see the shape:</p>
