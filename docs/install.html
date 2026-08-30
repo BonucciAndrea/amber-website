@@ -175,11 +175,45 @@ readline, no curses, no dependency) gives you:</p>
     <tr><td><kbd>Ctrl-A</kbd> / <kbd>Ctrl-E</kbd>, <kbd>Home</kbd> / <kbd>End</kbd></td><td>start / end of line</td></tr>
     <tr><td><kbd>&uarr;</kbd> <kbd>&darr;</kbd>, <kbd>Ctrl-P</kbd> / <kbd>Ctrl-N</kbd></td><td>history, persisted in <code>~/.amber_history</code></td></tr>
     <tr><td><kbd>Backspace</kbd>, <kbd>Del</kbd>, <kbd>Ctrl-W</kbd> / <kbd>Ctrl-U</kbd> / <kbd>Ctrl-K</kbd></td><td>delete char / word / to start / to end</td></tr>
-    <tr><td><kbd>Tab</kbd></td><td>complete globals, table columns, <code>\</code> commands, the vocabulary, and whole lines you already ran</td></tr>
-    <tr><td><kbd>Ctrl-L</kbd> · <kbd>Ctrl-C</kbd> · <kbd>Ctrl-D</kbd></td><td>clear screen · abandon the line · exit on an empty line</td></tr>
+    <tr><td><kbd>Ctrl-L</kbd></td><td>clear screen &mdash; byte-identical to <code>\clear</code></td></tr>
+    <tr><td><kbd>Ctrl-C</kbd> · <kbd>Ctrl-D</kbd></td><td>abandon the line (or a continuation) · exit on an empty line</td></tr>
+    <tr><td><kbd>PgUp</kbd> / <kbd>PgDn</kbd>, wheel</td><td>scroll the transcript while the status bar stays locked</td></tr>
+    <tr><td><code>\sb</code></td><td>toggle the status bar</td></tr>
   </tbody>
 </table>
 </div>
+
+<p><kbd>Tab</kbd> is a <strong>no-op</strong>. Tab completion existed in 1.9.5 and was removed at
+2.0.0: with k's terse syntax it was near-useless and uncomfortable to use.</p>
+
+<h3>Multi-line input</h3>
+<p>A line that leaves a bracket open (<code>{</code>, <code>(</code>, <code>[</code>) is an
+incomplete statement, so the editor keeps reading on a <code>...&gt;</code> prompt until the
+brackets balance, then evaluates the joined statement as one &mdash; and stores it in history as
+one entry:</p>
+
+<pre class="code"><code>amber&gt; f:{
+  ...&gt; x+1
+  ...&gt; }
+amber&gt; f 41
+42</code></pre>
+
+<p>There is deliberately no key binding for this. <kbd>Shift-Enter</kbd> is
+<strong>indistinguishable from <kbd>Enter</kbd></strong> in a terminal &mdash; both send CR &mdash;
+unless you opt into an extended keyboard protocol (xterm <code>modifyOtherKeys</code>, kitty, a
+hand-made iTerm2 binding), so continuing on incomplete syntax, which is what python, node, ghci and
+q all do, is the only portable mechanism. <kbd>Ctrl-C</kbd> abandons a continuation. A bracketed
+paste of a multi-line function is rejoined by the same string- and comment-aware rule, so a function
+typed by hand and one pasted produce identical text; a bracket inside a string
+(<code>"a{b"</code>) or after a comment never triggers it.</p>
+
+<h3>UTF-8</h3>
+<p>The buffer holds bytes but a terminal lays out cells, and the editor converts between the two:
+accented Latin, CJK and emoji all measure as the cells actually drawn, <kbd>Backspace</kbd> removes
+a whole character rather than one byte, and horizontal scrolling never cuts a sequence in half. The
+width table is built in rather than taken from <code>wcwidth()</code>, which answers according to
+<code>LC_CTYPE</code> and would otherwise lay the same line out differently on macOS and on a WSL
+box with a different locale.</p>
 
 <p>The editor degrades to a plain line read whenever stdin/stdout are not a terminal, so
 <code>echo '2+2' | ./a</code>, here-docs and CI runs behave byte-for-byte as they always did. If you
