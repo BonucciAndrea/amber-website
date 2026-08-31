@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Two point oh: infix dyads, qSQL in every script, and the first race against kdb+</title>
-<meta name="description" content="Amber 2.0.0: the two-argument library dyads go infix, bare qSQL runs inside loaded .k scripts, symbol group-by is ~17× faster, two engine bugs die, and the REPL gets bracketed paste and a status bar — the first release benchmarked against a real kdb+/q.">
+<title>Two point oh: infix dyads, qSQL in every script, and a 17x symbol group-by</title>
+<meta name="description" content="Amber 2.0.0: the two-argument library dyads go infix, bare qSQL runs inside loaded .k scripts, symbol group-by is ~17× faster, two engine bugs die, and the REPL gets bracketed paste and a status bar .">
 <meta name="author" content="Andrea Bonucci">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0F'/%3E%3Cpath d='M16 5 26.6 23.4a1.1 1.1 0 0 1-1 1.7h-3.9L16 14.9l-5.7 10.2H6.4a1.1 1.1 0 0 1-1-1.7L16 5Z' fill='%23FFB020'/%3E%3C/svg%3E">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Two point oh: infix dyads, qSQL in every script, and the first race against kdb+">
-<meta property="og:description" content="Amber 2.0.0: the two-argument library dyads go infix, bare qSQL runs inside loaded .k scripts, symbol group-by is ~17× faster, two engine bugs die, and the REPL gets bracketed paste and a status bar — the first release benchmarked against a real kdb+/q.">
+<meta property="og:title" content="Two point oh: infix dyads, qSQL in every script, and a 17x symbol group-by">
+<meta property="og:description" content="Amber 2.0.0: the two-argument library dyads go infix, bare qSQL runs inside loaded .k scripts, symbol group-by is ~17× faster, two engine bugs die, and the REPL gets bracketed paste and a status bar .">
 <meta property="article:published_time" content="2026-08-28">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -297,7 +297,7 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
 <header class="hero"><div class="wrap"><div class="col">
   <div class="series"><span class="bar"></span>Building Amber on ngn/k &nbsp;·&nbsp; Part 06 of 06</div>
   <div class="postno">06</div>
-  <h1>Two point oh: infix dyads, qSQL in every script, and the first race against kdb+</h1>
+  <h1>Two point oh: infix dyads, qSQL in every script, and a 17x symbol group-by</h1>
   <p class="dek">The version number crossed a whole integer, and it did it on ergonomics, not vocabulary. The syntax the docs always promised now actually parses — and for the first time the numbers are measured against the real thing.</p>
   <div class="meta">
     <span class="tag">v2.0.0</span>
@@ -310,7 +310,7 @@ the syntax the documentation told you to type. For a couple of years the docs wr
 and the parser demanded <code>lj[t;kt]</code>. The docs wrote <code>select … from … where …</code> and
 a script demanded <code>sel"…"</code>. This release makes the page and the parser agree.</p>
 
-<p>It also ships the first benchmark run against a real kdb+/q rather than against Amber's own past —
+<p>It also ships a symbol group-by that got about 17x faster —
 which turned out to be the more useful thing to know, and the more humbling.</p>
 
 <h2>Infix notation for the two-argument library dyads</h2>
@@ -386,7 +386,7 @@ the rewriter, so the bare interpreter and the bootstrap that runs before qSQL ex
 script with no qSQL in it is passed through byte-for-byte. Covered by <code>test_qsql.k</code> and
 <code>tests/test_qsql_script.sh</code>.</p>
 
-<h2>Symbol group-by, ~17× faster — and the first run against kdb+</h2>
+<h2>Symbol group-by, ~17× faster</h2>
 
 <p>Grouping a table by a <em>symbol</em> column used to lexically string-sort the symbols: an
 <code>O(n·log n)</code> sort with a per-character compare on every step. But equal symbols already have
@@ -402,34 +402,31 @@ group-by-sum row below moved about <strong>17×</strong>.</p>
 <div class="stats">
   <div><div class="v">587→34 ms</div><div class="l"><code>select … by sym</code>, 1M rows</div></div>
   <div><div class="v">~17×</div><div class="l">symbol group-by, id-based partition</div></div>
-  <div><div class="v">521 ms</div><div class="l">10M table sort — vs kdb's 1,136 ms</div></div>
+  <div><div class="v">521 ms</div><div class="l">10M table sort, `px xasc t`</div></div>
 </div>
 
-<p>What makes this release different is that the number is no longer measured against Amber's own past.
-This is the <strong>first release benchmarked against a real kdb+/q</strong> on the same machine —
-identical data from the same closed-form generator in both engines (no RNG), answers checked equal
-before anything was timed, minimum of five warm reps, kernel time only. A trade table, grouped and
-filtered by symbol, which is the workload q was built for:</p>
+<p>The workload is a trade table grouped and filtered by symbol — identical data from a
+closed-form generator (no RNG), answers checked equal before anything was timed, minimum of five
+warm reps, kernel time only:</p>
 
 <div class="tbl">
 <table>
-  <thead><tr><th>Workload (by <code>sym</code>), median ms</th><th class="n">q 1M</th><th class="n">Amber 1M</th><th class="n">q 10M</th><th class="n">Amber 10M</th></tr></thead>
+  <thead><tr><th>Workload (by <code>sym</code>), median ms</th><th class="n">Amber 1M</th><th class="n">Amber 10M</th></tr></thead>
   <tbody>
-    <tr><td><code>select sum px by sym</code></td><td class="n">3.2</td><td class="n">32.0</td><td class="n">33.2</td><td class="n">370</td></tr>
-    <tr><td><code>select vwap:wavg[sz;px] by sym</code></td><td class="n">26.6</td><td class="n">41.0</td><td class="n">221</td><td class="n">488</td></tr>
-    <tr><td><code>select from t where px&gt;105</code></td><td class="n">4.4</td><td class="n">13.2</td><td class="n">45.8</td><td class="n">62.6</td></tr>
-    <tr><td><code>sum px</code> — reduction</td><td class="n">0.22</td><td class="n hi">0.28</td><td class="n">6.3</td><td class="n hi">4.0</td></tr>
-    <tr><td><code>`px xasc t</code> — sort</td><td class="n">28.2</td><td class="n hi">30.4</td><td class="n">1,136</td><td class="n hi">521</td></tr>
+    <tr><td><code>select sum px by sym</code></td><td class="n">32.0</td><td class="n">370</td></tr>
+    <tr><td><code>select vwap:wavg[sz;px] by sym</code></td><td class="n">41.0</td><td class="n">488</td></tr>
+    <tr><td><code>select from t where px&gt;105</code></td><td class="n">13.2</td><td class="n">62.6</td></tr>
+    <tr><td><code>sum px</code> — reduction</td><td class="n hi">0.28</td><td class="n hi">4.0</td></tr>
+    <tr><td><code>`px xasc t</code> — sort</td><td class="n hi">30.4</td><td class="n hi">521</td></tr>
   </tbody>
 </table>
 </div>
 
-<p>The shape of the result is worth being honest about. On the <strong>pure array primitives</strong>
-— sort and reductions — Amber's ngn/k core matches or beats kdb: at 10M rows it sorts a table in
-<strong>521&nbsp;ms against kdb's 1,136&nbsp;ms</strong>, and reduces faster too. The gap is entirely in
-<strong>group-by aggregation</strong>: at 1M rows a <code>select sum px by sym</code> is 3.2&nbsp;ms in q
-and 32&nbsp;ms in Amber. Amber's <code>group</code> is now id-based, but it is still <em>sort</em>-based,
-where kdb runs an <code>O(n)</code> hash group with a fused per-group sum.</p>
+<p>The shape of the result is worth being honest about. The <strong>pure array primitives</strong>
+— sort and reductions — are where Amber's ngn/k core is strongest. The remaining weakness is
+<strong>group-by aggregation</strong>: <code>group</code> is now id-based rather than string-sorting,
+but it is still <em>sort</em>-based, where a hash group with a fused per-group aggregate would be
+<code>O(n)</code>. That is the next kernel to write.</p>
 
 <div class="note">
   <b>Where the next release goes</b>
@@ -507,14 +504,14 @@ one does not.</p>
 
 <p>Every change here is a gap being closed rather than a capability being added. Infix notation closes
 the gap between the docs and the parser. Bare qSQL in scripts closes the gap between the prompt and the
-file. The symbol group-by closes a gap between Amber and a sort it never needed to do — and the kdb+
-run measures, for the first time, exactly how wide the remaining gap is and precisely where it lives.</p>
+file. The symbol group-by closes a gap between Amber and a sort it never needed to do, and shows
+exactly where the remaining work lives: grouped aggregation, not the array primitives.</p>
 
 <blockquote>
 <p>The most useful number a project can publish is the one it is losing by.</p>
 </blockquote>
 
-<p>Amber matches kdb on the array primitives and trails it on grouped aggregation by a factor that has a
+<p>Amber is strong on the array primitives and trails on grouped aggregation by a factor that has a
 name and a fix. That is a far more actionable place to be at 2.0.0 than a page of wins would have been.
 The engine is at
 <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">github.com/BonucciAndrea/amber</a>;
