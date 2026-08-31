@@ -487,10 +487,13 @@ td code, th code { white-space: nowrap; }
   align-items: start;
   padding: 44px 0 96px;
 }
-@media (max-width: 1080px) { .docs-layout { grid-template-columns: 216px minmax(0,1fr); } .toc { display: none; } }
-@media (max-width: 860px)  { .docs-layout { grid-template-columns: 1fr; gap: 24px; } .sidebar { position: static; max-height: none; border-right: 0; border-bottom: 1px solid var(--border); padding-bottom: 18px; } }
-
 .sidebar { position: sticky; top: calc(var(--nav-h) + 24px); max-height: calc(100vh - var(--nav-h) - 48px); overflow-y: auto; font-size: .9rem; padding-right: 8px; }
+@media (max-width: 1080px) { .docs-layout { grid-template-columns: 216px minmax(0,1fr); } .toc { display: none; } }
+/* Mobile: the section nav must NOT stay sticky -- a sticky (positioned) sidebar
+   paints on top of the static article and overlays the text as you scroll.  This
+   override has to come AFTER the base `.sidebar` rule above, or equal specificity
+   + source order would keep it sticky (the bug this fixes). */
+@media (max-width: 860px)  { .docs-layout { grid-template-columns: 1fr; gap: 24px; } .sidebar { position: static; max-height: none; overflow: visible; border-right: 0; border-bottom: 1px solid var(--border); padding-bottom: 18px; } }
 .sidebar::-webkit-scrollbar { width: 6px; } .sidebar::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
 .sidebar .grp { font-size: .7rem; letter-spacing: .11em; text-transform: uppercase; color: var(--text-faint); font-weight: 600; margin: 22px 0 8px; }
 .sidebar .grp:first-child { margin-top: 0; }
