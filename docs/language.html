@@ -162,7 +162,8 @@ select last px by sym from trades
 select vwap:wavg[sz;px], n:#px by sym from trades where px&gt;0
 select vwap:wavg[sz;px] by time:minbar[1;time] from trades
 
-exec px from trades where sym=`AAPL        / a plain vector, not a table
+exec px from trades where sym=`AAPL        / one column -> a plain vector, not a table
+exec px,sz from trades where sym=`AAPL     / several columns -> a `px`sz dict of vectors
 update px:px*1.01 from trades where sym=`AAPL
 delete from trades where sz&lt;100</code></pre></div>
 
@@ -306,6 +307,9 @@ across cores with no GIL and it will not oversubscribe a small box or leave a bi
 
 <h2>Terminal charts and grid modes</h2>
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">plot (14*{sin x%7}'!74;60;9)                            / Braille line chart
+plot (a;b;c)                                            / several series: one labelled line each
+plot exec px,ask from trades taq quotes where sym=`AAPL / a line per column, straight from a query
+xyplot (trades`time; trades`px)                         / a time-of-day x axis -> HH:MM:SS ticks
 candle bars[10; select from trades where sym=`AAPL]     / Unicode candlesticks
 
 \grid clean | rounded | sharp | heavy                    / table frame style
