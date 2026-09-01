@@ -487,9 +487,11 @@ Driven over a real pty by <code>tests/test_paste.py</code>.</p>
 <p>On by default. The editor sets a DECSTBM scroll region and paints a
 Claude-Code-style bar on the bottom row — version, live memory, execution time, key hints — inside a
 rounded input box that stays locked while your session scrolls above it. The wheel scrolls back up
-through the transcript with the box staying put, and the whole thing runs in the alternate screen so
-quitting leaves the terminal exactly as it was. Type <code>\sb</code> to turn it off; <code>\sb</code>
-again restores it.</p>
+through the transcript with the box staying put — and now sideways too: output wider than the terminal,
+a many-column table or a wide chart, clips at the right edge instead of wrapping into a mangled box, and
+<kbd>Shift</kbd>+<kbd>&larr;</kbd>/<kbd>&rarr;</kbd> or the horizontal wheel pans across it. The whole
+thing runs in the alternate screen so quitting leaves the terminal exactly as it was. Type
+<code>\sb</code> to turn it off; <code>\sb</code> again restores it.</p>
 
 <div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">\sb                             / turn the status bar off; back to the plain prompt
 \sb                             / turn it back on</code></pre></div>
