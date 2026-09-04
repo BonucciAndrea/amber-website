@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tacit programming — trains, hooks and forks</title>
+<meta name="description" content="Point-free programming in Amber: adverbs, verb composition, projections, and — new in 2.0.1 — real tacit trains. Hooks (f;g) and forks (f;g;h) let you write mean, range and normalise as pure combinations of verbs, with no named argument.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Tacit programming — trains, hooks and forks">
+<meta property="og:description" content="Point-free programming in Amber: adverbs, composition, projections, and real tacit trains — hooks (f;g) and forks (f;g;h) — new in 2.0.1.">
+<meta property="og:site_name" content="Amber">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/amber.css?v=2">
+<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v2.0.1</span></a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../docs/" class="active">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a><a href="../notepad.html">Notepad</a>
+      <a href="https://github.com/BonucciAndrea/amber-notepad" rel="noopener" target="_blank" class="np-mobile">Scratchpad</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-btn scratchpad-nav" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener" title="Amber Notepad — browser scratchpad" aria-label="Amber Notepad scratchpad">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </a>
+      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+  </div>
+</header>
+<main id="main">
+<div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
+<div class="grp">Overview</div>
+<a href="../docs/index.html">Introduction</a>
+<a href="../docs/install.html">Install &amp; run</a>
+<div class="grp">Reference</div>
+<a href="../docs/language.html">Language &amp; qSQL</a>
+<a href="../docs/tacit.html" class="active">Tacit programming</a>
+<a href="../docs/temporal.html">Temporal mechanics</a>
+<a href="../docs/protocol.html">Wire protocol</a>
+<a href="../docs/capi.html">C API &amp; extensions</a>
+<div class="grp">Performance</div>
+<a href="../docs/benchmarks.html">Benchmarks</a>
+</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../docs/index.html">Docs</a> / Tacit programming</div>
+<h1>Tacit programming</h1>
+<p class="lead"><em>Tacit</em> — or <em>point-free</em> — code names the operations, never the data.
+Instead of <code>{(+/x)%#x}</code>, with its explicit <code>x</code>, you write the mean as a pure
+combination of verbs: <code>(+/;%;#)</code>. Amber is an array language, so most of it is already tacit;
+<strong>2.0.1</strong> adds the last piece — real <strong>trains</strong> (hooks and forks) — so a
+whole class of little functions needs no argument name at all.</p>
+
+<p style="border-left:3px solid var(--accent);padding-left:14px;margin:18px 0">
+<strong>New in 2.0.1.</strong> A parenthesised, semicolon-separated list whose every element is a
+function now runs as a <strong>train</strong> when applied: <code>(f;g)</code> is a hook,
+<code>(f;g;h)</code> a fork. Everything else on this page — adverbs, composition, projections —
+works in every version.</p>
+
+<h2>Why Amber is already tacit</h2>
+<p>In a scalar language you loop; in an array language you name a verb and it runs over the whole
+vector. That alone removes most of the bookkeeping that forces you to mention data. A verb applied
+to a vector, an adverb applied to a verb, one verb feeding another — each is a value you can name and
+combine without ever writing an index or a loop variable.</p>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">+/ 1 2 3 4          / 10        sum: the verb + folded by the adverb /
+#? 3 1 3 2 1        / 3         count of distinct: two verbs, no argument named
+|/ 5 2 9 1          / 9         maximum</code></pre></div>
+<p>Tacit style in Amber rests on three building blocks — <strong>adverbs</strong>,
+<strong>composition</strong>, and <strong>projection</strong> — and then trains, which combine them.</p>
+
+<h2>Adverbs — the workhorses</h2>
+<p>An <strong>adverb</strong> takes a verb and returns a new verb that applies it in a particular
+shape. They are the reason array code rarely needs an explicit loop.</p>
+<table>
+<thead><tr><th>Adverb</th><th>Name</th><th>Example</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td><code>/</code></td><td>over (fold)</td><td><code>+/ 1 2 3 4</code></td><td><code>10</code></td></tr>
+<tr><td><code>\</code></td><td>scan</td><td><code>+\ 1 2 3 4</code></td><td><code>1 3 6 10</code></td></tr>
+<tr><td><code>'</code></td><td>each</td><td><code>#'("ab";"cde")</code></td><td><code>2 3</code></td></tr>
+<tr><td><code>':</code></td><td>each-prior</td><td><code>-': 10 15 13 20</code></td><td><code>10 5 -2 7</code></td></tr>
+<tr><td><code>/:</code></td><td>each-right</td><td><code>10 +/: 1 2 3</code></td><td><code>11 12 13</code></td></tr>
+<tr><td><code>\:</code></td><td>each-left</td><td><code>1 2 3 +\: 10</code></td><td><code>11 12 13</code></td></tr>
+</tbody>
+</table>
+<p><code>-':</code> (subtract-each-prior) is deltas; <code>+\</code> is a running total; <code>f/:</code>
+and <code>f\:</code> build the outer-product tables. None of them mention an index.</p>
+
+<h2>Composition</h2>
+<p>Verbs read <strong>right to left</strong>, so writing them next to one another already composes
+them: <code>#?x</code> is <code>#(?x)</code> — "count of the distinct of <code>x</code>". Wrapping a run
+of verbs in <em>space-separated</em> parentheses makes that composition a value you can name and
+pass around.</p>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">(,|) 1 2 3          / ,3 2 1     enlist of the reverse: ,(|x)
+last:(*|)           / first of the reverse = last element
+last 1 2 3 4        / 4</code></pre></div>
+<p><strong>Watch the semicolon.</strong> <code>(f g)</code> with a space is ordinary composition
+<code>f(g x)</code>. <code>(f;g)</code> with a semicolon is a <em>hook</em> — a train, described next.
+They are different constructs; the semicolon is the switch.</p>
+
+<h2>Projection &amp; currying</h2>
+<p>Supplying <em>some</em> of a verb's arguments returns a new verb waiting for the rest — a
+<strong>projection</strong>. This is how you turn a dyadic verb into a one-argument transform without
+naming anything.</p>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">(10*) 1 2 3         / 10 20 30   multiply-by-ten
+(2+) 1 2 3          / 3 4 5      add-two
+{x*x}' 1 2 3 4      / 1 4 9 16   a lambda under each
+f[x;;z]             / a three-arg verb with the middle slot left open</code></pre></div>
+<p>Projections are ordinary values, so they slot straight into adverbs and — as you will see —
+into trains: <code>(10*)</code> is a perfectly good train element.</p>
+
+<h2>Trains — hooks and forks</h2>
+<p>A <strong>train</strong> is a parenthesised, <strong>semicolon-separated</strong> list whose every
+element is a function. When you apply it, Amber does not index the list — it wires the verbs together.
+Two shapes exist: the two-verb <strong>hook</strong> and the three-verb <strong>fork</strong>.</p>
+
+<h3>Fork <code>(f;g;h)</code></h3>
+<p>A fork sends the argument through the two <em>outer</em> verbs and combines the results with the
+<em>middle</em> one:</p>
+<p style="text-align:center;font-size:1.05em;margin:16px 0"><code>(f;g;h) y&nbsp;&nbsp;≡&nbsp;&nbsp;(f y) g (h y)</code></p>
+
+<div class="diagram">
+<svg viewBox="0 0 760 250" role="img" aria-label="Fork data flow: the argument y is fed to f and to h; their results become the left and right arguments of g, whose result is the output.">
+  <style>
+    .box{ fill: var(--surface-2); stroke: var(--border-strong); stroke-width: 1.3; rx: 8 }
+    .vb { fill: var(--accent); font: 600 17px var(--font-mono) }
+    .lb { fill: var(--text); font: 500 14px var(--font-mono) }
+    .sm { fill: var(--text-faint); font: 400 12.5px var(--font-mono) }
+    .fl { fill: none; stroke: var(--border-strong); stroke-width: 1.4 }
+  </style>
+  <!-- argument -->
+  <text class="lb" x="60" y="130" text-anchor="middle">y</text>
+  <circle cx="60" cy="150" r="5" fill="var(--accent)"/>
+  <!-- split to f and h -->
+  <path class="fl" d="M70 150 C 130 150 130 70 200 70"/>
+  <path class="fl" d="M70 150 C 130 150 130 230 200 230"/>
+  <!-- f -->
+  <rect class="box" x="200" y="46" width="90" height="48" rx="8"/>
+  <text class="vb" x="245" y="76" text-anchor="middle">f</text>
+  <!-- h -->
+  <rect class="box" x="200" y="206" width="90" height="48" rx="8" transform="translate(0,-30)"/>
+  <text class="vb" x="245" y="206" text-anchor="middle">h</text>
+  <!-- results into g -->
+  <path class="fl" d="M290 70 C 360 70 360 128 430 128"/>
+  <path class="fl" d="M290 200 C 360 200 360 152 430 152"/>
+  <text class="sm" x="360" y="60" text-anchor="middle">f y</text>
+  <text class="sm" x="360" y="214" text-anchor="middle">h y</text>
+  <!-- g -->
+  <rect class="box" x="430" y="116" width="110" height="48" rx="8"/>
+  <text class="vb" x="485" y="146" text-anchor="middle">g</text>
+  <!-- output -->
+  <path class="fl" d="M540 140 L 640 140"/>
+  <polygon points="640,140 630,135 630,145" fill="var(--border-strong)"/>
+  <text class="lb" x="680" y="145" text-anchor="middle">(f y) g (h y)</text>
+</svg>
+</div>
+
+<p>That single rule gives you a surprising number of everyday functions for free:</p>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">avg:(+/;%;#)        / mean = sum % count
+avg 2 4 6 8 10      / 6.0
+
+(|/;-;&amp;/) 5 2 9 1    / 8          range = max - min
+
+(&amp;/;+;|/) 2 9 4      / 11         min + max  (halve it for the midpoint)
+{x%2} (&amp;/;+;|/) 2 9 4   / 5.5</code></pre></div>
+
+<h3>Hook <code>(f;g)</code></h3>
+<p>A hook applies <code>g</code> to the argument and then feeds both the original argument and that
+result to <code>f</code>:</p>
+<p style="text-align:center;font-size:1.05em;margin:16px 0"><code>(f;g) y&nbsp;&nbsp;≡&nbsp;&nbsp;y f (g y)</code></p>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">(,;|) 1 2 3         / 1 2 3 3 2 1    a vector followed by its own reverse
+(~;|) 1 2 1         / 1              palindrome test: y ~ (|y)
+(~;|) 1 2 3         / 0
+
+norm:(%;+/)         / divide each element by the total
+norm 3 1 4 1 5      / 0.214 0.071 0.286 0.071 0.357
++/ norm 3 1 4 1 5   / 1.0            ... so it sums to 1</code></pre></div>
+
+<h2>Dyadic trains</h2>
+<p>Trains are ambivalent. Called on <em>two</em> arguments — write them in bracket form
+<code>t[x;y]</code> — the argument on the left threads in as well:</p>
+<table>
+<thead><tr><th>shape</th><th>monadic <code>t y</code></th><th>dyadic <code>t[x;y]</code></th></tr></thead>
+<tbody>
+<tr><td><code>(f;g)</code> hook</td><td><code>y f (g y)</code></td><td><code>x f (g y)</code></td></tr>
+<tr><td><code>(f;g;h)</code> fork</td><td><code>(f y) g (h y)</code></td><td><code>(x f y) g (x h y)</code></td></tr>
+</tbody>
+</table>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">(+;*;-)[10;3]       / 91         (10+3) * (10-3)
+(+;|)[100;1 2 3]    / 103 102 101    100 + |1 2 3</code></pre></div>
+<p class="small muted">Monadic application also works by plain juxtaposition (<code>t y</code>); the
+bracket form is only required when you are passing two arguments. Infix
+(<code>x&nbsp;t&nbsp;y</code>) is reserved for verbs, so pass a train's two arguments in brackets.</p>
+
+<h2>Building point-free pipelines</h2>
+<p>Because a train is just a value, it composes with everything else. Elements can be primitives,
+derived verbs (<code>+/</code>), projections (<code>10*</code>) or full lambdas, and the whole train can
+be named, stored in a list, or wrapped in a lambda to run under an adverb.</p>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">(10*;+;{x*x}) 3               / 39        mixes a projection, a primitive and a lambda
+
+/ to map a train over many rows, wrap it in a lambda -- see the note below
+{(+/;%;#) x}' (1 2 3;4 5 6;10 20 30 40)   / 2.0 5.0 25.0   the mean of each row</code></pre></div>
+
+<h2>Rules, edges &amp; gotchas</h2>
+<ul>
+<li><strong>Semicolons make a train; spaces make a composition.</strong> <code>(f;g)</code> is a hook;
+<code>(f g)</code> is <code>f(g x)</code>. Reach for the semicolon when you want a fork or a hook.</li>
+<li><strong>Only two or three elements, and every one must be a function.</strong> A list of four or more
+verbs, or any list containing a non-function value, is left alone and <strong>indexes</strong> exactly as
+before — <code>(10 20 30)[1]</code> is still <code>20</code>.</li>
+<li><strong>A train is applied, not adverb-modified.</strong> <code>train'rows</code> does not attach the
+each adverb to a list; wrap it — <code>{train x}'rows</code> — as in the pipeline example above.</li>
+<li><strong>Indexing a two- or three-element list of functions now trains it.</strong> This is the one
+behavioural change in 2.0.1. If you genuinely keep a dispatch table of two or three functions and index
+it by position, give it a fourth entry, or select with <code>.[tbl;i]</code>, so it is not read as a
+train. In practice dispatch tables are dictionaries (<code>`a`b!(f;g)</code>), which are unaffected.</li>
+</ul>
+
+<h2>Quick reference</h2>
+<table>
+<thead><tr><th>Form</th><th>Meaning</th><th>Example → result</th></tr></thead>
+<tbody>
+<tr><td><code>f/  f\  f'</code></td><td>over · scan · each</td><td><code>+/ 1 2 3</code> → <code>6</code></td></tr>
+<tr><td><code>f':  f/:  f\:</code></td><td>each-prior · each-right · each-left</td><td><code>-': 2 5 9</code> → <code>2 3 4</code></td></tr>
+<tr><td><code>(f g)</code></td><td>composition <code>f(g x)</code></td><td><code>(*|) 1 2 3 4</code> → <code>4</code></td></tr>
+<tr><td><code>(v f)</code>, <code>f[a;;c]</code></td><td>projection / currying</td><td><code>(10*) 3</code> → <code>30</code></td></tr>
+<tr><td><code>(f;g)</code></td><td>hook — <code>y f (g y)</code></td><td><code>(%;+/) 1 3</code> → <code>0.25 0.75</code></td></tr>
+<tr><td><code>(f;g;h)</code></td><td>fork — <code>(f y) g (h y)</code></td><td><code>(+/;%;#) 2 4 6</code> → <code>4.0</code></td></tr>
+<tr><td><code>(f;g;h)[x;y]</code></td><td>dyadic fork — <code>(x f y) g (x h y)</code></td><td><code>(+;*;-)[10;3]</code> → <code>91</code></td></tr>
+</tbody>
+</table>
+
+<p class="small muted" style="margin-top:24px">See also the <a href="../docs/language.html">Language &amp; qSQL</a>
+reference, and the <a href="https://github.com/BonucciAndrea/amber/blob/main/CHANGELOG.md" target="_blank" rel="noopener">CHANGELOG</a>
+for the 2.0.1 implementation notes.</p>
+
+</article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+        <p class="small muted" style="margin-top:14px">
+          <a class="scratchpad-link" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            Amber Notepad — scratchpad
+          </a>
+        </p>
+      </div>
+      <div>
+        <h5>Documentation</h5>
+        <a href="../docs/index.html">Introduction</a>
+        <a href="../docs/language.html">Language &amp; qSQL</a>
+        <a href="../docs/tacit.html">Tacit programming</a>
+        <a href="../docs/temporal.html">Temporal mechanics</a>
+        <a href="../docs/protocol.html">Wire protocol</a>
+        <a href="../docs/capi.html">C API</a>
+        <a href="../docs/benchmarks.html">Benchmarks</a>
+      </div>
+      <div>
+        <h5>Ecosystem</h5>
+        <a href="../ecosystem/python-amber.html">python-amber</a>
+        <a href="../ecosystem/amber-arrow.html">amber-arrow</a>
+        <a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
+        <a href="../ecosystem/amber-tick.html">amber-tick</a>
+        <a href="../ecosystem/grafana.html">Grafana datasource</a>
+        <a href="../ecosystem/vscode-amber.html">vscode-amber</a>
+        <a href="../ecosystem/amber-ai.html">amber-ai</a>
+      </div>
+      <div>
+        <h5>Learn</h5>
+        <a href="../tutorials/index.html">Tutorials</a>
+        <a href="../blog/index.html">Blog</a>
+        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+        <a href="https://github.com/BonucciAndrea" target="_blank" rel="noopener">All repositories</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+      <span>Not affiliated with kdb+ / KX Systems.</span>
+    </div>
+  </div>
+</footer>
+<script src="../assets/js/amber.js" defer></script>
+</body>
+</html>
