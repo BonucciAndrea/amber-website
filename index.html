@@ -378,6 +378,40 @@ p:arrow.export t            / (schemaAddr; arrayAddr)</code></pre>
 </section>
 
 <!-- ==================== ECOSYSTEM ==================== -->
+<section class="section" id="build-log">
+  <div class="wrap">
+    <div class="eyebrow">Development</div>
+    <h2 style="margin-top:0">Written down as it was built</h2>
+    <p class="lead" style="max-width:66ch">Amber started as a 10,000-line C interpreter and became an
+    engine one layer at a time. The build log follows the work in the order it happened, and the docs
+    carry what came out of it &mdash; the cost model, the internals, and the failures worth knowing
+    about.</p>
+    <div class="grid grid-2" style="margin-top:28px">
+      <a class="card card-link" href="blog/index.html">
+        <h4 style="margin-top:0;color:var(--text)">The build log &rarr;</h4>
+        <p class="small mb-0">The interpreter underneath, teaching K to speak q, one byte at offset
+        &minus;13, down to the metal, the platform seams, and 2.0. In implementation order.</p>
+      </a>
+      <a class="card card-link" href="docs/performance.html">
+        <h4 style="margin-top:0;color:var(--text)">Writing fast Amber &rarr;</h4>
+        <p class="small mb-0">A primitive call costs 60&ndash;100&nbsp;ns before it touches an element.
+        The whole cost model follows from that, including a kernel that got 10&times; faster on layout
+        alone.</p>
+      </a>
+      <a class="card card-link" href="docs/internals.html">
+        <h4 style="margin-top:0;color:var(--text)">Engine internals &rarr;</h4>
+        <p class="small mb-0">The C source map, how a primitive is dispatched and specialised by type,
+        the 16&nbsp;MB scratch arena, and where to look when something is slow.</p>
+      </a>
+      <a class="card card-link" href="docs/gotchas.html">
+        <h4 style="margin-top:0;color:var(--text)">Gotchas &rarr;</h4>
+        <p class="small mb-0">Seven ways Amber returns a plausible wrong answer instead of an error,
+        and the ten-second check that catches each one.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
 <section class="section" id="ecosystem">
   <div class="wrap">
     <div style="max-width:62ch;margin-bottom:34px">

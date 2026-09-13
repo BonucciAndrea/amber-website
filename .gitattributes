@@ -1,0 +1,10 @@
+# Normalise line endings on commit. Without this, editing on Windows rewrites
+# whole files as CRLF and git reports every line as changed — 19 files and
+# 6,634 phantom line changes, with no content difference at all.
+# A trailing CR in CNAME can also break the GitHub Pages custom domain.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.woff  binary
+*.woff2 binary
+*.wasm  binary

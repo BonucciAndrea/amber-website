@@ -706,3 +706,99 @@ html.has-js .reveal.in { opacity: 1; transform: none; transition: opacity .6s va
   .terminal-head .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .badge-row, .chips { row-gap: 8px; }
 }
+
+/* ---- 12. Long-form essay components ------------------------------------- */
+/* Additive only: classes the five engine essays use, restyled onto the site's
+   own tokens so folded-in posts read as part of the site rather than imports. */
+
+.prose figure { margin: 2.2em 0; }
+.prose figure.wide {
+  width: min(50rem, 92vw);
+  max-width: none;
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+@media (max-width: 960px) {
+  .prose figure.wide { width: auto; max-width: 100%; margin-left: 0; transform: none; }
+}
+.prose figcaption {
+  margin-top: 12px;
+  font-size: .84rem;
+  line-height: 1.55;
+  color: var(--text-faint);
+}
+
+.frame {
+  /* The essay diagrams carry their own <style> and reference the token names the
+     standalone essay shell used. Alias them onto the site's tokens here, scoped to
+     .frame so nothing leaks. Without these the fills compute to black. */
+  --surface2: var(--surface-2);
+  --border2:  var(--border-strong);
+  --hue:      var(--accent);
+  --dim:      var(--text-dim);
+  --faint:    var(--text-faint);
+  --sans:     var(--font-sans);
+  --mono:     var(--font-mono);
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 26px 22px;
+  overflow-x: auto;
+}
+.frame svg { display: block; width: 100%; height: auto; max-width: 100%; }
+/* diagram internals carried over with the SVGs */
+.frame .gap { fill: none; }
+
+/* right-aligned numeric cells in data tables */
+.prose td.n, .prose th.n {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.prose td.n.hi, .prose .n.hi { color: var(--accent); font-weight: 600; }
+
+/* stat strip */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px;
+  margin: 2.1em 0;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.stats > div { background: var(--surface-solid); padding: 18px 18px 16px; }
+.stats .v {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -.03em;
+  color: var(--text);
+  line-height: 1.15;
+}
+.stats .l { font-size: .76rem; color: var(--text-faint); margin-top: 4px; line-height: 1.4; }
+
+/* essays wrote tables as .tbl; the site calls it .table-wrap */
+.tbl { overflow-x: auto; margin: 1.9em 0; }
+.tbl table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.tbl th, .tbl td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.tbl thead th {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-faint);
+  font-weight: 600;
+}
+.tbl tbody tr:last-child td { border-bottom: 0; }
+
+/* series colours for the two-line comparison charts (validated pair) */
+:root { --s-amber: #c77b1e; --s-numpy: #3987e5; }
+html[data-theme="light"] { --s-amber: #B26B00; --s-numpy: #1668B0; }

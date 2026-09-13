@@ -40,15 +40,20 @@
 <div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
 <div class="grp">Overview</div>
 <a href="../docs/index.html">Introduction</a>
-<a href="../docs/install.html">Install & run</a>
+<a href="../docs/install.html">Install &amp; run</a>
 <div class="grp">Reference</div>
-<a href="../docs/language.html">Language & qSQL</a>
+<a href="../docs/language.html">Language &amp; qSQL</a>
 <a href="../docs/tacit.html">Tacit programming</a>
 <a href="../docs/temporal.html">Temporal mechanics</a>
 <a href="../docs/protocol.html">Wire protocol</a>
-<a href="../docs/capi.html">C API & extensions</a>
+<a href="../docs/capi.html">C API &amp; extensions</a>
 <div class="grp">Performance</div>
 <a href="../docs/benchmarks.html" class="active">Benchmarks</a>
+<a href="../docs/performance.html">Writing fast Amber</a>
+<div class="grp">Internals</div>
+<a href="../docs/internals.html">Engine internals</a>
+<a href="../docs/development.html">Development &amp; testing</a>
+<a href="../docs/gotchas.html">Gotchas</a>
 </aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../docs/index.html">Docs</a> / Benchmarks</div>
 <h1>Benchmarks</h1>
 <p class="lead">Every number on this page comes out of <code>bench/run_comparative.py</code>, which CI
@@ -320,6 +325,139 @@ asof     704.0
 ------------------------------------------------------------
 total: ~3.2 s end-to-end for 500,000 trades</code></pre></div>
 
+<h2>Against NumPy, on a real workload</h2>
+
+<p>The table above is a synthetic suite. This section is a single application benchmark — a
+structured-payoff backtest kernel — measured against a line-for-line NumPy port of the same
+algorithm. Same tensor, same three cumulative scans,
+<code>np.maximum.accumulate</code> where Amber uses <code>maxs</code>. It compares engines, not
+approaches, and it is the honest place to look because the answer is not flattering everywhere.</p>
+
+<p class="small muted">Intel Xeon 2.10&nbsp;GHz, two cores, 8&nbsp;GB. Amber built portable
+<code>-O3 -flto</code> with OpenMP; NumPy 2.4.4. Single-threaded, warm, best of repeated runs.</p>
+
+<h3>Where NumPy wins: few observations</h3>
+
+<div class="tbl">
+<table>
+  <thead><tr><th>Universe</th><th class="n">Cells</th><th class="n">Amber</th><th class="n">NumPy</th><th class="n">Ratio</th></tr></thead>
+  <tbody>
+    <tr><td>U = 25</td><td class="n">0.54 M</td><td class="n">9 ms</td><td class="n">0.9 ms</td><td class="n">10×</td></tr>
+    <tr><td>U = 50</td><td class="n">1.08 M</td><td class="n">13 ms</td><td class="n">1.8 ms</td><td class="n">7.2×</td></tr>
+    <tr><td>U = 100</td><td class="n">2.16 M</td><td class="n">20 ms</td><td class="n">6.7 ms</td><td class="n">3.0×</td></tr>
+    <tr><td>U = 200</td><td class="n">4.32 M</td><td class="n">199 ms</td><td class="n">10.3 ms</td><td class="n hi">19×</td></tr>
+    <tr><td>U = 400</td><td class="n">8.64 M</td><td class="n">377 ms</td><td class="n">30.4 ms</td><td class="n hi">12×</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Tensor build, S&nbsp;=&nbsp;1800 start dates, n&nbsp;=&nbsp;12 observations. The U&nbsp;=&nbsp;100
+row is the warm steady state; the 200 and 400 rows were measured in sequence after it and carry
+allocator pressure. Cold builds cost roughly double a warm one, so pre-warm the tensor when a session
+opens rather than on the user's first query.</p>
+
+<h3>Where Amber wins: many observations</h3>
+
+<p>The two engines scale differently, and the difference is structural rather than incidental. Amber
+carries a high fixed cost per <em>operation</em> — allocating an intermediate, dispatching a kernel —
+but that cost barely moves when the data inside the operation grows. NumPy's per-operation overhead is
+tiny, so its cost tracks the data almost exactly.</p>
+
+<div class="tbl">
+<table>
+  <thead><tr><th>Observations per product</th><th class="n">6</th><th class="n">12</th><th class="n">24</th><th class="n">48</th><th class="n">96</th><th class="n">120</th></tr></thead>
+  <tbody>
+    <tr><td>Amber µs</td><td class="n">1,052</td><td class="n">1,468</td><td class="n">1,153</td><td class="n">1,418</td><td class="n">1,746</td><td class="n">2,013</td></tr>
+    <tr><td>NumPy µs</td><td class="n">277</td><td class="n">396</td><td class="n">695</td><td class="n">1,528</td><td class="n">2,974</td><td class="n">3,697</td></tr>
+    <tr><td>Amber / NumPy</td><td class="n">3.8×</td><td class="n">3.7×</td><td class="n">1.7×</td><td class="n hi">0.93×</td><td class="n hi">0.59×</td><td class="n hi">0.54×</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Amber's cost rises 1.9× while the data grows 20×; NumPy's rises 13×. The crossover sits at roughly
+<strong>43 observations</strong>. A three-year quarterly note has 12 and belongs to NumPy; a ten-year
+monthly has 120, where Amber is 1.8× faster.</p>
+
+<div class="note note-info">
+  <span class="note-title">Read this the right way round</span>
+  <p>Both halves of that table were true of the <em>same code</em>. The lesson is not that one engine
+  is faster — it is that Amber's cost model is dominated by how many primitive calls you make, not how
+  much data each one touches. <a href="../docs/performance.html">Writing fast Amber</a> is the
+  page that turns that into a rule you can apply, and the same kernel rewritten against it beats NumPy
+  at <em>every</em> size on this workload.</p>
+</div>
+
+<h2>Native float scans</h2>
+
+<p>Until recently the fast scan path was gated on integer and char data only, so every float
+<code>+\</code>, <code>*\</code>, <code>&amp;\</code> and <code>|\</code> — that is
+<code>sums</code>, <code>prds</code>, <code>mins</code> and <code>maxs</code> on doubles — fell through
+to a generic loop that allocates an atom and goes through the generic dyadic apply once per element.
+It measured 57&nbsp;ns per element against 0.69&nbsp;ns for the identical scan on longs.</p>
+
+<div class="tbl">
+<table>
+  <thead><tr><th>21,600 doubles</th><th class="n">Before</th><th class="n">After</th><th class="n">Speed-up</th></tr></thead>
+  <tbody>
+    <tr><td><code>maxs</code></td><td class="n">1,290 µs</td><td class="n">85 µs</td><td class="n hi">15×</td></tr>
+    <tr><td><code>mins</code></td><td class="n">1,191 µs</td><td class="n">43 µs</td><td class="n hi">28×</td></tr>
+    <tr><td><code>sums</code></td><td class="n">610 µs</td><td class="n">25 µs</td><td class="n hi">24×</td></tr>
+    <tr><td><code>prds</code></td><td class="n">587 µs</td><td class="n">27 µs</td><td class="n hi">22×</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>On the operations a quant actually writes, over a 1,000,000-element price path:</p>
+
+<div class="stats">
+  <div><div class="v">17×</div><div class="l">running max<br>79.8 ms → 4.6 ms</div></div>
+  <div><div class="v">22×</div><div class="l">max drawdown<br>56.2 ms → 2.6 ms</div></div>
+  <div><div class="v">36×</div><div class="l">cumulative return<br>27.4 ms → 0.77 ms</div></div>
+</div>
+
+<p>Min and max fold through the existing order-preserving integer domain rather than comparing IEEE
+doubles directly, so scan and reduce agree bit-for-bit on NaN and signed zero. Output is identical to
+the previous path on every input tested, including NaN, ±0.0, ±∞ and seeded forms.</p>
+
+<h2>Multicore: when <code>peach</code> does not help</h2>
+
+<p>A basket sweep is embarrassingly parallel, so <code>peach</code> looks like free speed. On two
+cores it is not:</p>
+
+<div class="tbl">
+<table>
+  <thead><tr><th>400 baskets, 2 cores</th><th class="n">Wall time</th><th class="n">vs serial</th></tr></thead>
+  <tbody>
+    <tr><td>serial <code>each</code></td><td class="n">559 ms</td><td class="n">1.00×</td></tr>
+    <tr><td><code>peach</code>, one basket per task</td><td class="n">772 ms</td><td class="n">0.73×</td></tr>
+    <tr><td><code>peach</code>, 2 chunks</td><td class="n">722 ms</td><td class="n">0.77×</td></tr>
+    <tr><td><code>peach</code>, 4 chunks</td><td class="n">746 ms</td><td class="n">0.75×</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Results were byte-identical in every configuration — this is a cost problem, not a correctness one.
+<code>peach</code> forks, and the per-task cost of handing a slice of a 17&nbsp;MB tensor to a child
+and collecting its result exceeds what a second core buys at this granularity. Chunking reduces the
+task count but not the copy. For throughput, run several <code>amberd</code> processes and shard the
+work across them rather than reaching for <code>peach</code>.</p>
+
+<h2>Memory</h2>
+
+<div class="tbl">
+<table>
+  <thead><tr><th>Structure</th><th>Shape</th><th class="n">Resident</th></tr></thead>
+  <tbody>
+    <tr><td>Performance tensor</td><td>U = 100, S = 1800, n = 12</td><td class="n">17.3 MB</td></tr>
+    <tr><td>Price history</td><td>U = 400, T = 4600</td><td class="n">14.7 MB</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Worth noting against the 16&nbsp;MB thread-local scratch arena: a U&nbsp;=&nbsp;100 tensor already
+exceeds it, which is the most likely explanation for the allocator cliff visible in the U&nbsp;=&nbsp;200
+row of the first table.</p>
+
 <h2>Running them yourself</h2>
 <div class="code"><pre><code class="lang-sh">./amber bench.k                  # attribute / find speedups
 ./amber bench-fin.k              # the finance module
@@ -359,6 +497,10 @@ optimisation was tried, what was measured, and why.</p>
         <a href="../docs/protocol.html">Wire protocol</a>
         <a href="../docs/capi.html">C API</a>
         <a href="../docs/benchmarks.html">Benchmarks</a>
+        <a href="../docs/performance.html">Writing fast Amber</a>
+        <a href="../docs/internals.html">Engine internals</a>
+        <a href="../docs/development.html">Development &amp; testing</a>
+        <a href="../docs/gotchas.html">Gotchas</a>
       </div>
       <div>
         <h5>Ecosystem</h5>

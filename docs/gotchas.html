@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Amber tutorials</title>
-<meta name="description" content="Three end-to-end walkthroughs: build a 5-million-row in-memory tick store in 60 seconds, wire up a Grafana dashboard pipeline, and pass Arrow record batches into Python without copying.">
+<title>Gotchas — the silent failures worth knowing about</title>
+<meta name="description" content="Seven ways Amber will give you a plausible wrong answer instead of an error: comment lines that eat files, projections that evaluate once, out-of-range gathers that return nulls, and how to catch each one.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Amber tutorials">
-<meta property="og:description" content="Three end-to-end walkthroughs: build a 5-million-row in-memory tick store in 60 seconds, wire up a Grafana dashboard pipeline, and pass Arrow record batches into Python without copying.">
+<meta property="og:title" content="Gotchas — the silent failures worth knowing about">
+<meta property="og:description" content="Seven ways Amber will give you a plausible wrong answer instead of an error: comment lines that eat files, projections that evaluate once, out-of-range gathers that return nulls, and how to catch each one.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +23,7 @@
 <header class="nav">
   <div class="nav-inner">
     <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v2.0.1</span></a>
-    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../docs/">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/" class="active">Tutorials</a><a href="../blog/">Blog</a><a href="../notepad.html">Notepad</a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../docs/" class="active">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a><a href="../notepad.html">Notepad</a>
       <a href="https://github.com/BonucciAndrea/amber-notepad" rel="noopener" target="_blank" class="np-mobile">Scratchpad</a>
     </nav>
     <div class="nav-right">
@@ -38,48 +38,121 @@
 </header>
 <main id="main">
 <div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
-<div class="grp">Tutorials</div>
-<a href="../tutorials/index.html" class="active">All tutorials</a>
-<a href="../tutorials/tick-store.html" class="active">5M-row tick store</a>
-<a href="../tutorials/grafana-pipeline.html">Grafana pipeline</a>
-<a href="../tutorials/arrow-interop.html">Arrow → Python, zero copy</a>
-<div class="grp">Case studies</div>
-<a href="../tutorials/payoff-engine.html">Structured payoff engine</a>
-</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / Tutorials</div>
-<h1>Tutorials</h1>
-<p class="lead">Three walkthroughs that each end with something running. Every command is copyable, and
-every number quoted is one the tool prints for itself.</p>
+<div class="grp">Overview</div>
+<a href="../docs/index.html">Introduction</a>
+<a href="../docs/install.html">Install &amp; run</a>
+<div class="grp">Reference</div>
+<a href="../docs/language.html">Language &amp; qSQL</a>
+<a href="../docs/tacit.html">Tacit programming</a>
+<a href="../docs/temporal.html">Temporal mechanics</a>
+<a href="../docs/protocol.html">Wire protocol</a>
+<a href="../docs/capi.html">C API &amp; extensions</a>
+<div class="grp">Performance</div>
+<a href="../docs/benchmarks.html">Benchmarks</a>
+<a href="../docs/performance.html">Writing fast Amber</a>
+<div class="grp">Internals</div>
+<a href="../docs/internals.html">Engine internals</a>
+<a href="../docs/development.html">Development &amp; testing</a>
+<a href="../docs/gotchas.html" class="active">Gotchas</a>
+</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../docs/index.html">Docs</a> / Gotchas</div>
+<h1>Gotchas</h1>
+<p class="lead">Every item on this page was found the same way: code that ran, produced numbers, and
+was wrong. None of them raised an error. Six of the seven are completely silent, and four produced
+plausible output — which is the dangerous kind.</p>
 
-<div class="grid" style="margin-top:30px;gap:16px">
-  <a class="card card-link tut-card" href="../tutorials/tick-store.html">
-    <span class="n">01 · 15 minutes</span>
-    <h3 style="margin:8px 0">Building a 5-million-row in-memory tick store in 60 seconds</h3>
-    <p class="small mb-0">Generate a realistic session, stamp the attributes that make the as-of join
-    a binary search, run TAQ analytics, and check the memory footprint with <code>\v</code>.</p>
-  </a>
-  <a class="card card-link tut-card" href="../tutorials/grafana-pipeline.html">
-    <span class="n">02 · 40 minutes</span>
-    <h3 style="margin:8px 0">Setting up an end-to-end Grafana &amp; Amber dashboard pipeline</h3>
-    <p class="small mb-0">Store &rarr; marts &rarr; <code>amberd</code> &rarr; the Go datasource &rarr;
-    provisioned panels. Including the two failures that look like something else.</p>
-  </a>
-  <a class="card card-link tut-card" href="../tutorials/arrow-interop.html">
-    <span class="n">03 · 20 minutes</span>
-    <h3 style="margin:8px 0">Interoperability: Arrow record batches from Amber to Python without copying</h3>
-    <p class="small mb-0">Prove pointer identity, stream 400 million rows a batch at a time, and
-    understand the one lifetime rule that makes it safe.</p>
-  </a>
+<div class="note note-warn">
+  <span class="note-title">Why this page exists</span>
+  <p>An array language compresses a lot of behaviour into very little text, so a one-character
+  mistake is a whole different program rather than a syntax error. The defence is not vigilance, it is
+  a differential test: run anything numerically important against a second implementation and compare
+  exactly. Several of these were caught that way and no other.</p>
 </div>
 
-<h2>Before you start</h2>
-<p>All three assume the engine is built. Tutorials 2 and 3 also need the shared library and the Python
-bindings.</p>
-<div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/amber &amp;&amp; cd amber
-chmod +x a build.sh install.sh
-./build.sh --shared          # ./amber + libamber.so
-./a                          # sanity: the REPL opens</code></pre></div>
-<p>See the <a href="../docs/install.html">installation guide</a> if anything there surprises
-you.</p>
+<h2>1. A comment line of just <code>/</code> truncates the file</h2>
+
+<p>A line containing nothing but <code>/</code> starts a block comment. Everything after it in the file
+is silently ignored — definitions simply never appear, and referencing them later gives an unrelated
+"undefined variable" error somewhere else.</p>
+
+<div class="code"><pre><code class="lang-q">/ ---- section heading -----     OK: text follows the slash
+/                                 &lt;- this eats the rest of the file
+f:{x+1}                           &lt;- never defined</code></pre></div>
+
+<p>Keep at least one character after the slash on every comment line.</p>
+
+<h2>2. <code>\l</code> does not persist dotted names</h2>
+
+<p>Definitions with a dot in the name — <code>bt.idx:{…}</code> — do not survive a script load. They
+parse, they appear to work in the file, and they are gone at the prompt. Use camelCase
+(<code>btIdx</code>) for anything a loaded script must define.</p>
+
+<h2>3. Lambdas cap the number of locals</h2>
+
+<p>A lambda has a fixed maximum local count. Exceed it and the definition fails in a way that does not
+point at the cause. A seventeen-local function that refuses to load is not a syntax problem — split it
+into three smaller ones. This is inherited from the K core and is a real structural limit, not a
+tunable.</p>
+
+<h2>4. <code>til #x</code> parses as a train, not a count</h2>
+
+<p><code>til</code> followed by <code>#</code> does not mean "the first <var>n</var> integers where
+<var>n</var> is the count of x". It parses as a composition and gives you something else entirely,
+without complaint. Write <code>!#x</code>.</p>
+
+<h2>5. Comments inside a multi-line lambda eat the rest of it</h2>
+
+<p>The loader joins the lines of a multi-line lambda before parsing, so a trailing <code>/ note</code>
+on any line but the last comments out everything that follows it — including the closing brace and
+whatever came after. Keep multi-line lambda bodies comment-free and put the explanation above the
+definition.</p>
+
+<h2>6. A fully-applied projection under <code>each</code> evaluates once</h2>
+
+<p>This is the worst one on the page, because the output looks completely normal.</p>
+
+<div class="code"><pre><code class="lang-q">{[U] 3#U?U}[U]'til NB     / WRONG: returns the SAME basket NB times
+{[i;U] 3#U?U}[;U]'til NB  / RIGHT: leave the iterated slot open</code></pre></div>
+
+<p>In the first form every argument is already supplied, so the expression is evaluated once and the
+result is repeated. You get a list of the right length, of the right type, containing the right kind of
+value — all identical. In a randomised sweep that produced a 13× flattering benchmark before anyone
+noticed the variance was zero.</p>
+
+<div class="note note-ok">
+  <span class="note-title">The ten-second check</span>
+  <p>After any sampled or randomised <code>each</code>, run <code>#?r</code> — the count of distinct
+  results. If it is 1 and you expected <var>n</var>, you have this bug.</p>
+</div>
+
+<h2>7. An out-of-range gather returns nulls, silently</h2>
+
+<p>Indexing a vector past its end yields nulls where NumPy raises <code>IndexError</code>. The nulls
+then propagate through every downstream scan and reduction, and the run completes with output that
+looks like output.</p>
+
+<p>This surfaced when a 3,600-day start grid plus 756-day observation offsets overran a 2,600-day price
+history: the entire tensor filled with nulls and every summary statistic came back plausible.
+Assert your bounds explicitly before the gather:</p>
+
+<div class="code"><pre><code class="lang-q">if[T &lt;= (|/S) + |/off; '"price history too short"];</code></pre></div>
+
+<h2>Habits that catch all seven</h2>
+
+<ul>
+<li><strong>Differential-test anything numerical.</strong> A second implementation in a language with
+different failure modes — NumPy is ideal, because it raises where Amber returns nulls — catches items 6
+and 7 immediately and items 1–5 by their consequences.</li>
+<li><strong>Check variance, not just shape.</strong> <code>#?r</code> on any randomised result.</li>
+<li><strong>Check for nulls after every gather</strong> that uses computed indices:
+<code>+/^r</code> should be 0.</li>
+<li><strong>Load your scripts in a fresh process and list what got defined.</strong> Items 1, 2 and 5
+all manifest as "the definition is just not there".</li>
+</ul>
+
+<div class="pager">
+  <a href="../docs/development.html"><span class="dir">Previous</span><span class="ttl">Development &amp; testing</span></a>
+  <a class="next" href="../ecosystem/index.html"><span class="dir">Next</span><span class="ttl">Ecosystem</span></a>
+</div>
 </article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
 </main>
 <footer>
@@ -99,6 +172,7 @@ you.</p>
         <h5>Documentation</h5>
         <a href="../docs/index.html">Introduction</a>
         <a href="../docs/language.html">Language &amp; qSQL</a>
+<a href="../docs/tacit.html">Tacit programming</a>
         <a href="../docs/temporal.html">Temporal mechanics</a>
         <a href="../docs/protocol.html">Wire protocol</a>
         <a href="../docs/capi.html">C API</a>

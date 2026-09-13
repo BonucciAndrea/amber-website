@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Amber tutorials</title>
-<meta name="description" content="Three end-to-end walkthroughs: build a 5-million-row in-memory tick store in 60 seconds, wire up a Grafana dashboard pipeline, and pass Arrow record batches into Python without copying.">
+<title>Development &amp; testing — building Amber and changing the core</title>
+<meta name="description" content="How to build the interpreter from source, what the test suites cover, how to add a kernel or an out-of-tree extension, and the CI that gates every push.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Amber tutorials">
-<meta property="og:description" content="Three end-to-end walkthroughs: build a 5-million-row in-memory tick store in 60 seconds, wire up a Grafana dashboard pipeline, and pass Arrow record batches into Python without copying.">
+<meta property="og:title" content="Development &amp; testing — building Amber and changing the core">
+<meta property="og:description" content="How to build the interpreter from source, what the test suites cover, how to add a kernel or an out-of-tree extension, and the CI that gates every push.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +23,7 @@
 <header class="nav">
   <div class="nav-inner">
     <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v2.0.1</span></a>
-    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../docs/">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/" class="active">Tutorials</a><a href="../blog/">Blog</a><a href="../notepad.html">Notepad</a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../docs/" class="active">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a><a href="../notepad.html">Notepad</a>
       <a href="https://github.com/BonucciAndrea/amber-notepad" rel="noopener" target="_blank" class="np-mobile">Scratchpad</a>
     </nav>
     <div class="nav-right">
@@ -38,48 +38,121 @@
 </header>
 <main id="main">
 <div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
-<div class="grp">Tutorials</div>
-<a href="../tutorials/index.html" class="active">All tutorials</a>
-<a href="../tutorials/tick-store.html" class="active">5M-row tick store</a>
-<a href="../tutorials/grafana-pipeline.html">Grafana pipeline</a>
-<a href="../tutorials/arrow-interop.html">Arrow → Python, zero copy</a>
-<div class="grp">Case studies</div>
-<a href="../tutorials/payoff-engine.html">Structured payoff engine</a>
-</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / Tutorials</div>
-<h1>Tutorials</h1>
-<p class="lead">Three walkthroughs that each end with something running. Every command is copyable, and
-every number quoted is one the tool prints for itself.</p>
+<div class="grp">Overview</div>
+<a href="../docs/index.html">Introduction</a>
+<a href="../docs/install.html">Install &amp; run</a>
+<div class="grp">Reference</div>
+<a href="../docs/language.html">Language &amp; qSQL</a>
+<a href="../docs/tacit.html">Tacit programming</a>
+<a href="../docs/temporal.html">Temporal mechanics</a>
+<a href="../docs/protocol.html">Wire protocol</a>
+<a href="../docs/capi.html">C API &amp; extensions</a>
+<div class="grp">Performance</div>
+<a href="../docs/benchmarks.html">Benchmarks</a>
+<a href="../docs/performance.html">Writing fast Amber</a>
+<div class="grp">Internals</div>
+<a href="../docs/internals.html">Engine internals</a>
+<a href="../docs/development.html" class="active">Development &amp; testing</a>
+<a href="../docs/gotchas.html">Gotchas</a>
+</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../docs/index.html">Docs</a> / Development</div>
+<h1>Development &amp; testing</h1>
+<p class="lead">Amber has no build system beyond a shell script and no dependencies beyond a C
+compiler. A full rebuild is about eleven seconds. That is a deliberate property, not an accident of
+size — it is what makes "change a kernel, rebuild, re-measure" a loop you will actually run.</p>
 
-<div class="grid" style="margin-top:30px;gap:16px">
-  <a class="card card-link tut-card" href="../tutorials/tick-store.html">
-    <span class="n">01 · 15 minutes</span>
-    <h3 style="margin:8px 0">Building a 5-million-row in-memory tick store in 60 seconds</h3>
-    <p class="small mb-0">Generate a realistic session, stamp the attributes that make the as-of join
-    a binary search, run TAQ analytics, and check the memory footprint with <code>\v</code>.</p>
-  </a>
-  <a class="card card-link tut-card" href="../tutorials/grafana-pipeline.html">
-    <span class="n">02 · 40 minutes</span>
-    <h3 style="margin:8px 0">Setting up an end-to-end Grafana &amp; Amber dashboard pipeline</h3>
-    <p class="small mb-0">Store &rarr; marts &rarr; <code>amberd</code> &rarr; the Go datasource &rarr;
-    provisioned panels. Including the two failures that look like something else.</p>
-  </a>
-  <a class="card card-link tut-card" href="../tutorials/arrow-interop.html">
-    <span class="n">03 · 20 minutes</span>
-    <h3 style="margin:8px 0">Interoperability: Arrow record batches from Amber to Python without copying</h3>
-    <p class="small mb-0">Prove pointer identity, stream 400 million rows a batch at a time, and
-    understand the one lifetime rule that makes it safe.</p>
-  </a>
+<h2>Build</h2>
+
+<div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/amber &amp;&amp; cd amber
+./build.sh          # portable -O3 -flto, +OpenMP if available
+./amber             # REPL</code></pre></div>
+
+<p><code>build.sh</code> finds <code>cc</code>, <code>gcc</code> or <code>clang</code> in that order and
+builds with portable flags — no <code>-march=native</code> — so the binary runs on any x86-64 or arm64
+host. Set <code>CC</code> to override. Nothing is installed system-wide.</p>
+
+<h2>Test suites</h2>
+
+<div class="code"><pre><code class="lang-sh">./amber test.k        # core language + primitives
+./amber test-fin.k    # finance / HFT module
+./amber test-ext.k    # extension seam</code></pre></div>
+
+<p>Each prints a count and a pass/fail line and exits non-zero on failure. <code>test.k</code> also
+runs the SIMD and parallel self-checks, printing the active backend and confirming that the vectorised
+and scalar paths agree.</p>
+
+<div class="note note-ok">
+  <span class="note-title">The bar for a core change</span>
+  <p>Both suites green, and — for anything touching a kernel — evidence that output is unchanged.
+  Fold your change behind the existing dispatcher rather than around it, and diff the results of a
+  representative script against the previous binary before and after. A kernel that is faster and
+  subtly different is a regression.</p>
 </div>
 
-<h2>Before you start</h2>
-<p>All three assume the engine is built. Tutorials 2 and 3 also need the shared library and the Python
-bindings.</p>
-<div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/amber &amp;&amp; cd amber
-chmod +x a build.sh install.sh
-./build.sh --shared          # ./amber + libamber.so
-./a                          # sanity: the REPL opens</code></pre></div>
-<p>See the <a href="../docs/install.html">installation guide</a> if anything there surprises
-you.</p>
+<h2>Benchmarks</h2>
+
+<div class="code"><pre><code class="lang-sh">./amber bench.k                  # attribute / find speed-ups
+./amber bench-fin.k              # the finance module
+./amber bench-std.k              # moving windows, sorts
+python bench/run_comparative.py  # the ten-engine table</code></pre></div>
+
+<p>The comparative harness specifies its workloads once in <code>bench/SPEC.md</code>; every engine
+implements that document and nothing else, and answers are compared bit-exactly against a C reference.
+See <a href="../docs/benchmarks.html">Benchmarks</a> for what it produces and how to read it.</p>
+
+<h2>Adding a kernel</h2>
+
+<p>Read <a href="../docs/internals.html">Engine internals</a> first for the dispatcher shape.
+The pattern for a new type specialisation is:</p>
+
+<ol>
+<li>Write the kernel next to its siblings in the relevant translation unit — <code>3.c</code> for a
+reduce or scan, <code>2.c</code> for element-wise — following the local macro style.</li>
+<li>Widen the dispatcher's type guard to admit the new type, and add the routing line.</li>
+<li>Where semantics are subtle (NaN, signed zero, overflow), reuse an existing correct path rather
+than re-deriving it — the <code>of1</code>/<code>of0</code> integer fold exists for exactly this.</li>
+<li>Rebuild, run both suites, and diff output against the old binary on a script that exercises the
+edge values.</li>
+</ol>
+
+<p>If your kernel is domain-specific rather than a general primitive, it belongs in
+<code>ext/</code> instead — the extension seam lets you add <code>amber_*</code> entry points without
+touching the core or carrying a fork.</p>
+
+<h2>Continuous integration</h2>
+
+<div class="tbl">
+<table>
+  <thead><tr><th>Workflow</th><th>Triggers</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>ci</code></td><td>every push, every PR</td><td>Compiler matrix including a strict <code>-std=c99</code> build, then both test suites. Fastest signal — a toolchain break is reported against a named compiler version in minutes.</td></tr>
+    <tr><td><code>comparative benchmarks</code></td><td>PRs, and pushes to <code>main</code></td><td>Builds every comparison engine, runs the suite, posts results as a sticky PR comment. On <code>main</code> it commits a refreshed <code>docs/BENCHMARKS.md</code>.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note note-warn">
+  <span class="note-title">A branch push does not run the benchmarks</span>
+  <p>Because <code>comparative benchmarks</code> triggers on <code>pull_request</code> and on pushes to
+  <code>main</code> only, pushing a branch gets you <code>ci</code> alone. For a performance change
+  that is precisely the signal you want, so open a PR rather than merging locally — the benchmark
+  comment is the review.</p>
+</div>
+
+<h2>Licence</h2>
+
+<p>Amber is GNU AGPLv3, because its evaluator, parser and heap derive from
+<a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>. That obligation travels
+with the interpreter core and with anything linked into it. It is not a footnote — if you are planning
+to build a product on Amber, read
+<a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">the licence</a> and the
+<a href="https://github.com/BonucciAndrea/amber/blob/main/NOTICE" target="_blank" rel="noopener">NOTICE</a> before you design
+the architecture, not after. Talking to <code>amberd</code> over a socket and linking
+<code>libamber.so</code> into your binary are very different positions.</p>
+
+<div class="pager">
+  <a href="../docs/internals.html"><span class="dir">Previous</span><span class="ttl">Engine internals</span></a>
+  <a class="next" href="../docs/gotchas.html"><span class="dir">Next</span><span class="ttl">Gotchas</span></a>
+</div>
 </article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
 </main>
 <footer>
@@ -99,6 +172,7 @@ you.</p>
         <h5>Documentation</h5>
         <a href="../docs/index.html">Introduction</a>
         <a href="../docs/language.html">Language &amp; qSQL</a>
+<a href="../docs/tacit.html">Tacit programming</a>
         <a href="../docs/temporal.html">Temporal mechanics</a>
         <a href="../docs/protocol.html">Wire protocol</a>
         <a href="../docs/capi.html">C API</a>

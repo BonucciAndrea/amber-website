@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Engine internals — how Amber evaluates, allocates and dispatches</title>
+<meta name="description" content="A tour of the C core: the value representation, how a primitive is dispatched and specialised by type, the scratch arena, the SIMD kernel layer, and where the reduce and scan families live.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Engine internals — how Amber evaluates, allocates and dispatches">
+<meta property="og:description" content="A tour of the C core: the value representation, how a primitive is dispatched and specialised by type, the scratch arena, the SIMD kernel layer, and where the reduce and scan families live.">
+<meta property="og:site_name" content="Amber">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/amber.css?v=2">
+<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v2.0.1</span></a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../docs/" class="active">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a><a href="../notepad.html">Notepad</a>
+      <a href="https://github.com/BonucciAndrea/amber-notepad" rel="noopener" target="_blank" class="np-mobile">Scratchpad</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-btn scratchpad-nav" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener" title="Amber Notepad — browser scratchpad" aria-label="Amber Notepad scratchpad">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </a>
+      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+  </div>
+</header>
+<main id="main">
+<div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
+<div class="grp">Overview</div>
+<a href="../docs/index.html">Introduction</a>
+<a href="../docs/install.html">Install &amp; run</a>
+<div class="grp">Reference</div>
+<a href="../docs/language.html">Language &amp; qSQL</a>
+<a href="../docs/tacit.html">Tacit programming</a>
+<a href="../docs/temporal.html">Temporal mechanics</a>
+<a href="../docs/protocol.html">Wire protocol</a>
+<a href="../docs/capi.html">C API &amp; extensions</a>
+<div class="grp">Performance</div>
+<a href="../docs/benchmarks.html">Benchmarks</a>
+<a href="../docs/performance.html">Writing fast Amber</a>
+<div class="grp">Internals</div>
+<a href="../docs/internals.html" class="active">Engine internals</a>
+<a href="../docs/development.html">Development &amp; testing</a>
+<a href="../docs/gotchas.html">Gotchas</a>
+</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../docs/index.html">Docs</a> / Engine internals</div>
+<h1>Engine internals</h1>
+<p class="lead">Amber is a C99 interpreter descended from ngn/k, with a q/kdb+ vocabulary layered over
+it and a set of native kernels underneath. This page is the map: what a value is, how a primitive
+finds its implementation, and which layer to change when something is slow.</p>
+
+<div class="note note-info">
+  <span class="note-title">Provenance</span>
+  <p>The evaluator, parser and heap descend from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>,
+  which is why Amber is AGPLv3. The q layer, the join family, attributes, the temporal system, the
+  finance kernels, the wire protocol and the C API are Amber's own. The five posts starting at
+  <a href="../blog/ngn-k-foundation.html">the interpreter underneath</a> are the long version of
+  that story, in the order it was built.</p>
+</div>
+
+<h2>The source map</h2>
+
+<p>The core is deliberately terse — single-letter translation units, a macro vocabulary that makes a
+kernel fit on one line. That is inherited style, and it is load-bearing: the whole evaluator fits in
+cache. Here is what lives where.</p>
+
+<div class="tbl">
+<table>
+  <thead><tr><th style="width:16%">File</th><th>What is in it</th></tr></thead>
+  <tbody>
+    <tr><td><code>a.h</code>, <code>g.h</code></td><td>The macro vocabulary. Type tags, accessor macros (<code>xF</code>, <code>zn</code>, <code>ztF</code>), loop and error-propagation macros. Read these first or nothing else parses.</td></tr>
+    <tr><td><code>p.c</code></td><td>Parser, including Amber's temporal-literal scanner and <code>([]…)</code> table literals.</td></tr>
+    <tr><td><code>b.c</code>, <code>e.c</code></td><td>Bytecode and the evaluator.</td></tr>
+    <tr><td><code>1.c</code>, <code>2.c</code></td><td>Monadic and dyadic element-wise primitives.</td></tr>
+    <tr><td><code>3.c</code></td><td><strong>Reductions and scans.</strong> The <code>/</code> and <code>\</code> adverb families and their per-type specialisations.</td></tr>
+    <tr><td><code>w.c</code></td><td>Adverb dispatch — decides whether a reduce or scan takes a fast kernel or the generic boxed loop.</td></tr>
+    <tr><td><code>f.c</code></td><td>Find, group and the attribute-aware search paths.</td></tr>
+    <tr><td><code>v.c</code></td><td>Vectorisation helpers and argmin/argmax.</td></tr>
+    <tr><td><code>a.c</code></td><td>Joins, including the branch-free <code>aj</code>/<code>wj</code> lower-bound kernel.</td></tr>
+    <tr><td><code>simd.c</code>, <code>simd.h</code></td><td>The SIMD layer: AVX2, NEON and a scalar fallback behind one interface.</td></tr>
+    <tr><td><code>arena.c</code></td><td>The thread-local bump arena for kernel scratch.</td></tr>
+    <tr><td><code>parallel.c</code>, <code>peachpool.c</code></td><td>OpenMP thresholds and the fork pool behind <code>peach</code>.</td></tr>
+    <tr><td><code>ser.c</code></td><td><code>-8!</code> / <code>-9!</code> binary serialisation.</td></tr>
+    <tr><td><code>ar.c</code></td><td>Arrow C Data Interface — zero-dependency interop.</td></tr>
+    <tr><td><code>ext.c</code>, <code>ext.h</code></td><td>The extension seam for out-of-tree kernels.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>How a primitive gets specialised</h2>
+
+<p>This is the part worth understanding, because it explains most performance surprises. A primitive
+does not have one implementation — it has a dispatcher that picks one based on the argument types,
+and a generic fallback for everything the dispatcher does not recognise.</p>
+
+<p>Take reduction. The dispatcher accepts integer, float and char data, then routes by verb:</p>
+
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">src/3.c — the reduce dispatcher</span></div><pre><code class="lang-c">A3(arf,/*010*/Q(xtv)Q(xv&lt;11)Q(!y||ytzfc)Q(ztZFC)
+ ...
+ G(&amp;dexf,admf,subf,admf,___f,___f,mmmf,mmmf,___f,___f,___f)[xv](x,y,z))</code></pre></div>
+
+<p>Each entry is a specialised kernel: <code>admf</code> is float add/multiply, <code>mmmf</code> is
+float min/max with a SIMD fast path. <code>___f</code> is the generic one — a loop that allocates an
+atom per element and goes through the generic dyadic apply. Falling into <code>___f</code> costs
+roughly 50–100× a specialised kernel, and nothing warns you.</p>
+
+<p>The scan dispatcher, <code>ars</code>, has the same shape. Until recently its type guard read
+<code>Q(ztZC)</code> — integer and char, no float — which meant every <code>maxs</code> over doubles
+fell into the generic path. Widening that guard and adding the two missing kernels was a twelve-line
+change worth
+<a href="../docs/benchmarks.html">15–36×</a>. The lesson generalises: <strong>when a primitive is
+inexplicably slow on one type, check the dispatcher's guard before you look anywhere else.</strong></p>
+
+<div class="note">
+  <span class="note-title">Order-preserving float fold</span>
+  <p>Float min/max does not compare IEEE doubles directly in the general path. It folds them into an
+  order-preserving integer domain (<code>of1</code>), runs the integer kernel, and folds back
+  (<code>of0</code>). Two extra linear passes buy exact, consistent NaN and signed-zero behaviour —
+  and mean a new float kernel can reuse the integer one instead of re-deriving the semantics.</p>
+</div>
+
+<h2>The scratch arena</h2>
+
+<p>Kernels that need temporary space take it from a per-thread bump arena rather than
+<code>malloc</code>. Allocation is a pointer increment; the whole arena is reset at the end of the
+operation. <code>arena_init(0)</code> selects the default 16&nbsp;MB slab.</p>
+
+<p>That number is worth knowing because it is a cliff rather than a slope. A 17.3&nbsp;MB intermediate
+does not cost 8% more than a 16&nbsp;MB one — it falls off the arena onto the general allocator, and
+the measured tensor-build time in the
+<a href="../docs/benchmarks.html">benchmark table</a> jumps roughly tenfold between
+U&nbsp;=&nbsp;100 and U&nbsp;=&nbsp;200 for exactly that reason. The capacity is a compile-time
+constant with no environment override today.</p>
+
+<h2>SIMD and parallelism</h2>
+
+<p><code>simd.c</code> presents one interface — <code>simd_sum_f64</code>, <code>simd_max_f64</code>,
+<code>simd_min_i64</code> and friends — over AVX2, NEON and a portable scalar implementation, selected
+at build time. Kernels call the interface; nothing above <code>simd.h</code> knows which backend it
+got. <code>./amber</code> reports the active one in its self-test.</p>
+
+<p>Above that, <code>parallel.c</code> holds an element-count threshold (<code>PAR_THRESHOLD</code>,
+100,000) below which an operation stays single-threaded because the OpenMP fork costs more than it
+saves. <code>peach</code> is separate and coarser: it forks processes from a pool. Both have a
+crossover, and on a small core count with large intermediates
+<a href="../docs/benchmarks.html">it can sit above your workload entirely</a>.</p>
+
+<h2>Attributes</h2>
+
+<p>One byte at offset <code>−13</code> of every array carries the column attribute: <code>`s</code>
+sorted, <code>`u</code> unique, <code>`p</code> parted, <code>`g</code> grouped. It is a promise, not
+a description — the kernel believes it without checking, because checking costs exactly what believing
+saves. Setting it is one store; reading it is one load from a cache line the kernel was fetching
+anyway. Everything after that is kernel selection.</p>
+
+<p>Full treatment, including what happens when the promise is false, is in
+<a href="../blog/attributes.html">one byte at offset −13</a>.</p>
+
+<h2>Where to make a change</h2>
+
+<div class="tbl">
+<table>
+  <thead><tr><th>Symptom</th><th>Look here first</th></tr></thead>
+  <tbody>
+    <tr><td>A primitive is slow on one type only</td><td>The dispatcher guard in <code>3.c</code> / <code>w.c</code> — you are probably in a generic fallback.</td></tr>
+    <tr><td>Slow regardless of type, cost flat as data grows</td><td>Not the engine. Your call count — see <a href="../docs/performance.html">Writing fast Amber</a>.</td></tr>
+    <tr><td>A cliff at a particular size</td><td>The 16 MB arena in <code>arena.c</code>, or <code>PAR_THRESHOLD</code>.</td></tr>
+    <tr><td>Wrong answers on edge values</td><td>The <code>of1</code>/<code>of0</code> fold, or a fast path that skipped a NaN check.</td></tr>
+    <tr><td>You want a new domain kernel</td><td>The <code>ext/</code> seam — no core changes, no fork.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="pager">
+  <a href="../docs/performance.html"><span class="dir">Previous</span><span class="ttl">Writing fast Amber</span></a>
+  <a class="next" href="../docs/development.html"><span class="dir">Next</span><span class="ttl">Development &amp; testing</span></a>
+</div>
+</article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+        <p class="small muted" style="margin-top:14px">
+          <a class="scratchpad-link" href="https://github.com/BonucciAndrea/amber-notepad" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            Amber Notepad — scratchpad
+          </a>
+        </p>
+      </div>
+      <div>
+        <h5>Documentation</h5>
+        <a href="../docs/index.html">Introduction</a>
+        <a href="../docs/language.html">Language &amp; qSQL</a>
+<a href="../docs/tacit.html">Tacit programming</a>
+        <a href="../docs/temporal.html">Temporal mechanics</a>
+        <a href="../docs/protocol.html">Wire protocol</a>
+        <a href="../docs/capi.html">C API</a>
+        <a href="../docs/benchmarks.html">Benchmarks</a>
+        <a href="../docs/performance.html">Writing fast Amber</a>
+        <a href="../docs/internals.html">Engine internals</a>
+        <a href="../docs/development.html">Development &amp; testing</a>
+        <a href="../docs/gotchas.html">Gotchas</a>
+      </div>
+      <div>
+        <h5>Ecosystem</h5>
+        <a href="../ecosystem/python-amber.html">python-amber</a>
+        <a href="../ecosystem/amber-arrow.html">amber-arrow</a>
+        <a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
+        <a href="../ecosystem/amber-tick.html">amber-tick</a>
+        <a href="../ecosystem/grafana.html">Grafana datasource</a>
+        <a href="../ecosystem/vscode-amber.html">vscode-amber</a>
+        <a href="../ecosystem/amber-ai.html">amber-ai</a>
+      </div>
+      <div>
+        <h5>Learn</h5>
+        <a href="../tutorials/index.html">Tutorials</a>
+        <a href="../blog/index.html">Blog</a>
+        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+        <a href="https://github.com/BonucciAndrea" target="_blank" rel="noopener">All repositories</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+      <span>Not affiliated with kdb+ / KX Systems.</span>
+    </div>
+  </div>
+</footer>
+<script src="../assets/js/amber.js" defer></script>
+</body>
+</html>
