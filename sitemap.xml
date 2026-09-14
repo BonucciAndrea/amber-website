@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://bonucciandrea.github.io/amber-website/</loc><lastmod>2026-08-26</lastmod></url>
+  <url><loc>https://bonucciandrea.github.io/amber-website/</loc><lastmod>2026-09-14</lastmod></url>
   <url><loc>https://bonucciandrea.github.io/amber-website/blog/array-languages-hft.html</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://bonucciandrea.github.io/amber-website/blog/index.html</loc><lastmod>2026-08-26</lastmod></url>
+  <url><loc>https://bonucciandrea.github.io/amber-website/blog/index.html</loc><lastmod>2026-09-14</lastmod></url>
   <url><loc>https://bonucciandrea.github.io/amber-website/blog/temporal-offsets.html</loc><lastmod>2026-08-26</lastmod></url>
   <url><loc>https://bonucciandrea.github.io/amber-website/blog/zero-copy-arrow.html</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://bonucciandrea.github.io/amber-website/docs/benchmarks.html</loc><lastmod>2026-08-26</lastmod></url>
+  <url><loc>https://bonucciandrea.github.io/amber-website/docs/benchmarks.html</loc><lastmod>2026-09-14</lastmod></url>
   <url><loc>https://bonucciandrea.github.io/amber-website/docs/capi.html</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://bonucciandrea.github.io/amber-website/docs/index.html</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://bonucciandrea.github.io/amber-website/docs/install.html</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://bonucciandrea.github.io/amber-website/docs/language.html</loc><lastmod>2026-08-26</lastmod></url>
+  <url><loc>https://bonucciandrea.github.io/amber-website/docs/index.html</loc><lastmod>2026-09-14</lastmod></url>
+  <url><loc>https://bonucciandrea.github.io/amber-website/docs/install.html</loc><lastmod>2026-09-14</lastmod></url>
+  <url><loc>https://bonucciandrea.github.io/amber-website/docs/language.html</loc><lastmod>2026-09-14</lastmod></url>
   <url><loc>https://bonucciandrea.github.io/amber-website/docs/tacit.html</loc><lastmod>2026-09-04</lastmod></url>
-  <url><loc>https://bonucciandrea.github.io/amber-website/docs/protocol.html</loc><lastmod>2026-08-26</lastmod></url>
+  <url><loc>https://bonucciandrea.github.io/amber-website/docs/protocol.html</loc><lastmod>2026-09-14</lastmod></url>
   <url><loc>https://bonucciandrea.github.io/amber-website/docs/temporal.html</loc><lastmod>2026-08-26</lastmod></url>
   <url><loc>https://bonucciandrea.github.io/amber-website/ecosystem/amber-ai.html</loc><lastmod>2026-08-26</lastmod></url>
   <url><loc>https://bonucciandrea.github.io/amber-website/ecosystem/amber-arrow.html</loc><lastmod>2026-08-26</lastmod></url>
@@ -30,4 +30,6 @@
   <url><loc>https://bonucciandrea.github.io/docs/development.html</loc><lastmod>2026-09-13</lastmod></url>
   <url><loc>https://bonucciandrea.github.io/docs/gotchas.html</loc><lastmod>2026-09-13</lastmod></url>
   <url><loc>https://bonucciandrea.github.io/tutorials/payoff-engine.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://bonucciandrea.github.io/amber-website/blog/07-two-point-one.html</loc><lastmod>2026-09-14</lastmod></url>
+  <url><loc>https://bonucciandrea.github.io/amber-website/blog/06-two-point-oh.html</loc><lastmod>2026-08-28</lastmod></url>
 </urlset>

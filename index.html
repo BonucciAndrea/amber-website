@@ -22,7 +22,7 @@
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="nav">
   <div class="nav-inner">
-    <a class="brand" href="./index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v2.0.1</span></a>
+    <a class="brand" href="./index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v2.1.0</span></a>
     <nav class="nav-links" id="nav-links" aria-label="Main"><a href="./docs/">Docs</a><a href="./ecosystem/">Ecosystem</a><a href="./tutorials/">Tutorials</a><a href="./blog/">Blog</a><a href="./notepad.html">Notepad</a>
       <a href="https://github.com/BonucciAndrea/amber-notepad" rel="noopener" target="_blank" class="np-mobile">Scratchpad</a>
     </nav>
@@ -41,9 +41,9 @@
   <div class="wrap">
     <div class="hero-grid">
       <div>
-        <a class="announce" href="./docs/capi.html">
-          <span class="tag">v2.0.1</span>
-          <span>libamber.so — the dynamic C API seam</span>
+        <a class="announce" href="./blog/07-two-point-one.html">
+          <span class="tag">v2.1.0</span>
+          <span>2.1.0 — fused idioms, one-pass group-by, AVX2 in the portable build</span>
           <span class="arrow">&rarr;</span>
         </a>
         <h1>The array language<br><span class="grad">markets run on.</span></h1>
@@ -70,8 +70,8 @@
         </div>
         <div class="hero-stats">
           <div class="stat"><div class="n">2261&times;</div><div class="l">find, 5M rows, sorted attribute</div></div>
-          <div class="stat"><div class="n">0.70&times;</div><div class="l">of C&nbsp;-O3 on 10M reductions</div></div>
-          <div class="stat"><div class="n">287</div><div class="l">tests passing</div></div>
+          <div class="stat"><div class="n">0.48&times;</div><div class="l">of C&nbsp;-O3 on 10M reductions</div></div>
+          <div class="stat"><div class="n">11 / 19</div><div class="l">ops faster than CBQN, 10M rows</div></div>
                   </div>
       </div>
 
@@ -362,14 +362,14 @@ p:arrow.export t            / (schemaAddr; arrayAddr)</code></pre>
           <th class="num">CBQN</th><th class="num">NumPy</th><th class="num">DuckDB</th><th class="num">ngn/k</th>
         </tr></thead>
         <tbody>
-          <tr><td>Vector arithmetic + mask</td><td class="num">8.22</td><td class="num best">54.56</td><td class="num">65.73</td><td class="num">30.91</td><td class="num">27.47</td><td class="num">22.00</td><td class="num">254.82</td></tr>
-          <tr><td>Reductions — sum + max + dot</td><td class="num">21.92</td><td class="num best">15.40</td><td class="num">52.46</td><td class="num">4.09</td><td class="num">8.62</td><td class="num">29.00</td><td class="num">237.93</td></tr>
-          <tr><td>Group-by — 100 groups</td><td class="num">6.41</td><td class="num best">61.45</td><td class="num">119.63</td><td class="num">28.83</td><td class="num">11.54</td><td class="num">14.00</td><td class="num">276.51</td></tr>
-          <tr><td>Inner join — 1M &times; 1,000 sparse keys</td><td class="num">0.83</td><td class="num best">3.42</td><td class="num">9.85</td><td class="num">1.80</td><td class="num">11.34</td><td class="num">9.00</td><td class="num">364.13</td></tr>
+          <tr><td>Vector arithmetic + mask</td><td class="num">10.06</td><td class="num best">22.06</td><td class="num">52.78</td><td class="num">35.73</td><td class="num">32.02</td><td class="num">29.00</td><td class="num">320.10</td></tr>
+          <tr><td>Reductions — sum + max + dot</td><td class="num">28.27</td><td class="num best">13.46</td><td class="num">69.08</td><td class="num">5.62</td><td class="num">10.21</td><td class="num">38.00</td><td class="num">299.92</td></tr>
+          <tr><td>Group-by — 100 groups</td><td class="num">8.27</td><td class="num best">76.67</td><td class="num">210.14</td><td class="num">38.28</td><td class="num">14.98</td><td class="num">18.00</td><td class="num">348.73</td></tr>
+          <tr><td>Inner join — 1M &times; 1,000 sparse keys</td><td class="num">1.07</td><td class="num best">4.39</td><td class="num">8.41</td><td class="num">2.38</td><td class="num">14.69</td><td class="num">11.00</td><td class="num">452.92</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="small muted">Median of 5 timed runs after 2 warm-ups, milliseconds, kernel time only.
+    <p class="small muted">Median of 5 timed runs after 2 warm-ups, milliseconds, kernel time only; the 2.1.0 build, regenerated by CI (the group-by row still spells the aggregate with the pre-2.1 idiom and refreshes on the next run; the fused <code>gsum</code> path measures 21 ms on the scout matrix).
     Amber is reported twice on purpose: array-primitive code is the fair peer of ngn/k and CBQN;
     the qSQL layer is the fair peer of DuckDB's planner. The gap between the rows <em>is</em> the query
     layer's overhead, and it is meant to be visible.
