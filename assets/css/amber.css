@@ -798,3 +798,7 @@ html.has-js .reveal.in { opacity: 1; transform: none; transition: opacity .6s va
 /* series colours for the two-line comparison charts (validated pair) */
 :root { --s-amber: #c77b1e; --s-numpy: #3987e5; }
 html[data-theme="light"] { --s-amber: #B26B00; --s-numpy: #1668B0; }
+
+/* ---- Scrollbars: hidden everywhere; overflowing content still scrolls ---- */
+html, body, * { scrollbar-width: none; -ms-overflow-style: none; }
+*::-webkit-scrollbar { display: none; width: 0; height: 0; }

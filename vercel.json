@@ -2,10 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
-  "redirects": [
-    { "source": "/notepad", "destination": "/", "permanent": true },
-    { "source": "/notepad.html", "destination": "/", "permanent": true }
-  ],
   "headers": [
     {
       "source": "/assets/(.*)",
