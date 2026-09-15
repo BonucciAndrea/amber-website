@@ -24,7 +24,14 @@ mkdir -p "$AMBER_SRC/o/w" && cp "$O/fs.h" "$AMBER_SRC/o/w/fs.h"
 
 CFLAGS="--target=wasm32 -Dwasm -O2 -ffreestanding -fno-builtin -w -nostdinc -isystem $RES/include
         -I$AMBER_SRC/src/wsys -I$HERE/stubs -include $HERE/stubs/compat.h -I$AMBER_SRC/src -I$AMBER_SRC"
+# 2.1.0's peachC calls peachNW(), which walks the host `env`, before its wasm branch (serial
+# each). In the sandbox `env` is not a real environ array and the walk traps, so a patched
+# copy of i.c skips it. The Amber tree itself is not modified.
+sed 's/I nw=peachNW();if(nw>64)nw=64;/I nw=1;/' "$AMBER_SRC/src/i.c" > "$O/i.c"
+grep -q 'I nw=1;' "$O/i.c" || { echo "i.c peach patch did not apply: check peachC in src/i.c"; exit 1; }
+
 for f in "$AMBER_SRC"/src/*.c "$HERE"/stubs/*.c; do
+  [ "$f" = "$AMBER_SRC/src/i.c" ] && f="$O/i.c"
   "$CLANG" $CFLAGS -c "$f" -o "$O/$(basename "$f" .c).o"
 done
 

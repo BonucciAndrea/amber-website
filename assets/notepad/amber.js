@@ -20,6 +20,39 @@ const EXAMPLES = [
   ["test.k", "The interpreter's own test suite."]
 ];
 
+// ---- script → statements ------------------------------------------------------
+// A script is evaluated statement by statement, the way the native loader reads a file:
+// an indented line continues the statement above it, `/ ...` comments are dropped
+// (a lone `/` opens a comment block that a lone `\` closes), and a `/` inside a string
+// is not a comment. Each statement records the 1-based line it starts on.
+function stripComment(line) {
+  let inStr = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inStr) { if (c === "\\") i++; else if (c === '"') inStr = false; }
+    else if (c === '"') inStr = true;
+    else if (c === "/" && (i === 0 || line[i - 1] === " " || line[i - 1] === "\t")) return line.slice(0, i).replace(/\s+$/, "");
+  }
+  return line.replace(/\s+$/, "");
+}
+function statements(src) {
+  const out = [], lines = src.replace(/\r\n?/g, "\n").split("\n");
+  let inBlock = false;
+  for (let n = 0; n < lines.length; n++) {
+    const raw = lines[n];
+    // only a line that is exactly "/" opens a block ("/ " with a trailing space is a plain comment)
+    if (inBlock) { if (raw === "\\") inBlock = false; continue; }
+    if (raw === "/") { inBlock = true; continue; }
+    // a backslash command (\l, \t, \ast ...) keeps its whole line
+    const code = /^\\/.test(raw) ? raw.replace(/\s+$/, "") : stripComment(raw);
+    if (!code.trim()) continue;
+    const prev = out[out.length - 1];
+    if (/^\s/.test(code) && prev && !/^\\/.test(prev.code)) prev.code += "\n" + code;
+    else out.push({ line: n + 1, code: code.replace(/^\s+/, "") });
+  }
+  return out;
+}
+
 // amber_eval() prints a line through `wprint(. qrw "...")`; when the line itself fails,
 // the wrapper reports a second, confusing error about that wrapper. Keep only the real one.
 function dropWrapperErrors(text) {
@@ -108,4 +141,5 @@ class AmberVM {
 
 global.AmberVM = AmberVM;
 global.AMBER_EXAMPLES = EXAMPLES;
+global.amberStatements = statements;
 })(typeof window !== "undefined" ? window : self);

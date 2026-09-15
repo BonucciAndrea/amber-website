@@ -304,9 +304,9 @@
     </div>
     </div>
 
-    <p class="np-foot-note">Each line of the editor is evaluated in order, exactly as if typed at the prompt, and definitions
-    persist between runs. <strong>Share</strong> copies a link with the code packed into it: whoever opens it sees your
-    snippet run. The engine works in a background thread, so a long computation can be stopped.</p>
+    <p class="np-foot-note">Every run starts from a fresh engine and reads the editor like a script: statement by statement,
+    with indented lines continuing the one above. <strong>Share</strong> copies a link with the code packed into it:
+    whoever opens it sees your snippet run. The engine works in a background thread, so a long computation can be stopped.</p>
   </div>
 </section>
 
@@ -354,7 +354,7 @@
   </div>
 </footer>
 
-<script src="./assets/notepad/amber.js?v=3"></script>
+<script src="./assets/notepad/amber.js?v=4"></script>
 <script>
 (function () {
   "use strict";
@@ -680,7 +680,7 @@
     if (e.shiftKey && e.key === "Enter") {
       e.preventDefault();
       var v = editor.value, a = editor.selectionStart, b = editor.selectionEnd, lb = lineBounds(v, a, b);
-      run((a !== b ? v.slice(a, b) : v.slice(lb[0], lb[1])).split("\n"));
+      run(a !== b ? v.slice(a, b) : v.slice(lb[0], lb[1]));
       if (a === b) { var p = lb[1] < v.length ? lb[1] + 1 : lb[1]; editor.setSelectionRange(p, p); caret(); }
       return;
     }
@@ -717,24 +717,39 @@
     out.innerHTML = '<div class="np-empty"><div><strong>No output yet</strong>Press Run to see the results here.</div></div>';
   }
   function fmtMs(ms) { return ms < 10 ? ms.toFixed(1) + " ms" : ms < 1000 ? Math.round(ms) + " ms" : (ms / 1000).toFixed(2) + " s"; }
-  // only results are shown: a line that prints nothing (an assignment, a comment) adds no cell
+  // Only results are shown: a statement that prints nothing adds no cell. Cells are added to
+  // the page in batches and the output is not auto-scrolled, so a script that prints hundreds
+  // of charts does not force a layout per result; it reads from the top.
+  var pendingCells = [], flushTimer = 0;
+  function flushCells() {
+    clearTimeout(flushTimer); flushTimer = 0;
+    if (!pendingCells.length) return;
+    clearEmpty();
+    var frag = document.createDocumentFragment();
+    pendingCells.forEach(function (c) { frag.appendChild(c); });
+    pendingCells = [];
+    out.appendChild(frag);
+  }
+  function dropPendingCells() { clearTimeout(flushTimer); flushTimer = 0; pendingCells = []; }
   function addCell(text) {
     var body = text.replace(/^\s*\n/, "").replace(/\s+$/, "");
     if (!body) return;
-    clearEmpty();
     var cell = document.createElement("div");
     cell.className = "np-cell" + (/(^|\n)\s*(error\[|runtime error|'\w)/.test(plain(body)) ? " err" : "");
     var res = document.createElement("div"); res.className = "np-res";
     res.innerHTML = renderOutput(body);
     cell.appendChild(res);
-    out.appendChild(cell); cellsInRun++;
-    out.scrollTop = out.scrollHeight;
+    pendingCells.push(cell); cellsInRun++;
+    if (!flushTimer) flushTimer = setTimeout(flushCells, 60);
   }
-  $("np-clear").addEventListener("click", function () { emptyState(); $("np-timing").textContent = ""; });
+  $("np-clear").addEventListener("click", function () { dropPendingCells(); emptyState(); $("np-timing").textContent = ""; });
 
-  /* ---------------- engine: Web Worker, with a main-thread fallback ---------------- */
-  var worker = null, inlineVM = null, busy = false, ready = false, busyTimer = 0, fileWaiters = {};
-  var version = "", pendingRun = null;
+  /* ---------------- engine: a fresh interpreter for every run ---------------- */
+  // Nothing defined by one run or example leaks into the next: each run gets its own Web
+  // Worker, and a spare boots in the background so the next run starts without waiting.
+  var ASSET_V = "2.1.1";
+  var engine = null, spare = null, used = false, noWorkers = false;
+  var busy = false, ready = false, busyTimer = 0, fileWaiters = {}, version = "", pendingRun = null;
   function status(cls, text) {
     $("np-chip").className = "np-chip " + cls; $("np-chip2").className = "np-chip " + cls;
     $("np-chip-text").textContent = text;
@@ -747,89 +762,115 @@
       busyTimer = setTimeout(function () {
         if (!busy) return;
         status("busy", "running…");
-        if (worker) { runBtn.classList.add("stop"); runLabel.textContent = "Stop"; }
+        if (!noWorkers) { runBtn.classList.add("stop"); runLabel.textContent = "Stop"; }
       }, 250);
     } else {
       runBtn.classList.remove("stop"); runLabel.textContent = "Run";
       if (ready) status("ready", readyText());
     }
   }
-  function onMessage(m) {
-    if (m.type === "ready") {
-      ready = true; version = m.version || "2.1.0";
-      runBtn.disabled = false;
-      status("ready", readyText());
-      if (pendingRun) { var p = pendingRun; pendingRun = null; run(p); }
-    } else if (m.type === "fatal") {
-      status("error", "engine failed to start"); note("The engine could not start: " + m.message, true);
-    } else if (m.type === "result") {
-      if (m.run === runNo) addCell(m.out);
-    } else if (m.type === "done") {
-      if (m.run !== runNo) return;
-      var total = fmtMs(performance.now() - runStart);
-      if (runHead) runHead.textContent += " · " + total;
-      if (!cellsInRun) note("Done — nothing to print.");
-      $("np-timing").textContent = total;
-      setBusy(false);
-    } else if (m.type === "file") {
-      var cb = fileWaiters[m.name]; delete fileWaiters[m.name]; if (cb) cb(m.src);
-    }
+  function onReady(v) {
+    if (ready) return;
+    ready = true; version = v || "2.1.0";
+    runBtn.disabled = false;
+    status("ready", readyText());
+    if (pendingRun !== null) { var p = pendingRun; pendingRun = null; run(p); }
+  }
+  function fatal(message) {
+    status("error", "engine failed to start");
+    note("The engine could not start: " + message, true);
+    setBusy(false);
+  }
+  function onResult(run, text) { if (run === runNo) addCell(text); }
+  function onDone(run) {
+    if (run !== runNo) return;
+    flushCells();
+    var total = fmtMs(performance.now() - runStart);
+    if (runHead) runHead.textContent += " · " + total;
+    if (!cellsInRun) note("Done — nothing to print.");
+    $("np-timing").textContent = total;
+    setBusy(false);
+  }
+  function onFile(name, src) { var cb = fileWaiters[name]; delete fileWaiters[name]; if (cb) cb(src); }
+
+  function spawn() {
+    var e = {};
+    try { e.w = new Worker("./assets/notepad/worker.js?v=" + ASSET_V); } catch (_) { return null; }
+    e.w.onmessage = function (ev) {
+      var m = ev.data;
+      if (m.type === "ready") onReady(m.version);
+      else if (e !== engine) return;          // a retired or spare engine
+      else if (m.type === "fatal") fatal(m.message);
+      else if (m.type === "result") onResult(m.run, m.out);
+      else if (m.type === "done") onDone(m.run);
+      else if (m.type === "file") onFile(m.name, m.src);
+    };
+    e.w.onerror = function (ev) { ev.preventDefault(); if (e === engine) useMainThread(); };
+    return e;
+  }
+  function freshEngine() {
+    if (engine) engine.w.terminate();
+    engine = spare || spawn(); spare = spawn(); used = false;
+    if (!engine) useMainThread();
   }
   function startEngine() {
-    ready = false; runBtn.disabled = true;
     status("booting", "loading engine…");
-    try {
-      worker = new Worker("./assets/notepad/worker.js?v=2.1.0");
-      worker.onmessage = function (e) { onMessage(e.data); };
-      worker.onerror = function (e) { e.preventDefault(); if (worker) worker.terminate(); worker = null; mainThreadEngine(); };
-    } catch (_) { worker = null; mainThreadEngine(); }
+    if (typeof Worker !== "function") { useMainThread(); return; }
+    engine = spawn(); spare = spawn();
+    if (!engine) useMainThread();
   }
-  // file:// previews and browsers without module workers: run the engine on the page itself
-  function mainThreadEngine() {
-    if (inlineVM) return;
+
+  // file:// previews and browsers without workers: a new interpreter on the page for each run
+  function useMainThread() {
+    if (noWorkers) return;
+    noWorkers = true;
+    [engine, spare].forEach(function (e) { if (e) e.w.terminate(); });
+    engine = spare = null;
     var s = document.createElement("script");
-    s.src = "./assets/notepad/amber.wasm.js?v=2.1.0";
-    s.onload = function () {
-      inlineVM = new window.AmberVM();
-      inlineVM.boot().then(function () { onMessage({ type: "ready", version: inlineVM.version }); },
-        function (err) { onMessage({ type: "fatal", message: String((err && err.message) || err) }); });
-    };
-    s.onerror = function () { onMessage({ type: "fatal", message: "the engine files did not load" }); };
+    s.src = "./assets/notepad/amber.wasm.js?v=" + ASSET_V;
+    s.onload = function () { freshVM(function (vm) { onReady(vm.version); }); };
+    s.onerror = function () { fatal("the engine files did not load"); };
     document.body.appendChild(s);
   }
-  function post(msg) {
-    if (worker) { worker.postMessage(msg); return; }
-    if (!inlineVM) return;
-    setTimeout(function () {
-      if (msg.type === "eval") {
-        msg.lines.forEach(function (line) {
-          var t0 = performance.now(), o = inlineVM.eval(line);
-          onMessage({ type: "result", run: msg.run, line: line, out: o, ms: performance.now() - t0 });
-        });
-        onMessage({ type: "done", run: msg.run });
-      } else if (msg.type === "read") onMessage({ type: "file", name: msg.name, src: inlineVM.readFile(msg.name) });
-    }, 0);
+  function freshVM(cb) {
+    var vm = new window.AmberVM();
+    vm.boot().then(function () { cb(vm); }, function (err) { fatal(String((err && err.message) || err)); });
   }
-  function run(lines) {
-    lines = lines.filter(function (l) { return l.trim() !== ""; });
-    if (!ready) { pendingRun = lines; return; }
+  function readExample(name) {
+    if (noWorkers) freshVM(function (vm) { onFile(name, vm.readFile(name)); });
+    else engine.w.postMessage({ type: "read", name: name });
+  }
+
+  function run(src) {
+    if (!ready) { pendingRun = src; return; }
     if (busy) return;
-    if (!lines.length) { note("Nothing to run — the editor is empty."); return; }
+    var stmts = window.amberStatements(src);
     runNo++; cellsInRun = 0; runStart = performance.now();
+    dropPendingCells();
     out.innerHTML = "";   // each run replaces the previous output
+    out.scrollTop = 0;
+    if (!stmts.length) { note("Nothing to run — the editor is empty."); return; }
     runHead = document.createElement("div"); runHead.className = "np-run-head";
     runHead.textContent = "run " + runNo + " · " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
     out.appendChild(runHead);
     setBusy(true);
-    post({ type: "eval", run: runNo, lines: lines });
+    var msg = { type: "eval", run: runNo, lines: stmts.map(function (s) { return s.code; }) };
+    if (noWorkers) {
+      var id = runNo;
+      freshVM(function (vm) { msg.lines.forEach(function (code) { onResult(id, vm.eval(code)); }); onDone(id); });
+      return;
+    }
+    if (used) freshEngine();
+    used = true;
+    engine.w.postMessage(msg);
   }
-  function runAll() { run(editor.value.split("\n")); }
+  function runAll() { run(editor.value); }
   function stop() {
-    if (!busy || !worker) return;
-    worker.terminate(); worker = null; runNo++;
+    if (!busy || noWorkers) return;
+    runNo++;
+    freshEngine();
     setBusy(false);
-    note("Stopped. The engine was restarted, so earlier definitions are gone.", true);
-    startEngine();
+    note("Stopped.", true);
   }
   runBtn.addEventListener("click", function () { busy ? stop() : runAll(); });
 
@@ -845,7 +886,7 @@
         setEditor(src.replace(/\s+$/, "") + "\n");
         toastMsg("Loaded " + ex[0] + " — press Run.");
       };
-      post({ type: "read", name: ex[0] });
+      readExample(ex[0]);
     });
     menu.appendChild(b);
   });
@@ -946,7 +987,7 @@
     decode(shared[1]).then(function (src) {
       editor.value = src; paint();
       note("Opened from a shared link — the snippet runs as soon as the engine is ready.");
-      run(src.split("\n"));
+      run(src);
     }, function () { note("That share link is damaged, so nothing was loaded.", true); loadDefault(); });
   } else loadDefault();
   startEngine();
