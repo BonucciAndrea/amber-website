@@ -136,21 +136,28 @@
     font: 500 .68rem var(--font-mono); color: var(--text-faint);
   }
   .np-run-head::after { content: ""; flex: 1; height: 1px; background: var(--code-border); }
-  .np-cell { padding: 5px 16px 6px 14px; border-left: 2px solid transparent; }
-  .np-cell:hover { background: var(--surface); }
+  .np-cell { padding: 6px 16px 8px 14px; border-left: 2px solid transparent; }
   .np-cell.err { border-left-color: var(--red); background: color-mix(in srgb, var(--red) 6%, transparent); }
-  .np-in {
-    display: flex; gap: 10px; align-items: baseline;
-    font: 13px/1.6 var(--font-mono); color: var(--text-dim); white-space: pre; overflow-x: auto;
-  }
-  .np-in::before { content: "\203A"; color: var(--accent); font-weight: 600; flex: none; }
-  .np-in .np-ms { margin-left: auto; padding-left: 12px; font-size: .7rem; color: var(--text-faint); flex: none; }
-  /* terminal-like line height so box-drawing table borders join up */
-  .np-res {
-    margin: 2px 0 0 18px; font: 13px/1.38 var(--font-mono); color: var(--text);
-    white-space: pre; overflow-x: auto;
-  }
+  .np-res { font: 13px/1.6 var(--font-mono); color: var(--text); overflow-x: auto; }
+  .np-txt { white-space: pre; }
   .np-res .d { opacity: .62; } .np-res .b { font-weight: 600; } .np-res .i { font-style: italic; } .np-res .u { text-decoration: underline; }
+
+  /* engine tables arrive as box-drawing text and are rebuilt as real tables */
+  .np-res table.np-tbl {
+    width: auto; margin: 2px 0 0; border-collapse: separate; border-spacing: 0;
+    font: 13px/1.5 var(--font-mono); background: transparent;
+    border: 1px solid var(--border-strong); border-radius: 10px; overflow: hidden;
+  }
+  .np-tbl th, .np-tbl td {
+    padding: 2px 14px; white-space: pre; text-align: left; vertical-align: top;
+    border: 0; border-bottom: 1px solid var(--code-border); background: transparent; color: var(--text);
+  }
+  .np-tbl th + th, .np-tbl td + td { border-left: 1px solid var(--code-border); }
+  .np-tbl thead th { background: var(--surface-2); font-weight: 600; border-bottom-color: var(--border-strong); }
+  .np-tbl tbody tr:last-child td { border-bottom: 0; }
+  .np-tbl tbody tr:hover td { background: var(--surface); }
+  .np-tbl .r { text-align: right; }
+  .np-tbl-foot { margin-top: 5px; font-size: .7rem; color: var(--text-faint); }
   .np-note { margin: 8px 16px; font-size: .8rem; color: var(--text-faint); }
   .np-note.bad { color: var(--red); }
   .np-empty { display: grid; place-items: center; height: 100%; padding: 24px; text-align: center; color: var(--text-faint); font-size: .85rem; }
@@ -395,6 +402,20 @@
     if (g === mx) return b >= g - 1 ? "var(--cyan)" : "var(--green)";
     return r >= b - 1 ? "var(--violet)" : "var(--blue)";
   }
+  // truecolour → the nearest theme token, so output stays legible in light and dark
+  function rgbVar(r, g, b) {
+    var mx = Math.max(r, g, b), mn = Math.min(r, g, b), c = mx - mn;
+    if (c / 255 < 0.18) { var l = (mx + mn) / 510; return l > 0.72 ? "var(--text)" : l > 0.45 ? "var(--text-dim)" : "var(--text-faint)"; }
+    var h = mx === r ? ((g - b) / c + 6) % 6 : mx === g ? (b - r) / c + 2 : (r - g) / c + 4;
+    h *= 60;
+    if (h < 15 || h >= 330) return "var(--red)";
+    if (h < 32) return "var(--accent-deep)";
+    if (h < 65) return "var(--accent)";
+    if (h < 160) return "var(--green)";
+    if (h < 200) return "var(--cyan)";
+    if (h < 255) return "var(--blue)";
+    return "var(--violet)";
+  }
   function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function ansi(text) {
     var html = "", fg = null, cls = {}, re = /\x1b\[([\d;]*)m/g, last = 0, m;
@@ -416,13 +437,65 @@
         else if (n >= 30 && n <= 37) fg = BASIC[n - 30];
         else if (n >= 90 && n <= 97) fg = BRIGHT[n - 90];
         else if (n === 38 && codes[k + 1] === 5) { fg = c256(codes[k + 2] | 0); k += 2; }
-        else if (n === 38 && codes[k + 1] === 2) { fg = "rgb(" + (codes[k + 2] | 0) + "," + (codes[k + 3] | 0) + "," + (codes[k + 4] | 0) + ")"; k += 4; }
+        else if (n === 38 && codes[k + 1] === 2) { fg = rgbVar(codes[k + 2] | 0, codes[k + 3] | 0, codes[k + 4] | 0); k += 4; }
       }
     }
     flush(text.slice(last));
     return html;
   }
   function plain(s) { return s.replace(/\x1b\[[\d;]*m/g, ""); }
+
+  /* ---------------- box-drawn tables → <table> ---------------- */
+  var CODES = "(?:\\x1b\\[[\\d;]*m)*";
+  var LEAD_WS = new RegExp("^(" + CODES + ")\\s+"), TRAIL_WS = new RegExp("\\s+(" + CODES + ")$");
+  // trim whitespace from a cell without touching the colour codes around it
+  function trimAnsi(s) {
+    var prev;
+    do { prev = s; s = s.replace(LEAD_WS, "$1").replace(TRAIL_WS, "$1"); } while (s !== prev);
+    return s;
+  }
+  function tableHTML(rows) {
+    var head = [], body = [], sawSep = false, cols = 0;
+    rows.forEach(function (l) {
+      var p = plain(l);
+      if (/^\s*├/.test(p)) { sawSep = true; return; }
+      var cells = /^\s*│.*│\s*$/.test(p) ? l.split("│").slice(1, -1) : null;
+      (sawSep ? body : head).push(cells || [l]);
+      if (cells) cols = Math.max(cols, cells.length);
+    });
+    if (!sawSep) { body = head; head = []; }
+    function row(cells, tag) {
+      if (cells.length === 1 && cols > 1) return "<tr><" + tag + ' colspan="' + cols + '">' + ansi(trimAnsi(cells[0])) + "</" + tag + "></tr>";
+      return "<tr>" + cells.map(function (c) {
+        var p = plain(c), lead = p.length - p.replace(/^\s+/, "").length, trail = p.length - p.replace(/\s+$/, "").length;
+        return "<" + tag + (lead > trail ? ' class="r"' : "") + ">" + ansi(trimAnsi(c)) + "</" + tag + ">";
+      }).join("") + "</tr>";
+    }
+    return '<table class="np-tbl">' +
+      (head.length ? "<thead>" + head.map(function (r) { return row(r, "th"); }).join("") + "</thead>" : "") +
+      "<tbody>" + body.map(function (r) { return row(r, "td"); }).join("") + "</tbody></table>";
+  }
+  function renderOutput(raw) {
+    var lines = raw.split("\n"), html = "", text = [];
+    function flush() { if (text.length) { html += '<div class="np-txt">' + ansi(text.join("\n")) + "</div>"; text = []; } }
+    for (var i = 0; i < lines.length; i++) {
+      if (/^\s*╭/.test(plain(lines[i]))) {
+        var j = i + 1;
+        while (j < lines.length && !/^\s*╰/.test(plain(lines[j]))) j++;
+        if (j < lines.length) {
+          flush();
+          html += tableHTML(lines.slice(i + 1, j));
+          i = j;
+          var foot = i + 1 < lines.length ? plain(lines[i + 1]).trim() : "";
+          if (/^\[[\d,]+ rows? x [\d,]+ cols?\]$/.test(foot)) { html += '<div class="np-tbl-foot">' + esc(foot) + "</div>"; i++; }
+          continue;
+        }
+      }
+      text.push(lines[i]);
+    }
+    flush();
+    return html;
+  }
 
   /* ---------------- syntax highlighting ---------------- */
   var KW = {}, FN = {};
@@ -525,7 +598,7 @@
   }
 
   /* ---------------- output ---------------- */
-  var runNo = 0, cellsInRun = 0, runStart = 0;
+  var runNo = 0, cellsInRun = 0, runStart = 0, runHead = null;
   function clearEmpty() { var e = out.querySelector(".np-empty"); if (e) e.remove(); }
   function note(text, bad) {
     clearEmpty();
@@ -536,20 +609,16 @@
     out.innerHTML = '<div class="np-empty"><div><strong>No output yet</strong>Press Run, or type a line below.</div></div>';
   }
   function fmtMs(ms) { return ms < 10 ? ms.toFixed(1) + " ms" : ms < 1000 ? Math.round(ms) + " ms" : (ms / 1000).toFixed(2) + " s"; }
-  function addCell(line, text, ms) {
-    if (/^\s*\/(\s|$)/.test(line) && !text) return;
+  // only results are shown: a line that prints nothing (an assignment, a comment) adds no cell
+  function addCell(text) {
+    var body = text.replace(/^\s*\n/, "").replace(/\s+$/, "");
+    if (!body) return;
     clearEmpty();
     var cell = document.createElement("div");
-    cell.className = "np-cell" + (/(^|\n)\s*(error\[|runtime error|'\w)/.test(plain(text)) ? " err" : "");
-    var inEl = document.createElement("div"); inEl.className = "np-in";
-    inEl.innerHTML = "<span>" + esc(line) + "</span>" + (ms >= 1 ? '<span class="np-ms">' + fmtMs(ms) + "</span>" : "");
-    cell.appendChild(inEl);
-    var body = text.replace(/\s+$/, "");
-    if (body) {
-      var res = document.createElement("div"); res.className = "np-res";
-      res.innerHTML = ansi(body);
-      cell.appendChild(res);
-    }
+    cell.className = "np-cell" + (/(^|\n)\s*(error\[|runtime error|'\w)/.test(plain(body)) ? " err" : "");
+    var res = document.createElement("div"); res.className = "np-res";
+    res.innerHTML = renderOutput(body);
+    cell.appendChild(res);
     out.appendChild(cell); cellsInRun++;
     out.scrollTop = out.scrollHeight;
   }
@@ -586,11 +655,13 @@
     } else if (m.type === "fatal") {
       status("error", "engine failed to start"); note("The engine could not start: " + m.message, true);
     } else if (m.type === "result") {
-      if (m.run === runNo) addCell(m.line, m.out, m.ms);
+      if (m.run === runNo) addCell(m.out);
     } else if (m.type === "done") {
       if (m.run !== runNo) return;
-      if (!cellsInRun) note("Ran without output.");
-      $("np-timing").textContent = fmtMs(performance.now() - runStart);
+      var total = fmtMs(performance.now() - runStart);
+      if (runHead) runHead.textContent += " · " + total;
+      if (!cellsInRun) note("Done — nothing to print.");
+      $("np-timing").textContent = total;
       setBusy(false);
     } else if (m.type === "file") {
       var cb = fileWaiters[m.name]; delete fileWaiters[m.name]; if (cb) cb(m.src);
@@ -638,9 +709,9 @@
     if (!lines.length) { note("Nothing to run — the editor is empty."); return; }
     runNo++; cellsInRun = 0; runStart = performance.now();
     clearEmpty();
-    var head = document.createElement("div"); head.className = "np-run-head";
-    head.textContent = "run " + runNo + " · " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-    out.appendChild(head);
+    runHead = document.createElement("div"); runHead.className = "np-run-head";
+    runHead.textContent = "run " + runNo + " · " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    out.appendChild(runHead);
     setBusy(true);
     post({ type: "eval", run: runNo, lines: lines });
   }
