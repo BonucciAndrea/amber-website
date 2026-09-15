@@ -164,7 +164,6 @@ taken from the project repositories:
 | Tick store & real-time data | <https://github.com/BonucciAndrea/amber-tick> |
 | Python bindings | <https://github.com/BonucciAndrea/python-amber> |
 | Vector & AI extensions | <https://github.com/BonucciAndrea/amber-ai> |
-| Browser scratchpad | <https://github.com/BonucciAndrea/amber-notepad> |
 
 Amber itself is licensed under the GNU AGPLv3; its interpreter core derives from
 [ngn/k](https://codeberg.org/ngn/k).

@@ -615,8 +615,6 @@ footer { border-top: 1px solid var(--border); padding: 56px 0 40px; margin-top: 
 .foot-bottom { display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--border); font-size: .82rem; color: var(--text-faint); }
 .foot-bottom a { color: var(--text-faint); }
 .foot-bottom a:hover { color: var(--accent); }
-.scratchpad-link { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: .78rem; }
-.scratchpad-link svg { width: 13px; height: 13px; opacity: .7; }
 
 /* ---- 14. Utility -------------------------------------------------------- */
 
@@ -632,8 +630,6 @@ html.has-js .reveal.in { opacity: 1; transform: none; transition: opacity .6s va
 .mt-0 { margin-top: 0 } .mb-0 { margin-bottom: 0 } .mt-6 { margin-top: 44px } .mt-3 { margin-top: 22px }
 
 /* ---- 15. Late additions -------------------------------------------------- */
-.np-mobile { display: none; }
-@media (max-width: 940px) { .nav-links.open .np-mobile { display: block; } .scratchpad-nav { display: none; } }
 
 .hero-code-tabs { display: flex; gap: 4px; margin-bottom: -1px; }
 .tabbtn {
