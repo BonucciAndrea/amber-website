@@ -50,9 +50,12 @@
   .np-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   /* the workbench */
+  /* the workbench breaks out of the page column to use wide screens */
+  .np-wide { --np-w: min(1680px, calc(100vw - 32px)); width: var(--np-w); margin-left: calc(50% - var(--np-w) / 2); }
   .np-bench {
+    --np-z: 1;
     display: flex; flex-direction: column;
-    height: clamp(560px, calc(100dvh - 150px), 880px);
+    height: max(640px, calc(100dvh - 96px));
     border: 1px solid var(--border); border-radius: var(--radius-lg);
     background: var(--surface-solid); box-shadow: var(--shadow-lg); overflow: hidden;
   }
@@ -82,6 +85,14 @@
   html[data-theme="light"] .np-run { background: var(--accent); }
   .np-run:hover { color: var(--accent-ink); background: var(--accent); filter: brightness(1.06); }
   .np-run.stop { background: var(--red); color: #fff; box-shadow: none; }
+  .np-zoom { display: inline-flex; align-items: center; height: 34px; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+  .np-zoom button {
+    width: 30px; height: 100%; border: 0; background: transparent; cursor: pointer;
+    color: var(--text-dim); font: 600 .95rem var(--font-sans);
+  }
+  .np-zoom button:hover { color: var(--text); background: var(--surface-2); }
+  .np-zoom button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .np-zoom button.val { width: auto; min-width: 46px; font: 500 .72rem var(--font-mono); }
   .np-run kbd { font: 500 .66rem var(--font-mono); color: inherit; opacity: .7; background: transparent; border: 0; padding: 0; box-shadow: none; }
 
   /* examples menu */
@@ -113,7 +124,7 @@
   /* editor: transparent textarea over a highlighted mirror */
   .np-code { flex: 1; min-height: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); background: var(--code-bg); }
   .np-gutter { overflow: hidden; padding: 14px 10px 14px 16px; text-align: right; user-select: none; border-right: 1px solid var(--code-border); }
-  .np-gutter div, .np-hl, .np-ta { font-family: var(--font-mono); font-size: 13.5px; line-height: 22px; tab-size: 2; }
+  .np-gutter div, .np-hl, .np-ta { font-family: var(--font-mono); font-size: calc(13.5px * var(--np-z)); line-height: calc(22px * var(--np-z)); tab-size: 2; }
   .np-gutter div { color: var(--text-faint); opacity: .6; min-width: 2ch; }
   .np-gutter div.cur { color: var(--accent); opacity: 1; }
   .np-area { position: relative; overflow: hidden; }
@@ -138,14 +149,21 @@
   .np-run-head::after { content: ""; flex: 1; height: 1px; background: var(--code-border); }
   .np-cell { padding: 6px 16px 8px 14px; border-left: 2px solid transparent; }
   .np-cell.err { border-left-color: var(--red); background: color-mix(in srgb, var(--red) 6%, transparent); }
-  .np-res { font: 13px/1.6 var(--font-mono); color: var(--text); overflow-x: auto; }
-  .np-txt { white-space: pre; }
+  .np-res { font: calc(13px * var(--np-z))/1.6 var(--font-mono); color: var(--text); overflow-x: auto; }
+  .np-txt { white-space: pre; line-height: 1.35; }
+  /* Web fonts don't ship box-drawing, block or braille glyphs, and fallback fonts have other
+     widths, so charts fall apart. Those characters are drawn as masks on an exact 1ch cell. */
+  .gc {
+    display: inline-block; width: 1ch; height: 1.35em; vertical-align: top; overflow: hidden;
+    -webkit-text-fill-color: transparent; background: currentColor;
+    -webkit-mask: var(--m) 0 0 / 100% 100% no-repeat; mask: var(--m) 0 0 / 100% 100% no-repeat;
+  }
   .np-res .d { opacity: .62; } .np-res .b { font-weight: 600; } .np-res .i { font-style: italic; } .np-res .u { text-decoration: underline; }
 
   /* engine tables arrive as box-drawing text and are rebuilt as real tables */
   .np-res table.np-tbl {
     width: auto; margin: 2px 0 0; border-collapse: separate; border-spacing: 0;
-    font: 13px/1.5 var(--font-mono); background: transparent;
+    font: calc(13px * var(--np-z))/1.5 var(--font-mono); background: transparent;
     border: 1px solid var(--border-strong); border-radius: 10px; overflow: hidden;
   }
   .np-tbl th, .np-tbl td {
@@ -162,14 +180,6 @@
   .np-note.bad { color: var(--red); }
   .np-empty { display: grid; place-items: center; height: 100%; padding: 24px; text-align: center; color: var(--text-faint); font-size: .85rem; }
   .np-empty strong { display: block; color: var(--text-dim); font-weight: 550; margin-bottom: 4px; }
-
-  .np-repl { display: flex; align-items: center; gap: 10px; padding: 0 14px; height: 44px; margin: 0; border-top: 1px solid var(--border); background: var(--surface); }
-  .np-repl label { color: var(--accent); font: 600 14px var(--font-mono); }
-  .np-repl input {
-    flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent;
-    font: 13.5px var(--font-mono); color: var(--text);
-  }
-  .np-repl input::placeholder { color: var(--text-faint); }
 
   .np-status {
     display: flex; align-items: center; gap: 16px; height: 30px; padding: 0 14px;
@@ -197,8 +207,8 @@
     .np-bench { height: auto; }
     .np-split { grid-template-columns: minmax(0, 1fr); }
     .np-pane + .np-pane { border-left: 0; border-top: 1px solid var(--border); }
-    .np-code { height: 46vh; min-height: 280px; flex: none; }
-    .np-out { height: 46vh; min-height: 260px; flex: none; }
+    .np-code { height: 58vh; min-height: 300px; flex: none; }
+    .np-out { height: 62vh; min-height: 300px; flex: none; }
     .np-hide-sm { display: none; }
   }
 </style>
@@ -234,9 +244,10 @@
 
 <section style="padding-bottom:56px">
   <div class="wrap">
+    <div class="np-wide">
     <div class="np-try" id="np-try"><span class="np-try-label">Try</span></div>
 
-    <div class="np-bench">
+    <div class="np-bench" id="np-bench">
       <div class="np-bar">
         <span class="np-file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>scratch.k</span>
         <span class="np-sep"></span>
@@ -256,6 +267,11 @@
           <span class="np-hide-sm">Clear</span>
         </button>
         <span class="np-spacer"></span>
+        <div class="np-zoom" role="group" aria-label="Text size">
+          <button type="button" id="np-zoom-out" title="Smaller text (Ctrl −)" aria-label="Smaller text">−</button>
+          <button type="button" class="val" id="np-zoom-val" title="Reset text size (Ctrl 0)">100%</button>
+          <button type="button" id="np-zoom-in" title="Larger text (Ctrl +)" aria-label="Larger text">+</button>
+        </div>
         <button class="np-tb np-run" id="np-run" type="button" disabled>
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z"/></svg>
           <span id="np-run-label">Run</span> <kbd class="np-hide-sm" id="np-run-kbd">Ctrl ↵</kbd>
@@ -276,10 +292,6 @@
         <div class="np-pane">
           <div class="np-pane-head">Output <span class="np-spacer"></span><span id="np-timing"></span></div>
           <div class="np-out" id="np-out" aria-live="polite" aria-label="Amber output"></div>
-          <form class="np-repl" id="np-repl" autocomplete="off">
-            <label for="np-repl-in">›</label>
-            <input id="np-repl-in" spellcheck="false" autocapitalize="off" placeholder="evaluate a line…  (↑ ↓ history)" disabled>
-          </form>
         </div>
       </div>
 
@@ -289,6 +301,7 @@
         <span class="np-spacer"></span>
         <span class="np-hide-sm" id="np-keys">Ctrl ↵ run all · Shift ↵ run line · Ctrl / comment</span>
       </div>
+    </div>
     </div>
 
     <p class="np-foot-note">Each line of the editor is evaluated in order, exactly as if typed at the prompt, and definitions
@@ -348,7 +361,6 @@
   var $ = function (id) { return document.getElementById(id); };
   var editor = $("np-editor"), hl = $("np-hl"), gutter = $("np-gutter-inner"), out = $("np-out");
   var runBtn = $("np-run"), runLabel = $("np-run-label");
-  var replForm = $("np-repl"), replIn = $("np-repl-in");
   var menu = $("np-menu"), exBtn = $("np-ex-btn"), toast = $("np-toast");
   var DRAFT_KEY = "amber-notepad-draft";
   if (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) {
@@ -416,21 +428,111 @@
     if (h < 255) return "var(--blue)";
     return "var(--violet)";
   }
+  var XBASE = ["#1b1b1f","#e05561","#8cc265","#d9a35a","#4aa5f0","#c162de","#42b3c2","#d7dae0",
+               "#5a6374","#ff616e","#a5e075","#f0c56a","#61afef","#d16dfa","#56c9d6","#f7f9ff"];
+  function xtermRGB(n) {
+    if (n < 16) return XBASE[n];
+    if (n >= 232) { var v = (n - 232) * 10 + 8; return "rgb(" + v + "," + v + "," + v + ")"; }
+    n -= 16;
+    var lv = function (x) { return x ? x * 40 + 55 : 0; };
+    return "rgb(" + lv(Math.floor(n / 36)) + "," + lv(Math.floor(n / 6) % 6) + "," + lv(n % 6) + ")";
+  }
   function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+  /* ---------------- drawn glyphs: box drawing, blocks, braille ---------------- */
+  // cell is 1ch x 1.35em; JetBrains Mono's advance is 0.6em, so the viewBox is 6 x 13.5
+  var GW = 6, GH = 13.5, GX = 3, GY = 6.75;
+  // [up, right, down, left]: 1 light, 2 heavy, 3 double
+  var BOX = {
+    0x2500:[0,1,0,1], 0x2501:[0,2,0,2], 0x2502:[1,0,1,0], 0x2503:[2,0,2,0],
+    0x2504:[0,1,0,1], 0x2505:[0,2,0,2], 0x2506:[1,0,1,0], 0x2507:[2,0,2,0],
+    0x2508:[0,1,0,1], 0x2509:[0,2,0,2], 0x250a:[1,0,1,0], 0x250b:[2,0,2,0],
+    0x250c:[0,1,1,0], 0x250f:[0,2,2,0], 0x2510:[0,0,1,1], 0x2513:[0,0,2,2],
+    0x2514:[1,1,0,0], 0x2517:[2,2,0,0], 0x2518:[1,0,0,1], 0x251b:[2,0,0,2],
+    0x251c:[1,1,1,0], 0x2523:[2,2,2,0], 0x2524:[1,0,1,1], 0x252b:[2,0,2,2],
+    0x252c:[0,1,1,1], 0x2533:[0,2,2,2], 0x2534:[1,1,0,1], 0x253b:[2,2,0,2],
+    0x253c:[1,1,1,1], 0x254b:[2,2,2,2], 0x254c:[0,1,0,1], 0x254d:[0,2,0,2], 0x254e:[1,0,1,0], 0x254f:[2,0,2,0],
+    0x2550:[0,3,0,3], 0x2551:[3,0,3,0], 0x2554:[0,3,3,0], 0x2557:[0,0,3,3], 0x255a:[3,3,0,0], 0x255d:[3,0,0,3],
+    0x2560:[3,3,3,0], 0x2563:[3,0,3,3], 0x2566:[0,3,3,3], 0x2569:[3,3,0,3], 0x256c:[3,3,3,3],
+    0x2574:[0,0,0,1], 0x2575:[1,0,0,0], 0x2576:[0,1,0,0], 0x2577:[0,0,1,0],
+    0x2578:[0,0,0,2], 0x2579:[2,0,0,0], 0x257a:[0,2,0,0], 0x257b:[0,0,2,0]
+  };
+  function rect(x, y, w, h, op) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '"' + (op ? ' fill-opacity="' + op + '"' : "") + "/>"; }
+  function arm(dir, weight) {
+    var out = "", offs = weight === 3 ? [-0.9, 0.9] : [0], t = weight === 2 ? 1.5 : 0.8;
+    offs.forEach(function (o) {
+      if (dir === 0) out += rect(GX + o - t / 2, 0, t, GY + t / 2);
+      if (dir === 2) out += rect(GX + o - t / 2, GY - t / 2, t, GH - GY + t / 2);
+      if (dir === 3) out += rect(0, GY + o - t / 2, GX + t / 2, t);
+      if (dir === 1) out += rect(GX - t / 2, GY + o - t / 2, GW - GX + t / 2, t);
+    });
+    return out;
+  }
+  function glyphShapes(cp) {
+    var s = "", i;
+    if (BOX[cp]) { for (i = 0; i < 4; i++) if (BOX[cp][i]) s += arm(i, BOX[cp][i]); return s; }
+    if (cp >= 0x256d && cp <= 0x2570) {   // rounded corners
+      var R = 2.4, d = {
+        0x256d: "M6 6.75H" + (GX + R) + "Q3 6.75 3 " + (GY + R) + "V13.5",
+        0x256e: "M0 6.75H" + (GX - R) + "Q3 6.75 3 " + (GY + R) + "V13.5",
+        0x256f: "M3 0V" + (GY - R) + "Q3 6.75 " + (GX - R) + " 6.75H0",
+        0x2570: "M3 0V" + (GY - R) + "Q3 6.75 " + (GX + R) + " 6.75H6"
+      }[cp];
+      return '<path d="' + d + '" fill="none" stroke="#000" stroke-width="0.8"/>';
+    }
+    if (cp === 0x2580) return rect(0, 0, GW, GH / 2);
+    if (cp >= 0x2581 && cp <= 0x2588) { var hh = GH * (cp - 0x2580) / 8; return rect(0, GH - hh, GW, hh); }
+    if (cp >= 0x2589 && cp <= 0x258f) return rect(0, 0, GW * (0x2590 - cp) / 8, GH);
+    if (cp === 0x2590) return rect(GW / 2, 0, GW / 2, GH);
+    if (cp >= 0x2591 && cp <= 0x2593) return rect(0, 0, GW, GH, (cp - 0x2590) * 0.25);
+    if (cp === 0x2594) return rect(0, 0, GW, GH / 8);
+    if (cp === 0x2595) return rect(GW * 7 / 8, 0, GW / 8, GH);
+    if (cp >= 0x2596 && cp <= 0x259f) {   // quadrants: 1 UL, 2 UR, 4 LL, 8 LR
+      var q = [4, 8, 1, 13, 9, 7, 11, 2, 6, 14][cp - 0x2596];
+      if (q & 1) s += rect(0, 0, GX, GY); if (q & 2) s += rect(GX, 0, GX, GY);
+      if (q & 4) s += rect(0, GY, GX, GY); if (q & 8) s += rect(GX, GY, GX, GY);
+      return s;
+    }
+    if (cp >= 0x2800 && cp <= 0x28ff) {   // braille: dots 1-3,7 left column, 4-6,8 right column
+      var bits = cp - 0x2800, pos = [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[0,3],[1,3]];
+      for (i = 0; i < 8; i++) if (bits & (1 << i)) s += '<circle cx="' + (pos[i][0] ? 4.3 : 1.7) + '" cy="' + (GH * (pos[i][1] + 0.5) / 4) + '" r="1.05"/>';
+      return s;
+    }
+    return null;
+  }
+  var glyphStyle = null, glyphDone = {};
+  function glyphClass(cp) {
+    if (glyphDone[cp] !== undefined) return glyphDone[cp];
+    var shapes = glyphShapes(cp);
+    if (shapes === null) return (glyphDone[cp] = "");
+    if (!glyphStyle) { glyphStyle = document.createElement("style"); document.head.appendChild(glyphStyle); }
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + GW + " " + GH + '" preserveAspectRatio="none">' + shapes + "</svg>";
+    var name = "g" + cp.toString(16);
+    glyphStyle.sheet.insertRule("." + name + '{--m:url("data:image/svg+xml,' + encodeURIComponent(svg) + '")}', glyphStyle.sheet.cssRules.length);
+    return (glyphDone[cp] = name);
+  }
+  // escape text and wrap drawable characters; the character stays in the DOM for copy & paste
+  function glyphs(s) {
+    return esc(s).replace(/[─-▟⠀-⣿]/g, function (ch) {
+      var name = glyphClass(ch.charCodeAt(0));
+      return name ? '<span class="gc ' + name + '">' + ch + "</span>" : ch;
+    });
+  }
   function ansi(text) {
-    var html = "", fg = null, cls = {}, re = /\x1b\[([\d;]*)m/g, last = 0, m;
+    var html = "", fg = null, bg = null, cls = {}, re = /\x1b\[([\d;]*)m/g, last = 0, m;
     function flush(chunk) {
       if (!chunk) return;
       var names = Object.keys(cls).filter(function (k) { return cls[k]; }).join(" ");
-      if (fg || names) html += "<span" + (names ? ' class="' + names + '"' : "") + (fg ? ' style="color:' + fg + '"' : "") + ">" + esc(chunk) + "</span>";
-      else html += esc(chunk);
+      var style = (fg ? "color:" + fg + ";" : "") + (bg ? "background:" + bg + ";" : "");
+      if (style || names) html += "<span" + (names ? ' class="' + names + '"' : "") + (style ? ' style="' + style + '"' : "") + ">" + glyphs(chunk) + "</span>";
+      else html += glyphs(chunk);
     }
     while ((m = re.exec(text))) {
       flush(text.slice(last, m.index)); last = re.lastIndex;
       var codes = (m[1] || "0").split(";").map(Number);
       for (var k = 0; k < codes.length; k++) {
         var n = codes[k];
-        if (n === 0) { fg = null; cls = {}; }
+        if (n === 0) { fg = null; bg = null; cls = {}; }
         else if (n === 1) cls.b = true; else if (n === 2) cls.d = true; else if (n === 3) cls.i = true; else if (n === 4) cls.u = true;
         else if (n === 22) { cls.b = false; cls.d = false; } else if (n === 23) cls.i = false; else if (n === 24) cls.u = false;
         else if (n === 39) fg = null;
@@ -438,6 +540,12 @@
         else if (n >= 90 && n <= 97) fg = BRIGHT[n - 90];
         else if (n === 38 && codes[k + 1] === 5) { fg = c256(codes[k + 2] | 0); k += 2; }
         else if (n === 38 && codes[k + 1] === 2) { fg = rgbVar(codes[k + 2] | 0, codes[k + 3] | 0, codes[k + 4] | 0); k += 4; }
+        // backgrounds (heat maps) keep their real colour
+        else if (n === 49) bg = null;
+        else if (n >= 40 && n <= 47) bg = xtermRGB(n - 40);
+        else if (n >= 100 && n <= 107) bg = xtermRGB(n - 92);
+        else if (n === 48 && codes[k + 1] === 5) { bg = xtermRGB(codes[k + 2] | 0); k += 2; }
+        else if (n === 48 && codes[k + 1] === 2) { bg = "rgb(" + (codes[k + 2] | 0) + "," + (codes[k + 3] | 0) + "," + (codes[k + 4] | 0) + ")"; k += 4; }
       }
     }
     flush(text.slice(last));
@@ -606,7 +714,7 @@
     out.appendChild(d); out.scrollTop = out.scrollHeight;
   }
   function emptyState() {
-    out.innerHTML = '<div class="np-empty"><div><strong>No output yet</strong>Press Run, or type a line below.</div></div>';
+    out.innerHTML = '<div class="np-empty"><div><strong>No output yet</strong>Press Run to see the results here.</div></div>';
   }
   function fmtMs(ms) { return ms < 10 ? ms.toFixed(1) + " ms" : ms < 1000 ? Math.round(ms) + " ms" : (ms / 1000).toFixed(2) + " s"; }
   // only results are shown: a line that prints nothing (an assignment, a comment) adds no cell
@@ -649,7 +757,7 @@
   function onMessage(m) {
     if (m.type === "ready") {
       ready = true; version = m.version || "2.1.0";
-      runBtn.disabled = false; replIn.disabled = false;
+      runBtn.disabled = false;
       status("ready", readyText());
       if (pendingRun) { var p = pendingRun; pendingRun = null; run(p); }
     } else if (m.type === "fatal") {
@@ -668,7 +776,7 @@
     }
   }
   function startEngine() {
-    ready = false; runBtn.disabled = true; replIn.disabled = true;
+    ready = false; runBtn.disabled = true;
     status("booting", "loading engine…");
     try {
       worker = new Worker("./assets/notepad/worker.js?v=2.1.0");
@@ -708,7 +816,7 @@
     if (busy) return;
     if (!lines.length) { note("Nothing to run — the editor is empty."); return; }
     runNo++; cellsInRun = 0; runStart = performance.now();
-    clearEmpty();
+    out.innerHTML = "";   // each run replaces the previous output
     runHead = document.createElement("div"); runHead.className = "np-run-head";
     runHead.textContent = "run " + runNo + " · " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
     out.appendChild(runHead);
@@ -724,19 +832,6 @@
     startEngine();
   }
   runBtn.addEventListener("click", function () { busy ? stop() : runAll(); });
-
-  /* REPL line */
-  var hist = [], hIdx = 0;
-  replForm.addEventListener("submit", function (e) {
-    e.preventDefault();
-    var v = replIn.value; if (!v.trim() || busy) return;
-    hist.push(v); hIdx = hist.length; replIn.value = "";
-    run([v]);
-  });
-  replIn.addEventListener("keydown", function (e) {
-    if (e.key === "ArrowUp" && hIdx > 0) { e.preventDefault(); replIn.value = hist[--hIdx]; }
-    else if (e.key === "ArrowDown") { e.preventDefault(); hIdx = Math.min(hist.length, hIdx + 1); replIn.value = hist[hIdx] || ""; }
-  });
 
   /* ---------------- examples menu + snippets ---------------- */
   (window.AMBER_EXAMPLES || []).forEach(function (ex) {
@@ -817,6 +912,27 @@
       } else manual();
     });
   });
+
+  /* ---------------- text zoom ---------------- */
+  var ZOOM_KEY = "amber-notepad-zoom", bench = $("np-bench"), zoom = 1;
+  function setZoom(z) {
+    zoom = Math.min(2, Math.max(0.7, Math.round(z * 10) / 10));
+    bench.style.setProperty("--np-z", zoom);
+    $("np-zoom-val").textContent = Math.round(zoom * 100) + "%";
+    try { localStorage.setItem(ZOOM_KEY, String(zoom)); } catch (_) {}
+    syncScroll();
+  }
+  $("np-zoom-out").addEventListener("click", function () { setZoom(zoom - 0.1); });
+  $("np-zoom-in").addEventListener("click", function () { setZoom(zoom + 0.1); });
+  $("np-zoom-val").addEventListener("click", function () { setZoom(1); });
+  // Ctrl/⌘ + = − 0 zoom the notepad text instead of the page while focus is inside it
+  bench.addEventListener("keydown", function (e) {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    if (e.key === "=" || e.key === "+") { e.preventDefault(); setZoom(zoom + 0.1); }
+    else if (e.key === "-") { e.preventDefault(); setZoom(zoom - 0.1); }
+    else if (e.key === "0") { e.preventDefault(); setZoom(1); }
+  });
+  try { var z0 = parseFloat(localStorage.getItem(ZOOM_KEY)); if (z0) setZoom(z0); } catch (_) {}
 
   /* ---------------- start ---------------- */
   function loadDefault() {
