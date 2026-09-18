@@ -106,7 +106,7 @@ appending a second copy.</p>
 # folder uninstalls it completely.
 export AMBER_HOME="$HOME/amber"
 
-# amber  -&gt; the full REPL: repl.k, the q/kdb+ vocabulary and the stdlib.
+# amber  -&gt; the full REPL: repl.k, the q vocabulary and the stdlib.
 alias amber='AMBER_NATIVE=1 "$AMBER_HOME/a"'
 
 # amberx -&gt; the bare interpreter for scripts and pipes: no REPL, no stdlib.
@@ -269,7 +269,7 @@ AMBER_SHARED=1 ./build.sh  # same as --shared, for callers that cannot pass a fl
   <span class="note-title">Isolation</span>
   <p>Amber is a single self-contained folder. The interpreter is named <code>amber</code> (never
   <code>k</code> or <code>q</code>), built only inside the folder, never placed on your
-  <code>PATH</code>. It reads and writes no config, no <code>QHOME</code>, no dotfiles. Your kdb+,
+  <code>PATH</code>. It reads and writes no config, no <code>QHOME</code>, no dotfiles. Your
   kona and other k/q installs are untouched.</p>
 </div>
 
@@ -320,7 +320,6 @@ AMBER_SHARED=1 ./build.sh  # same as --shared, for callers that cannot pass a fl
     </div>
     <div class="foot-bottom">
       <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
-      <span>Not affiliated with kdb+ / KX Systems.</span>
     </div>
   </div>
 </footer>

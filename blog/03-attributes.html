@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>One byte at offset −13: column attributes in C</title>
-<meta name="description" content="How Amber implements kdb-style column attributes in C: where the byte lives, which kernels branch on it, what each of the four promises, and the measured 2261x speedup on find.">
+<meta name="description" content="How Amber implements q-style column attributes in C: where the byte lives, which kernels branch on it, what each of the four promises, and the measured 2261x speedup on find.">
 <meta name="author" content="Andrea Bonucci">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0F'/%3E%3Cpath d='M16 5 26.6 23.4a1.1 1.1 0 0 1-1 1.7h-3.9L16 14.9l-5.7 10.2H6.4a1.1 1.1 0 0 1-1-1.7L16 5Z' fill='%23FFB020'/%3E%3C/svg%3E">
 <meta property="og:type" content="article">
 <meta property="og:title" content="One byte at offset −13: column attributes in C">
-<meta property="og:description" content="How Amber implements kdb-style column attributes in C: where the byte lives, which kernels branch on it, what each of the four promises, and the measured 2261x speedup on find.">
+<meta property="og:description" content="How Amber implements q-style column attributes in C: where the byte lives, which kernels branch on it, what each of the four promises, and the measured 2261x speedup on find.">
 <meta property="article:published_time" content="2026-03-08">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -451,7 +451,7 @@ is holding) and write the byte.</p>
 
 <p>No index is built. No data is moved. No validation is performed. That last one is deliberate and
 worth being explicit about: <code>`sa</code> on an unsorted vector is a lie you are allowed to tell, and
-the engine will believe you. This is exactly how kdb+ behaves, and the alternative — an <code>O(n)</code>
+the engine will believe you. This is exactly how q behaves, and the alternative — an <code>O(n)</code>
 check on every set — would make stamping a hundred-million-row column as expensive as sorting it.</p>
 
 <h2>Reading it: kernel selection in <code>fnd()</code></h2>

@@ -188,10 +188,10 @@ pessimisation.</p>
 <h2>Concurrency</h2>
 <p>A single-threaded event loop over <code>poll()</code>: many connections, one query at a time,
 <strong>shared</strong> global state.</p>
-<p>That is not a compromise — it is the model kdb+ uses, and it is the only one where two clients can
+<p>That is not a compromise — it is the only model, and the only one where two clients can
 see each other's writes. Forking per connection would buy parallelism and lose the shared table you
 connected in order to query. A long query blocks the loop; that is visible, predictable, and fixed by
-running more <code>amberd</code> processes over a partitioned database, which is also what kdb+
+running more <code>amberd</code> processes over a partitioned database, which is also what q
 does.</p>
 
 <div class="note note-info">
@@ -340,7 +340,6 @@ standard library so a protocol bug reproduces without a Grafana instance anywher
     </div>
     <div class="foot-bottom">
       <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
-      <span>Not affiliated with kdb+ / KX Systems.</span>
     </div>
   </div>
 </footer>

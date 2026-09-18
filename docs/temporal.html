@@ -114,7 +114,7 @@ this right explicitly, because getting it wrong is a silent thirty-year shift.</
 </table>
 </div>
 
-<p>A <em>time of day</em> is a count of milliseconds since midnight, the same convention as kdb+'s
+<p>A <em>time of day</em> is a count of milliseconds since midnight, the same convention as q's
 <code>time</code> — it carries no date at all. A <em>timestamp</em> is a count of nanoseconds since
 the epoch instant and carries both.</p>
 
@@ -197,8 +197,8 @@ qby[tb; `sym`time;
   <div class="card">
     <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 12h18M12 3v18"/></svg></div>
     <h4 style="margin-top:0;color:var(--text)">Compatibility with q</h4>
-    <p class="small mb-0">kdb+ uses the same epoch and the same millisecond-of-day convention. A shop
-    porting a tickerplant query does not have to rebase anything, and a stored kdb-shaped column means
+    <p class="small mb-0">q uses the same epoch and the same millisecond-of-day convention. A shop
+    porting a tickerplant query does not have to rebase anything, and a stored q-shaped column means
     the same thing here.</p>
   </div>
 </div>
@@ -217,7 +217,7 @@ us:86400 * ud                      / 1753833600
 / timestamp -&gt; unix nanoseconds
 un:(`i$2026.07.30D09:30:00.000000000) + UNIXNS
 
-/ and back  (`mkp builds a timestamp from raw ns; `p$ is a kdb spelling Amber
+/ and back  (`mkp builds a timestamp from raw ns; `p$ is a q spelling Amber
 / does not have — the constructors are `mkd `mkt `mkp)
 `mkp un - UNIXNS</code></pre></div>
 
@@ -297,7 +297,7 @@ from the same arrays, so the two views cannot drift.</p>
 
 <div class="note note-ok">
   <span class="note-title">Rendering does not change storage</span>
-  <p>Columns keep numeric storage, exactly as kdb does internally, so <code>xasc</code> and the
+  <p>Columns keep numeric storage, exactly as q does internally, so <code>xasc</code> and the
   <code>`s</code> attribute work unchanged and the as-of kernel still binary-searches. A column named
   <code>time</code> auto-renders as <code>HH:MM:SS.mmm</code> in a grid; <code>tsym[t;c]</code> marks
   any other columns you want rendered that way.</p>
@@ -350,7 +350,6 @@ from the same arrays, so the two views cannot drift.</p>
     </div>
     <div class="foot-bottom">
       <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
-      <span>Not affiliated with kdb+ / KX Systems.</span>
     </div>
   </div>
 </footer>

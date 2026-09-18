@@ -345,7 +345,7 @@ year 2026.07.30                     / 2026
 `i$2026.07.30                       / 9709 — the raw value, when you want it</code></pre></div>
 
 <p>The crucial decision, and the one I would make again: <strong>columns keep numeric storage</strong>,
-exactly as kdb does internally. The type tag changes how a value parses, prints and combines. It does not
+exactly as q does internally. The type tag changes how a value parses, prints and combines. It does not
 change the bytes.</p>
 
 <p>So <code>xasc</code> still works on a time column. The <code>`s</code> attribute still applies. The
@@ -356,7 +356,7 @@ and would have cost every single one of those.</p>
 <div class="note info">
   <b>The epoch</b>
   <p>Dates count days from <strong>2000-01-01</strong>; timestamps count nanoseconds from the same
-  instant; a time is milliseconds since midnight and carries no date at all. Same convention as kdb+, and
+  instant; a time is milliseconds since midnight and carries no date at all. Same convention as q, and
   it buys thirty years at the end of the <code>int64</code> range that matters — 1707–2292 instead of
   Unix nanoseconds' 1677–2262. It also means every integration has to convert explicitly, and none of them
   do it silently, because a quiet thirty-year shift is the worst class of bug there is: it does not crash,
@@ -401,7 +401,7 @@ serialises its result down a pipe, and the parent deserialises and concatenates.
     <tr><td>Data races</td><td>None possible — copy-on-write heap per worker</td><td>Every refcount becomes a contended atomic</td></tr>
     <tr><td>Cost to serial code</td><td>Zero</td><td>An atomic increment on every single value, forever</td></tr>
     <tr><td>Cost to parallel code</td><td>A serialise + pipe + deserialise per chunk</td><td>Nothing</td></tr>
-    <tr><td>Precedent</td><td>How kdb+ gets multi-core</td><td>—</td></tr>
+    <tr><td>Precedent</td><td>How q gets multi-core</td><td>—</td></tr>
   </tbody>
 </table>
 </div>

@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Amber documentation — introduction</title>
-<meta name="description" content="What Amber is, how it is put together, and what it deliberately is not: a C99 array engine with a q/kdb+ vocabulary, built on the ngn/k core.">
+<meta name="description" content="What Amber is, how it is put together, and what it deliberately is not: a C99 array engine with a q vocabulary, built on the ngn/k core.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Amber documentation — introduction">
-<meta property="og:description" content="What Amber is, how it is put together, and what it deliberately is not: a C99 array engine with a q/kdb+ vocabulary, built on the ngn/k core.">
+<meta property="og:description" content="What Amber is, how it is put together, and what it deliberately is not: a C99 array engine with a q vocabulary, built on the ngn/k core.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -54,7 +54,7 @@
 <h1>Introduction</h1>
 <p class="lead">Amber is a small, fast, self-contained array language. The interpreter is portable
 C99 that builds clean on <code>gcc</code> and <code>clang</code>; the vocabulary on top of it is
-q/kdb+'s. It is one folder, it installs nothing system-wide, and deleting the folder uninstalls it
+q's. It is one folder, it installs nothing system-wide, and deleting the folder uninstalls it
 completely.</p>
 
 <div class="badge-row" style="margin-bottom:28px">
@@ -69,7 +69,7 @@ completely.</p>
 ngn's compact AGPLv3 implementation of the K array language. Amber keeps that engine's speed and
 small footprint and layers on:</p>
 <ul>
-  <li>the <strong>q/kdb+ working vocabulary</strong> — dictionaries, tables and keyed tables with
+  <li>the <strong>q working vocabulary</strong> — dictionaries, tables and keyed tables with
   <code>([]…)</code> literal syntax, qSQL <code>select</code>/<code>exec</code>/<code>update</code>/<code>delete</code>,
   and the full join family: left, inner, union, plus, equi, <strong>as-of</strong> and <strong>window</strong>;</li>
   <li><strong>column attributes implemented in C</strong> — <code>`s</code> sorted, <code>`u</code> unique,
@@ -87,10 +87,10 @@ small footprint and layers on:</p>
 <h2>What it deliberately is not</h2>
 <div class="grid grid-2" style="margin:20px 0">
   <div class="card">
-    <h4 style="margin-top:0;color:var(--text)">Not a kdb+ distribution</h4>
+    <h4 style="margin-top:0;color:var(--text)">Not a q distribution</h4>
     <p class="small mb-0">Amber is an independent language. The interpreter is named <code>amber</code>,
     never <code>k</code> or <code>q</code>; it reads no <code>QHOME</code>, no config and no dotfiles,
-    and your kdb+, kona or ngn/k installs are untouched.</p>
+    and your kona or ngn/k installs are untouched.</p>
   </div>
   <div class="card">
     <h4 style="margin-top:0;color:var(--text)">Not a networked runtime</h4>
@@ -247,7 +247,6 @@ peach[{avg x?1.0}; 8#1000000]</code></pre></div>
     </div>
     <div class="foot-bottom">
       <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
-      <span>Not affiliated with kdb+ / KX Systems.</span>
     </div>
   </div>
 </footer>

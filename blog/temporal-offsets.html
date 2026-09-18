@@ -374,7 +374,7 @@ produce plausible output, which is the worst thing a bug can do.</p>
 
 <p>They are first-class types with literal syntax and type-aware arithmetic — <code>date - date</code> gives
 you days, <code>time + time</code> gives you a time, <code>year</code> and <code>dow</code> and
-<code>hh</code> work on them directly. But the storage is numeric, exactly as kdb does internally, which is
+<code>hh</code> work on them directly. But the storage is numeric, exactly as q does internally, which is
 what lets <code>xasc</code> and the <code>`s</code> attribute work on a time column unchanged and lets the
 as-of kernel binary-search it.</p>
 
@@ -431,9 +431,9 @@ than a string) it is a large part of why a tick table is as compact as it is.</p
 
 <h3>3. It is the convention the domain already uses</h3>
 
-<p>kdb+ uses the same epoch and the same millisecond-of-day convention for <code>time</code>. That means a
+<p>q uses the same epoch and the same millisecond-of-day convention for <code>time</code>. That means a
 tickerplant query ported from q means the same thing here without rebasing anything, and a stored
-kdb-shaped column can be read as-is. When your users are people who already have twenty years of q muscle
+q-shaped column can be read as-is. When your users are people who already have twenty years of q muscle
 memory, matching that convention is worth more than matching POSIX.</p>
 
 <h2>The two magnitudes that look alike</h2>

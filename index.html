@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Amber — a low-latency array language for market data</title>
-<meta name="description" content="Amber is a C99 columnar in-memory array engine with the working vocabulary of q/kdb+: tables, the full join family including native as-of, qSQL select/by, C-level column attributes and a zero-copy Arrow bridge.">
+<meta name="description" content="Amber is a C99 columnar in-memory array engine with the working vocabulary of q: tables, the full join family including native as-of, qSQL select/by, C-level column attributes and a zero-copy Arrow bridge.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="./assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Amber — a low-latency array language for market data">
-<meta property="og:description" content="Amber is a C99 columnar in-memory array engine with the working vocabulary of q/kdb+: tables, the full join family including native as-of, qSQL select/by, C-level column attributes and a zero-copy Arrow bridge.">
+<meta property="og:description" content="Amber is a C99 columnar in-memory array engine with the working vocabulary of q: tables, the full join family including native as-of, qSQL select/by, C-level column attributes and a zero-copy Arrow bridge.">
 <meta property="og:site_name" content="Amber">
 <meta property="og:url" content="https://amber-lang.org/">
 <meta property="og:image" content="https://amber-lang.org/assets/img/og.png">
@@ -51,7 +51,7 @@
         <h1>The array language<br><span class="grad">markets run on.</span></h1>
         <p class="lead">
           Amber is a small, fast, self-contained engine written in portable <strong>C99</strong>: columnar,
-          vectorised, in-memory, with the working vocabulary of <strong>q/kdb+</strong> — dictionaries,
+          vectorised, in-memory, with the working vocabulary of <strong>q</strong> — dictionaries,
           tables and keyed tables, the full join family including a native as-of kernel, qSQL
           <code>select</code>/<code>by</code>, and column attributes implemented in C that turn search from
           <code>O(n)</code> into <code>O(log n)</code>.
@@ -142,7 +142,7 @@
       <div class="card reveal">
         <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></div>
         <h3>Columnar storage &amp; attributes</h3>
-        <p class="small">All four kdb-style attributes are implemented in C — <code>`s</code> sorted,
+        <p class="small">All four q-style attributes are implemented in C — <code>`s</code> sorted,
         <code>`u</code> unique, <code>`p</code> parted, <code>`g</code> grouped. Sorted turns
         <code>?</code> into a binary search: <strong>1.73 s &rarr; 1.4 ms</strong> on 2M rows, same answer.</p>
       </div>
@@ -549,7 +549,6 @@ chmod +x a build.sh install.sh
     </div>
     <div class="foot-bottom">
       <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
-      <span>Not affiliated with kdb+ / KX Systems.</span>
     </div>
   </div>
 </footer>

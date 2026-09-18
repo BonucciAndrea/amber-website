@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Language & qSQL reference — Amber</title>
-<meta name="description" content="K expressions, the q/kdb+ built-in vocabulary, wavg, xbar, aj, wj, operators, tables, dictionaries and keyed tables, and the dialect rules that differ from q.">
+<meta name="description" content="K expressions, the q built-in vocabulary, wavg, xbar, aj, wj, operators, tables, dictionaries and keyed tables, and the dialect rules that differ from q.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Language & qSQL reference — Amber">
-<meta property="og:description" content="K expressions, the q/kdb+ built-in vocabulary, wavg, xbar, aj, wj, operators, tables, dictionaries and keyed tables, and the dialect rules that differ from q.">
+<meta property="og:description" content="K expressions, the q built-in vocabulary, wavg, xbar, aj, wj, operators, tables, dictionaries and keyed tables, and the dialect rules that differ from q.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -52,7 +52,7 @@
 <a href="../docs/gotchas.html">Gotchas</a>
 </aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../docs/index.html">Docs</a> / Language &amp; qSQL</div>
 <h1>Language &amp; qSQL</h1>
-<p class="lead">Amber is a terse array notation with a q/kdb+ vocabulary bolted firmly on top. If you
+<p class="lead">Amber is a terse array notation with a q vocabulary bolted firmly on top. If you
 have written q you already know most of it; the rules below are the handful of places where the host
 grammar shows through, and they are properties of the host, not bugs.</p>
 
@@ -299,7 +299,7 @@ wj[w; `sym`time; trades; quotes; ((`mbid;max;`bid);(`mask;min;`ask))]</code></pr
 <p>See <code>examples/wj.k</code> for a full walkthrough.</p>
 
 <h2>Attributes — the C-level change</h2>
-<p>All four kdb-style attributes are implemented in C. <code>`at</code> reads them; <code>meta</code>
+<p>All four q-style attributes are implemented in C. <code>`at</code> reads them; <code>meta</code>
 shows them; every ascending value sort — <code>asc</code>, <code>x@&lt;x</code>, <code>`srt</code>, <code>xasc</code> — returns its result flagged <code>`s</code> (since 2.1), so a later <code>?</code>, <code>in</code>, <code>bin</code> or <code>aj</code> on it takes the O(log n) path without an explicit <code>`sa</code>.</p>
 
 <div class="table-wrap">
@@ -536,7 +536,6 @@ bars[1; trades]                    / 1-minute OHLCV bars</code></pre></div>
     </div>
     <div class="foot-bottom">
       <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
-      <span>Not affiliated with kdb+ / KX Systems.</span>
     </div>
   </div>
 </footer>

@@ -316,7 +316,7 @@ which turned out to be the more useful thing to know, and the more humbling.</p>
 <h2>Infix notation for the two-argument library dyads</h2>
 
 <p>The join family and the set/search dyads can now be written <strong>infix</strong>, exactly as in
-kdb+/q, instead of only in bracket form. Nothing about the functions changed; only how the parser is
+q, instead of only in bracket form. Nothing about the functions changed; only how the parser is
 willing to read them:</p>
 
 <div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">2 3 9 in 2 3 4          / 1 1 0        (was: in[2 3 9;2 3 4])
@@ -357,7 +357,7 @@ prefix, and the ambiguity never arises.</p>
 <div class="note info">
   <b>Verified against the reference</b>
   <p><code>x in y</code>, <code>x within y</code>, <code>t lj kt</code> and the rest were checked to
-  produce output identical to kdb+/q <em>and</em> to their own bracket form, across twelve cases in
+  produce output identical to q <em>and</em> to their own bracket form, across twelve cases in
   <code>test.k</code>. Two ways to spell one operation have to give one answer, or the syntax sugar is
   a bug.</p>
 </div>
