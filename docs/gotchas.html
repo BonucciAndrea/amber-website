@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gotchas — the silent failures worth knowing about</title>
-<meta name="description" content="Seven ways Amber will give you a plausible wrong answer instead of an error: comment lines that eat files, projections that evaluate once, out-of-range gathers that return nulls, and how to catch each one.">
+<meta name="description" content="Eight ways Amber will give you a plausible wrong answer instead of an error: comment lines that eat files, projections that evaluate once, out-of-range gathers that return nulls, and how to catch each one.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Gotchas — the silent failures worth knowing about">
-<meta property="og:description" content="Seven ways Amber will give you a plausible wrong answer instead of an error: comment lines that eat files, projections that evaluate once, out-of-range gathers that return nulls, and how to catch each one.">
+<meta property="og:description" content="Eight ways Amber will give you a plausible wrong answer instead of an error: comment lines that eat files, projections that evaluate once, out-of-range gathers that return nulls, and how to catch each one.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -53,7 +53,7 @@
 </aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../docs/index.html">Docs</a> / Gotchas</div>
 <h1>Gotchas</h1>
 <p class="lead">Every item on this page was found the same way: code that ran, produced numbers, and
-was wrong. None of them raised an error. Six of the seven are completely silent, and four produced
+was wrong. None of them raised an error. Seven of the eight are completely silent, and five produced
 plausible output — which is the dangerous kind.</p>
 
 <div class="note note-warn">
@@ -132,12 +132,32 @@ Assert your bounds explicitly before the gather:</p>
 
 <div class="code"><pre><code class="lang-q">if[T &lt;= (|/S) + |/off; '"price history too short"];</code></pre></div>
 
-<h2>Habits that catch all seven</h2>
+<h2>8. <code>-0.0</code> compares equal but does not sort equal</h2>
+
+<p>Since 2.2, <code>-0.0</code> and <code>0.0</code> are <strong>one value</strong> everywhere it
+matters: <code>=</code>, <code>~</code>, <code>in</code>, <code>=</code> (group), <code>?</code>
+(distinct) and find all treat them as the same number, as q does. Before 2.2 <code>?</code> and
+find disagreed with the rest &mdash; and worse, <em>which</em> answer you got depended on the
+vector&rsquo;s length, because the short and long generic paths used different comparisons:</p>
+
+<div class="code"><pre><code class="lang-q">#?(-0.0 0.0)          / 2   &lt;- before 2.2
+#?(300#-0.0 0.0)      / 1   &lt;- the same two values, six hundred times
+#?(-0.0 0.0)          / 1   &lt;- 2.2, at every length</code></pre></div>
+
+<p>What <em>is</em> still asymmetric is the <strong>collation</strong>: Amber orders
+<code>-0.0</code> before <code>0.0</code> unconditionally, so <code>asc (0.0;-0.0)</code> is
+<code>-0.0 0.0</code> and <code>&lt;(0.0;-0.0)</code> is <code>1 0</code>. q&rsquo;s sort is
+stable for equal elements and leaves them where they were. Now that the two compare equal this is
+a tie-break rather than an ordering, and Amber&rsquo;s is a total order over the bit patterns &mdash;
+which is what makes the radix key a bijection, and the keys-only sort possible. Do not write code
+that depends on the relative position of a signed zero.</p>
+
+<h2>Habits that catch all eight</h2>
 
 <ul>
 <li><strong>Differential-test anything numerical.</strong> A second implementation in a language with
-different failure modes — NumPy is ideal, because it raises where Amber returns nulls — catches items 6
-and 7 immediately and items 1–5 by their consequences.</li>
+different failure modes — NumPy is ideal, because it raises where Amber returns nulls — catches items 6,
+7 and 8 immediately and items 1–5 by their consequences.</li>
 <li><strong>Check variance, not just shape.</strong> <code>#?r</code> on any randomised result.</li>
 <li><strong>Check for nulls after every gather</strong> that uses computed indices:
 <code>+/^r</code> should be 0.</li>

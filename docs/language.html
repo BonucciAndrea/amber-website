@@ -227,6 +227,14 @@ qselect[t; (,`v)!,{x[`px]*x`sz}]                    / project: name -&gt; functi
 qby[t; `sym; (,`vwap)!,{wavg[x`sz;x`px]}]           / group + aggregate
 xgroup[`sym; t]                                     / group into a keyed table of lists
 ungroup xgroup[`sym; t]                             / and flatten it back
+
+/ fby: an aggregate broadcast back over the rows of its group, as in q.
+/ Usable INFIX, including inside a where-clause:
+sel"select from t where px=(max;px) fby sym"        / each sym's top-priced rows
+sel"select sym, m:(max;px) fby sym from t"          / ... or as a column
+fby[(sum;t`sz); t`sym]                              / functional form
+fby[(sum;t`sz); (t`sym;t`ex)]                       / grouped on several columns
+fby[(sum;t`sz); ([]s:t`sym;e:t`ex)]                 / the same thing, as a table
 qexec[t; t[`px]&gt;100; ,`sym; (,`n)!,{#x`px}]         / where + by + aggregate, in one call</code></pre></div>
 
 <div class="note">
