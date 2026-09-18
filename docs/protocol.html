@@ -188,7 +188,7 @@ pessimisation.</p>
 <h2>Concurrency</h2>
 <p>A single-threaded event loop over <code>poll()</code>: many connections, one query at a time,
 <strong>shared</strong> global state.</p>
-<p>That is not a compromise — it is the only model, and the only one where two clients can
+<p>That is not a compromise — it is the only model where two clients can
 see each other's writes. Forking per connection would buy parallelism and lose the shared table you
 connected in order to query. A long query blocks the loop; that is visible, predictable, and fixed by
 running more <code>amberd</code> processes over a partitioned database, which is also what q
