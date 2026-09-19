@@ -1,7 +1,7 @@
 # Amber — showcase website
 
 A static marketing + documentation site for **[Amber](https://github.com/BonucciAndrea/amber)**,
-the C99 columnar in-memory array engine with a q/kdb+ vocabulary, and its ecosystem.
+the C99 columnar in-memory array engine with a q vocabulary, and its ecosystem.
 
 **Zero build dependencies.** Every file in this folder is already the deployable artifact — plain
 HTML, one CSS file, one JS file, a handful of SVGs. There is no bundler, no framework, no
