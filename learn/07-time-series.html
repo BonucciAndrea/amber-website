@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time series — joins, temporal types, bars and attributes</title>
+<meta name="description" content="The join family including as-of and window joins, how Amber stores times, bucketing into bars, and the column attributes that make lookups O(log n).">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Time series — joins, temporal types, bars and attributes">
+<meta property="og:description" content="The join family including as-of and window joins, how Amber stores times, bucketing into bars, and the column attributes that make lookups O(log n).">
+<meta property="og:site_name" content="Amber">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/amber.css?v=3">
+<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v2.2.0</span></a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../learn/index.html">Learn</a><a href="../docs/">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/" class="active">Tutorials</a><a href="../blog/">Blog</a><a href="../notepad.html">Notepad</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+  </div>
+</header>
+<main id="main">
+<div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
+<div class="grp">Amber for Mortals</div>
+<a href="../learn/index.html">Start here</a>
+<a href="../learn/01-thinking-in-arrays.html">1 · Thinking in arrays</a>
+<a href="../learn/02-first-session.html">2 · Your first session</a>
+<a href="../learn/03-verbs.html">3 · Verbs</a>
+<a href="../learn/04-adverbs.html">4 · Adverbs</a>
+<a href="../learn/05-tables.html">5 · Dictionaries and tables</a>
+<a href="../learn/06-qsql.html">6 · qSQL</a>
+<a href="../learn/07-time-series.html" class="active">7 · Time series</a>
+<a href="../learn/08-performance.html">8 · Making it fast</a>
+<div class="grp">Then</div>
+<a href="../docs/language.html">Language reference</a>
+<a href="../tutorials/index.html">Applied tutorials</a>
+</aside><article class="doc-content prose">
+<div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../learn/index.html">Amber for Mortals</a> / 7 · Time series</div>
+
+<span class="pill pill-accent" style="margin-bottom:14px;display:inline-flex">Chapter 7 of 8</span>
+
+<h1>Time series — joins, temporal types, bars and attributes</h1>
+
+<p>This is what the engine is for. Everything in this chapter assumes two tables: trades and quotes, the shape every tick workload has.</p>
+
+<div class="code"><pre><code class="lang-q">trades: ([] sym: `a`b`a; time: 3 4 9; px: 100 200 300.0; sz: 10 20 30)
+quotes: ([] sym: `a`a`b`a; time: 1 5 2 8; bid: 10 11 20 12.0)</code></pre></div>
+
+<h2 id="the-join-family">The join family</h2>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>join</th><th>what it does</th></tr></thead>
+<tbody><tr><td><code>lj[t;kt]</code></td><td>left join against a keyed table</td></tr><tr><td><code>ij[t;kt]</code></td><td>inner join</td></tr><tr><td><code>uj[x;y]</code></td><td>union join — the column-wise concatenation</td></tr><tr><td><code>pj[t;kt]</code></td><td>plus join — adds matching numeric columns</td></tr><tr><td><code>ej[c;x;y]</code></td><td>equi join on named columns</td></tr><tr><td><code>aj[c;x;y]</code></td><td><strong>as-of</strong> join — the important one</td></tr><tr><td><code>wj[w;c;t;q;a]</code></td><td>window join — aggregates over a window per row</td></tr></tbody>
+</table>
+</div>
+
+<h2 id="as-of-join">As-of join</h2>
+
+<p><code>aj</code> answers "what was the prevailing quote at the moment of each trade". The last column named is the time key; the ones before it are the matching keys:</p>
+
+<div class="code"><pre><code class="lang-q">trades: ([] sym: `a`b`a; time: 3 4 9; px: 100 200 300.0; sz: 10 20 30)
+quotes: ([] sym: `a`a`b`a; time: 1 5 2 8; bid: 10 11 20 12.0)
+aj[`sym`time; trades; quotes]</code></pre></div>
+
+<p>Each trade keeps its own columns and gains the quote columns as they stood at or before its timestamp, within its own symbol. That is the whole operation — one line, and it is a native C kernel, not a loop.</p>
+
+<h2 id="window-join">Window join</h2>
+
+<p>Where <code>aj</code> takes the single prevailing row, <code>wj</code> aggregates everything inside a window around each row — for example the average quoted bid in the two seconds before each trade:</p>
+
+<div class="code"><pre><code class="lang-q">trades: ([] sym: `a`b`a; time: 3 4 9; px: 100 200 300.0; sz: 10 20 30)
+quotes: ([] sym: `a`a`b`a; time: 1 5 2 8; bid: 10 11 20 12.0)
+w: (trades`time) -\: 2 0                 / a window per trade: [t-2, t]
+wj[w; `sym`time; trades; quotes; ,(`ab; avg; `bid)]</code></pre></div>
+
+<h2 id="how-times-are-stored">How times are stored</h2>
+
+<p>Temporal columns are numeric underneath — a date is an integer count of days, a time is an integer count of milliseconds since midnight. That is what lets sorting and the attributes work on them unchanged:</p>
+
+<div class="code"><pre><code class="lang-q">tm: 09:30:00.000       / a time literal
+hh tm                  / 9   -- hour
+mm tm                  / 30  -- minute of the hour
+sec tm                 / 0   -- second of the minute
+minute tm              / 570 -- minutes since midnight
+stime tm               / &quot;09:30:00.000&quot;</code></pre></div>
+
+<div class="note">
+  <span class="note-title">There is no time-vector literal</span>
+  <p>A single <code>09:30:00.000</code> parses, but <code>09:30:00.000 09:30:40.000</code> does not — there is no space-separated vector form. Build one with <code>ptime</code>, which parses a string to milliseconds: <code>ptime'("09:30:00.000"; "09:30:40.000")</code>. Underneath a time <em>is</em> the millisecond count, so writing the integers directly works too, and the accessors accept either spelling.</p>
+</div>
+
+<div class="note">
+  <span class="note-title">It is sec, not ss</span>
+  <p>q spells the seconds accessor <code>time.ss</code>. In Amber <code>ss</code> is already string-search, so the accessor is <code>sec</code>. This is the kind of difference collected in the language reference's dialect notes.</p>
+</div>
+
+<h2 id="bars">Bars</h2>
+
+<div class="code"><pre><code class="lang-q">times: ptime&#x27;(&quot;09:30:00.000&quot;; &quot;09:30:40.000&quot;; &quot;09:31:10.000&quot;)
+minbar[1; times]       / bucket into 1-minute bars
+xbar[5; 0 3 7 12 18]   / generic bucketing: 0 0 5 10 15</code></pre></div>
+
+<p>Bucketing plus a by-clause is the whole of OHLCV — one query, any bar width:</p>
+
+<div class="code"><pre><code class="lang-q">tr: ([] sym: `a`a`b; time: ptime&#x27;(&quot;09:30:00.000&quot;;&quot;09:30:40.000&quot;;&quot;09:31:10.000&quot;); px: 10 11 20.0; sz: 1 2 3)
+select o: first px, h: max px, l: min px, c: last px, v: sum sz by sym, time: minbar[1; time] from tr</code></pre></div>
+
+<h2 id="attributes">Attributes</h2>
+
+<p>An attribute is a promise about a column's current contents that lets the engine pick a better algorithm. They are set in C and read with <code>`at</code>:</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>attribute</th><th>promise</th><th>what it buys</th></tr></thead>
+<tbody><tr><td><code>`s</code> sorted</td><td>ascending</td><td>binary search — O(log n) find, and as-of joins</td></tr><tr><td><code>`u</code> unique</td><td>no duplicates</td><td>hash-like membership</td></tr><tr><td><code>`p</code> parted</td><td>equal values are contiguous</td><td>O(1) slice per distinct value</td></tr><tr><td><code>`g</code> grouped</td><td>any order</td><td>an index from value to positions</td></tr></tbody>
+</table>
+</div>
+
+<div class="code"><pre><code class="lang-q">v: asc 1 5 3 9 7        / asc sets `s for you
+`at v                   / `s
+v ? 7                   / binary search, not a scan
+`sa v                   / set sorted explicitly
+`pa v                   / set parted</code></pre></div>
+
+<div class="note">
+  <span class="note-title">The promise is yours to keep</span>
+  <p>An attribute is not checked on every write. Setting <code>`s</code> on an unsorted column makes lookups return wrong answers rather than slow ones. Let <code>asc</code> and <code>xasc</code> set it for you where you can.</p>
+</div>
+
+<div class="pager">
+  <a href="../learn/06-qsql.html"><span class="dir">Previous</span><span class="ttl">6 · qSQL</span></a>
+  <a class="next" href="../learn/08-performance.html"><span class="dir">Next</span><span class="ttl">8 · Making it fast</span></a>
+</div>
+</article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+      </div>
+      <div>
+        <h5>Documentation</h5>
+        <a href="../docs/index.html">Introduction</a>
+        <a href="../docs/language.html">Language &amp; qSQL</a>
+        <a href="../docs/temporal.html">Temporal mechanics</a>
+        <a href="../docs/protocol.html">Wire protocol</a>
+        <a href="../docs/capi.html">C API</a>
+        <a href="../docs/benchmarks.html">Benchmarks</a>
+        <a href="../docs/performance.html">Writing fast Amber</a>
+        <a href="../docs/internals.html">Engine internals</a>
+        <a href="../docs/development.html">Development &amp; testing</a>
+        <a href="../docs/gotchas.html">Gotchas</a>
+      </div>
+      <div>
+        <h5>Ecosystem</h5>
+        <a href="../ecosystem/python-amber.html">python-amber</a>
+        <a href="../ecosystem/amber-arrow.html">amber-arrow</a>
+        <a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
+        <a href="../ecosystem/amber-tick.html">amber-tick</a>
+        <a href="../ecosystem/grafana.html">Grafana datasource</a>
+        <a href="../ecosystem/vscode-amber.html">vscode-amber</a>
+        <a href="../ecosystem/amber-ai.html">amber-ai</a>
+      </div>
+      <div>
+        <h5>Learn</h5>
+        <a href="../learn/index.html">Amber for Mortals</a>
+        <a href="../tutorials/index.html">Tutorials</a>
+        <a href="../blog/index.html">Blog</a>
+        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+        <a href="https://github.com/BonucciAndrea" target="_blank" rel="noopener">All repositories</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+    </div>
+  </div>
+</footer>
+<script src="../assets/js/amber.js" defer></script>
+</body>
+</html>

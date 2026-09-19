@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Amber tutorials</title>
-<meta name="description" content="Three end-to-end walkthroughs: build a 5-million-row in-memory tick store in 60 seconds, wire up a Grafana dashboard pipeline, and pass Arrow record batches into Python without copying.">
+<title>Thinking in arrays — the one idea everything else rests on</title>
+<meta name="description" content="The mental shift from loops to whole-array operations, why Amber has no operator precedence, and how to read an expression right to left.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Amber tutorials">
-<meta property="og:description" content="Three end-to-end walkthroughs: build a 5-million-row in-memory tick store in 60 seconds, wire up a Grafana dashboard pipeline, and pass Arrow record batches into Python without copying.">
+<meta property="og:title" content="Thinking in arrays — the one idea everything else rests on">
+<meta property="og:description" content="The mental shift from loops to whole-array operations, why Amber has no operator precedence, and how to read an expression right to left.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,46 +34,98 @@
 </header>
 <main id="main">
 <div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
-<div class="grp">Tutorials</div>
-<a href="../tutorials/index.html" class="active">All tutorials</a>
-<a href="../tutorials/tick-store.html">5M-row tick store</a>
-<a href="../tutorials/grafana-pipeline.html">Grafana pipeline</a>
-<a href="../tutorials/arrow-interop.html">Arrow → Python, zero copy</a>
-</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / Tutorials</div>
-<h1>Tutorials</h1>
-<p class="lead">Three walkthroughs that each end with something running. Every command is copyable, and
-every number quoted is one the tool prints for itself.</p>
+<div class="grp">Amber for Mortals</div>
+<a href="../learn/index.html">Start here</a>
+<a href="../learn/01-thinking-in-arrays.html" class="active">1 · Thinking in arrays</a>
+<a href="../learn/02-first-session.html">2 · Your first session</a>
+<a href="../learn/03-verbs.html">3 · Verbs</a>
+<a href="../learn/04-adverbs.html">4 · Adverbs</a>
+<a href="../learn/05-tables.html">5 · Dictionaries and tables</a>
+<a href="../learn/06-qsql.html">6 · qSQL</a>
+<a href="../learn/07-time-series.html">7 · Time series</a>
+<a href="../learn/08-performance.html">8 · Making it fast</a>
+<div class="grp">Then</div>
+<a href="../docs/language.html">Language reference</a>
+<a href="../tutorials/index.html">Applied tutorials</a>
+</aside><article class="doc-content prose">
+<div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../learn/index.html">Amber for Mortals</a> / 1 · Thinking in arrays</div>
 
-<div class="grid" style="margin-top:30px;gap:16px">
-  <a class="card card-link tut-card" href="../tutorials/tick-store.html">
-    <span class="n">01 · 15 minutes</span>
-    <h3 style="margin:8px 0">Building a 5-million-row in-memory tick store in 60 seconds</h3>
-    <p class="small mb-0">Generate a realistic session, stamp the attributes that make the as-of join
-    a binary search, run TAQ analytics, and check the memory footprint with <code>\v</code>.</p>
-  </a>
-  <a class="card card-link tut-card" href="../tutorials/grafana-pipeline.html">
-    <span class="n">02 · 40 minutes</span>
-    <h3 style="margin:8px 0">Setting up an end-to-end Grafana &amp; Amber dashboard pipeline</h3>
-    <p class="small mb-0">Store &rarr; marts &rarr; <code>amberd</code> &rarr; the Go datasource &rarr;
-    provisioned panels. Including the two failures that look like something else.</p>
-  </a>
-  <a class="card card-link tut-card" href="../tutorials/arrow-interop.html">
-    <span class="n">03 · 20 minutes</span>
-    <h3 style="margin:8px 0">Interoperability: Arrow record batches from Amber to Python without copying</h3>
-    <p class="small mb-0">Prove pointer identity, stream 400 million rows a batch at a time, and
-    understand the one lifetime rule that makes it safe.</p>
-  </a>
+<span class="pill pill-accent" style="margin-bottom:14px;display:inline-flex">Chapter 1 of 8</span>
+
+<h1>Thinking in arrays — the one idea everything else rests on</h1>
+
+<p>Amber is not a language with array <em>features</em>. It is a language where the array is the only unit of thought. Every habit you bring from Python, C or Java will fight you for about an hour, and then stop.</p>
+
+<p>This chapter is the hour. Nothing here is syntax you need to memorise — it is the three ideas that make the rest of the documentation readable.</p>
+
+<h2 id="idea-1-the-loop-is-already-written">Idea 1 — the loop is already written</h2>
+
+<p>In most languages you describe <em>how</em> to visit each element. In Amber you name the operation and the whole array is the operand:</p>
+
+<div class="code"><pre><code class="lang-q">x: 1 2 3 4 5
+x * 2                  / 2 4 6 8 10   -- no loop, no map, no comprehension
+x + x                  / 2 4 6 8 10
++/ x                   / 15           -- sum: the verb + folded over x
+x &gt; 2                  / 0 0 1 1 1    -- comparison is elementwise too</code></pre></div>
+
+<p>That last line matters more than it looks. A comparison does not give you a <code>bool</code>; it gives you a <strong>mask</strong> — one byte per element — and masks are how you select data:</p>
+
+<div class="code"><pre><code class="lang-q">x @ &amp; x &gt; 2            / 3 4 5        -- &amp; turns a mask into indices, @ takes them
++/ x @ &amp; x &gt; 2         / 12           -- sum of the elements above 2</code></pre></div>
+
+<div class="note">
+  <span class="note-title">Why this is fast, not just short</span>
+  <p><code>+/x@&amp;x&gt;2</code> looks like four passes over the data. The compiler recognises the shape and emits <em>one</em> fused primitive that never materialises the mask or the index vector. Writing the idiomatic thing and writing the fast thing are the same act — that is the whole design.</p>
 </div>
 
-<h2>Before you start</h2>
-<p>All three assume the engine is built. Tutorials 2 and 3 also need the shared library and the Python
-bindings.</p>
-<div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/amber &amp;&amp; cd amber
-chmod +x a build.sh install.sh
-./build.sh --shared          # ./amber + libamber.so
-./a                          # sanity: the REPL opens</code></pre></div>
-<p>See the <a href="../docs/install.html">installation guide</a> if anything there surprises
-you.</p>
+<h2 id="idea-2-right-to-left-always-no-exceptions">Idea 2 — right to left, always, no exceptions</h2>
+
+<p>Amber has <strong>no operator precedence</strong>. Every expression is evaluated right to left. This is the single most common source of early confusion, and it takes ten minutes to internalise:</p>
+
+<div class="code"><pre><code class="lang-q">2 * 3 + 4              / 14, not 10 -- it reads as 2 * (3 + 4)
+(2 * 3) + 4            / 10         -- parenthesise when you mean it</code></pre></div>
+
+<p>The rule is uniform, which is what makes it worth having. There is no table of sixteen precedence levels to remember, and no expression whose meaning depends on knowing whether <code>%</code> binds tighter than <code>&lt;&lt;</code>.</p>
+
+<p>A monadic (one-argument) verb takes everything to its right:</p>
+
+<div class="code"><pre><code class="lang-q"># 1 2 3                / 3      -- # is `count` here
+|  1 2 3               / 3 2 1  -- | is `reverse` here
+# | 1 2 3              / 3      -- count of the reverse of 1 2 3</code></pre></div>
+
+<h2 id="idea-3-one-glyph-two-verbs">Idea 3 — one glyph, two verbs</h2>
+
+<p>Most symbols are <strong>ambivalent</strong>: they mean one thing with one argument and another with two. This is not overloading for cleverness — the two meanings are almost always the same idea at different arity:</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>glyph</th><th>monadic (one arg)</th><th>dyadic (two args)</th></tr></thead>
+<tbody><tr><td><code>#</code></td><td>count</td><td>take / reshape</td></tr><tr><td><code>|</code></td><td>reverse</td><td>max / or</td></tr><tr><td><code>&amp;</code></td><td>where (mask &rarr; indices)</td><td>min / and</td></tr><tr><td><code>?</code></td><td>distinct</td><td>find</td></tr><tr><td><code>!</code></td><td>enumerate (<code>!5</code>)</td><td>dict / mod</td></tr><tr><td><code>$</code></td><td>string</td><td>cast / pad</td></tr></tbody>
+</table>
+</div>
+
+<p>You never have to guess which one you got: the count of arguments decides it, and <code>\h</code> at the prompt prints the whole table on one screen.</p>
+
+<h2 id="putting-the-three-together">Putting the three together</h2>
+
+<p>Here is a real expression. Read it right to left and it decomposes cleanly:</p>
+
+<div class="code"><pre><code class="lang-q">+/ (x * x) @ &amp; x &gt; 0
+/  4. sum them
+/     3. take those positions from x*x
+/        2. positions where the mask is 1
+/           1. mask of x above zero</code></pre></div>
+
+<p>Four ideas, one line, one pass over memory. If you can read that, you can read Amber.</p>
+
+<h2 id="what-to-do-next">What to do next</h2>
+
+<p>Do not read on yet. Open a REPL and type the examples above until the right-to-left rule stops surprising you. The next chapter gets you that REPL.</p>
+
+<div class="pager">
+  <a href="../learn/index.html"><span class="dir">Previous</span><span class="ttl">Start here</span></a>
+  <a class="next" href="../learn/02-first-session.html"><span class="dir">Next</span><span class="ttl">2 · Your first session</span></a>
+</div>
 </article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
 </main>
 <footer>

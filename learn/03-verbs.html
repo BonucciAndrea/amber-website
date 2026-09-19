@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Amber tutorials</title>
-<meta name="description" content="Three end-to-end walkthroughs: build a 5-million-row in-memory tick store in 60 seconds, wire up a Grafana dashboard pipeline, and pass Arrow record batches into Python without copying.">
+<title>Verbs — the vocabulary you actually use</title>
+<meta name="description" content="The verbs worth learning first, grouped by what you reach for them for: selecting, reshaping, searching, and arithmetic.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Amber tutorials">
-<meta property="og:description" content="Three end-to-end walkthroughs: build a 5-million-row in-memory tick store in 60 seconds, wire up a Grafana dashboard pipeline, and pass Arrow record batches into Python without copying.">
+<meta property="og:title" content="Verbs — the vocabulary you actually use">
+<meta property="og:description" content="The verbs worth learning first, grouped by what you reach for them for: selecting, reshaping, searching, and arithmetic.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,46 +34,103 @@
 </header>
 <main id="main">
 <div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
-<div class="grp">Tutorials</div>
-<a href="../tutorials/index.html" class="active">All tutorials</a>
-<a href="../tutorials/tick-store.html">5M-row tick store</a>
-<a href="../tutorials/grafana-pipeline.html">Grafana pipeline</a>
-<a href="../tutorials/arrow-interop.html">Arrow → Python, zero copy</a>
-</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / Tutorials</div>
-<h1>Tutorials</h1>
-<p class="lead">Three walkthroughs that each end with something running. Every command is copyable, and
-every number quoted is one the tool prints for itself.</p>
+<div class="grp">Amber for Mortals</div>
+<a href="../learn/index.html">Start here</a>
+<a href="../learn/01-thinking-in-arrays.html">1 · Thinking in arrays</a>
+<a href="../learn/02-first-session.html">2 · Your first session</a>
+<a href="../learn/03-verbs.html" class="active">3 · Verbs</a>
+<a href="../learn/04-adverbs.html">4 · Adverbs</a>
+<a href="../learn/05-tables.html">5 · Dictionaries and tables</a>
+<a href="../learn/06-qsql.html">6 · qSQL</a>
+<a href="../learn/07-time-series.html">7 · Time series</a>
+<a href="../learn/08-performance.html">8 · Making it fast</a>
+<div class="grp">Then</div>
+<a href="../docs/language.html">Language reference</a>
+<a href="../tutorials/index.html">Applied tutorials</a>
+</aside><article class="doc-content prose">
+<div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../learn/index.html">Amber for Mortals</a> / 3 · Verbs</div>
 
-<div class="grid" style="margin-top:30px;gap:16px">
-  <a class="card card-link tut-card" href="../tutorials/tick-store.html">
-    <span class="n">01 · 15 minutes</span>
-    <h3 style="margin:8px 0">Building a 5-million-row in-memory tick store in 60 seconds</h3>
-    <p class="small mb-0">Generate a realistic session, stamp the attributes that make the as-of join
-    a binary search, run TAQ analytics, and check the memory footprint with <code>\v</code>.</p>
-  </a>
-  <a class="card card-link tut-card" href="../tutorials/grafana-pipeline.html">
-    <span class="n">02 · 40 minutes</span>
-    <h3 style="margin:8px 0">Setting up an end-to-end Grafana &amp; Amber dashboard pipeline</h3>
-    <p class="small mb-0">Store &rarr; marts &rarr; <code>amberd</code> &rarr; the Go datasource &rarr;
-    provisioned panels. Including the two failures that look like something else.</p>
-  </a>
-  <a class="card card-link tut-card" href="../tutorials/arrow-interop.html">
-    <span class="n">03 · 20 minutes</span>
-    <h3 style="margin:8px 0">Interoperability: Arrow record batches from Amber to Python without copying</h3>
-    <p class="small mb-0">Prove pointer identity, stream 400 million rows a batch at a time, and
-    understand the one lifetime rule that makes it safe.</p>
-  </a>
+<span class="pill pill-accent" style="margin-bottom:14px;display:inline-flex">Chapter 3 of 8</span>
+
+<h1>Verbs — the vocabulary you actually use</h1>
+
+<p>There are about thirty verbs. You will use twelve of them constantly and meet the rest when you need them. This chapter is the twelve, grouped by intent rather than by glyph, because that is how you will look for them.</p>
+
+<p><code>\+</code> at the prompt prints the complete table with an example per line. Keep it open in a second terminal while you read this.</p>
+
+<h2 id="selecting-and-slicing">Selecting and slicing</h2>
+
+<div class="code"><pre><code class="lang-q">x: 10 20 30 40 50
+x @ 0                  / 10        -- index
+x @ 0 2                / 10 30     -- index with a vector: gather
+x 0 2                  / 10 30     -- @ is optional for a vector on the left
+2 # x                  / 10 20     -- take the first 2
+-2 # x                 / 40 50     -- take the last 2
+2 _ x                  / 30 40 50  -- drop the first 2
+x @ &amp; x &gt; 25           / 30 40 50  -- mask, where, gather
+| x                    / 50 40 30 20 10</code></pre></div>
+
+<h2 id="searching-and-set-operations">Searching and set operations</h2>
+
+<div class="code"><pre><code class="lang-q">x: 10 20 30 40 50
+x ? 30                 / 2         -- find: first index, 0N if absent
+? 1 2 2 3 1            / 1 2 3     -- distinct, first-appearance order
+1 2 3 in 2 3 4         / 0 1 1     -- membership mask
+except[1 2 3; 2]       / 1 3
+inter[1 2 3; 2 3 4]    / 2 3
+union[1 2; 2 3]        / 1 2 3
+within[25; 10 50]      / 1         -- inclusive range test</code></pre></div>
+
+<div class="note">
+  <span class="note-title">An atom on the right is a one-element set</span>
+  <p><code>1 2 3 in 2</code> is <code>0 1 0</code>, exactly as if you had written <code>in[1 2 3; ,2]</code>. This was wrong before 2.2.0 — it silently returned two random numbers — which is worth knowing if you are reading older material.</p>
 </div>
 
-<h2>Before you start</h2>
-<p>All three assume the engine is built. Tutorials 2 and 3 also need the shared library and the Python
-bindings.</p>
-<div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/amber &amp;&amp; cd amber
-chmod +x a build.sh install.sh
-./build.sh --shared          # ./amber + libamber.so
-./a                          # sanity: the REPL opens</code></pre></div>
-<p>See the <a href="../docs/install.html">installation guide</a> if anything there surprises
-you.</p>
+<h2 id="sorting-and-grading">Sorting and grading</h2>
+
+<div class="code"><pre><code class="lang-q">x: 30 10 20
+asc x                  / 10 20 30      -- sorted values
+&lt; x                    / 1 2 0         -- GRADE: the permutation that sorts
+x @ &lt; x                / 10 20 30      -- ... which is what asc does
+desc x  /  &gt; x         / descending value sort / grade
+rank x                 / 2 0 1         -- rank of each element</code></pre></div>
+
+<p>The distinction between <code>asc</code> (values) and <code>&lt;</code> (a permutation) is the one to hold on to. The grade is what lets you sort one vector <em>by another</em>:</p>
+
+<div class="code"><pre><code class="lang-q">sym: `c`a`b
+px:  30 10 20
+sym @ &lt; px             / `a`b`c   -- symbols ordered by price</code></pre></div>
+
+<div class="note">
+  <span class="note-title">asc sets an attribute for you</span>
+  <p><code>asc</code> and <code>xasc</code> mark the result <code>`s</code> (sorted). A later <code>?</code>, <code>in</code> or <code>aj</code> on that vector takes an O(log n) binary search instead of a linear scan. Chapter 7 covers attributes.</p>
+</div>
+
+<h2 id="reshaping">Reshaping</h2>
+
+<div class="code"><pre><code class="lang-q">2 3 # !6               / (0 1 2; 3 4 5)   -- reshape into 2 rows of 3
+, 1 2                  / ,1 2             -- enlist: wrap in one more level
+raze (1 2; 3 4)        / 1 2 3 4          -- flatten one level
++ (1 2; 3 4)           / (1 3; 2 4)       -- flip (transpose)
+1 2 , 3 4              / 1 2 3 4          -- concatenate</code></pre></div>
+
+<h2 id="arithmetic-you-will-actually-type">Arithmetic you will actually type</h2>
+
+<div class="code"><pre><code class="lang-q">x: 1 2 3 4
++/ x                   / 10       -- sum
+*/ x                   / 24       -- product
+|/ x                   / 4        -- max
+&amp;/ x                   / 1        -- min
++\ x                   / 1 3 6 10 -- running sum (scan)
+avg x  /  med x        / mean / median
+dev x  /  var x        / standard deviation / variance</code></pre></div>
+
+<p><code>+/</code> is not a special "sum" function — it is the verb <code>+</code> with the adverb <code>/</code> (fold) applied to it. That composability is the subject of the next chapter, and it is where the language stops being a curiosity and starts being useful.</p>
+
+<div class="pager">
+  <a href="../learn/02-first-session.html"><span class="dir">Previous</span><span class="ttl">2 · Your first session</span></a>
+  <a class="next" href="../learn/04-adverbs.html"><span class="dir">Next</span><span class="ttl">4 · Adverbs</span></a>
+</div>
 </article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
 </main>
 <footer>

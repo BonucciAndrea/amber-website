@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Amber tutorials</title>
-<meta name="description" content="Three end-to-end walkthroughs: build a 5-million-row in-memory tick store in 60 seconds, wire up a Grafana dashboard pipeline, and pass Arrow record batches into Python without copying.">
+<title>Dictionaries and tables — the column store</title>
+<meta name="description" content="How a dictionary becomes a table, why a table is a flipped dictionary of columns, keyed tables, and the vocabulary for inspecting them.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Amber tutorials">
-<meta property="og:description" content="Three end-to-end walkthroughs: build a 5-million-row in-memory tick store in 60 seconds, wire up a Grafana dashboard pipeline, and pass Arrow record batches into Python without copying.">
+<meta property="og:title" content="Dictionaries and tables — the column store">
+<meta property="og:description" content="How a dictionary becomes a table, why a table is a flipped dictionary of columns, keyed tables, and the vocabulary for inspecting them.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,46 +34,91 @@
 </header>
 <main id="main">
 <div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
-<div class="grp">Tutorials</div>
-<a href="../tutorials/index.html" class="active">All tutorials</a>
-<a href="../tutorials/tick-store.html">5M-row tick store</a>
-<a href="../tutorials/grafana-pipeline.html">Grafana pipeline</a>
-<a href="../tutorials/arrow-interop.html">Arrow → Python, zero copy</a>
-</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / Tutorials</div>
-<h1>Tutorials</h1>
-<p class="lead">Three walkthroughs that each end with something running. Every command is copyable, and
-every number quoted is one the tool prints for itself.</p>
+<div class="grp">Amber for Mortals</div>
+<a href="../learn/index.html">Start here</a>
+<a href="../learn/01-thinking-in-arrays.html">1 · Thinking in arrays</a>
+<a href="../learn/02-first-session.html">2 · Your first session</a>
+<a href="../learn/03-verbs.html">3 · Verbs</a>
+<a href="../learn/04-adverbs.html">4 · Adverbs</a>
+<a href="../learn/05-tables.html" class="active">5 · Dictionaries and tables</a>
+<a href="../learn/06-qsql.html">6 · qSQL</a>
+<a href="../learn/07-time-series.html">7 · Time series</a>
+<a href="../learn/08-performance.html">8 · Making it fast</a>
+<div class="grp">Then</div>
+<a href="../docs/language.html">Language reference</a>
+<a href="../tutorials/index.html">Applied tutorials</a>
+</aside><article class="doc-content prose">
+<div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../learn/index.html">Amber for Mortals</a> / 5 · Dictionaries and tables</div>
 
-<div class="grid" style="margin-top:30px;gap:16px">
-  <a class="card card-link tut-card" href="../tutorials/tick-store.html">
-    <span class="n">01 · 15 minutes</span>
-    <h3 style="margin:8px 0">Building a 5-million-row in-memory tick store in 60 seconds</h3>
-    <p class="small mb-0">Generate a realistic session, stamp the attributes that make the as-of join
-    a binary search, run TAQ analytics, and check the memory footprint with <code>\v</code>.</p>
-  </a>
-  <a class="card card-link tut-card" href="../tutorials/grafana-pipeline.html">
-    <span class="n">02 · 40 minutes</span>
-    <h3 style="margin:8px 0">Setting up an end-to-end Grafana &amp; Amber dashboard pipeline</h3>
-    <p class="small mb-0">Store &rarr; marts &rarr; <code>amberd</code> &rarr; the Go datasource &rarr;
-    provisioned panels. Including the two failures that look like something else.</p>
-  </a>
-  <a class="card card-link tut-card" href="../tutorials/arrow-interop.html">
-    <span class="n">03 · 20 minutes</span>
-    <h3 style="margin:8px 0">Interoperability: Arrow record batches from Amber to Python without copying</h3>
-    <p class="small mb-0">Prove pointer identity, stream 400 million rows a batch at a time, and
-    understand the one lifetime rule that makes it safe.</p>
-  </a>
+<span class="pill pill-accent" style="margin-bottom:14px;display:inline-flex">Chapter 5 of 8</span>
+
+<h1>Dictionaries and tables — the column store</h1>
+
+<p>Amber's table is not a new primitive bolted on. It is two things you already have — a dictionary and a flip — composed. Understanding that is worth more than memorising the table functions.</p>
+
+<h2 id="a-dictionary-is-two-vectors">A dictionary is two vectors</h2>
+
+<div class="code"><pre><code class="lang-q">d: `a`b`c ! 1 2 3      / keys ! values
+d`a                    / 1        -- index by key
+d`a`c                  / 1 3
+! d                    / `a`b`c   -- the keys
+. d                    / 1 2 3    -- the values
+# d                    / 3</code></pre></div>
+
+<h2 id="a-table-is-a-flipped-dictionary-of-columns">A table is a flipped dictionary of columns</h2>
+
+<div class="code"><pre><code class="lang-q">cd: `sym`px ! (`a`b`c; 10 20 30)   / call it cd, NOT cols -- cols is a builtin
+t: + cd                / that flip IS the table
+t                      / a 3-row table with columns sym and px
+t: ([] sym: `a`b`c; px: 10 20 30)   / the literal syntax for the same thing</code></pre></div>
+
+<p>Because the columns are the storage, a column is a plain vector and everything you learned in chapters 3 and 4 applies to it directly:</p>
+
+<div class="code"><pre><code class="lang-q">t: ([] sym: `a`b`c; px: 10 20 30)
+t`px                   / 10 20 30      -- a column is just a vector
++/ t`px                / 60
+t`px                   / 10 20 30
+# t                    / 3             -- rows
+cols t                 / `sym`px
+t 0                    / a row, as a dictionary</code></pre></div>
+
+<div class="note">
+  <span class="note-title">This is why it is fast</span>
+  <p>Selecting a column is a pointer, not a copy or a gather. Summing one column of a fifty-column table touches only that column's memory. A row store has to walk past the other forty-nine.</p>
 </div>
 
-<h2>Before you start</h2>
-<p>All three assume the engine is built. Tutorials 2 and 3 also need the shared library and the Python
-bindings.</p>
-<div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/amber &amp;&amp; cd amber
-chmod +x a build.sh install.sh
-./build.sh --shared          # ./amber + libamber.so
-./a                          # sanity: the REPL opens</code></pre></div>
-<p>See the <a href="../docs/install.html">installation guide</a> if anything there surprises
-you.</p>
+<h2 id="inspecting">Inspecting</h2>
+
+<div class="code"><pre><code class="lang-q">t: ([] sym: `a`b`c; px: 10 20 30)
+meta t                 / column names, types and attributes
+show t                 / grid-print it
+5 # t                  / first 5 rows -- take works on tables
+cols t                 / column names
+istable t              / 1</code></pre></div>
+
+<h2 id="keyed-tables">Keyed tables</h2>
+
+<p>A keyed table is a dictionary whose key <em>and</em> value are both tables. That is what <code>select ... by</code> returns, and what joins look up against:</p>
+
+<div class="code"><pre><code class="lang-q">kt: ([sym: `a`b`c] px: 10 20 30)
+keys kt                / the key column(s)
+value kt               / the value table
+unkey kt               / back to a flat table
+xkey[`sym; t]          / key an existing table by a column</code></pre></div>
+
+<h2 id="restructuring">Restructuring</h2>
+
+<div class="code"><pre><code class="lang-q">t: ([] sym: `a`b`a`b; px: 10 20 30 40)
+xgroup[`sym; t]        / one row per sym, px becomes a nested column
+ungroup xgroup[`sym; t]    / and back again
+xasc[`px; t]           / sort the table by a column
+xdesc[`px; t]
+xcols[`px`sym; t]      / reorder columns</code></pre></div>
+
+<div class="pager">
+  <a href="../learn/04-adverbs.html"><span class="dir">Previous</span><span class="ttl">4 · Adverbs</span></a>
+  <a class="next" href="../learn/06-qsql.html"><span class="dir">Next</span><span class="ttl">6 · qSQL</span></a>
+</div>
 </article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
 </main>
 <footer>

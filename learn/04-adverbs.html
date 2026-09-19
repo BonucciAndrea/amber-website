@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Amber tutorials</title>
-<meta name="description" content="Three end-to-end walkthroughs: build a 5-million-row in-memory tick store in 60 seconds, wire up a Grafana dashboard pipeline, and pass Arrow record batches into Python without copying.">
+<title>Adverbs — each, over, scan and prior</title>
+<meta name="description" content="The six adverbs that turn thirty verbs into a language: each, over (fold), scan, each-prior, each-right and each-left, with the idioms they produce.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Amber tutorials">
-<meta property="og:description" content="Three end-to-end walkthroughs: build a 5-million-row in-memory tick store in 60 seconds, wire up a Grafana dashboard pipeline, and pass Arrow record batches into Python without copying.">
+<meta property="og:title" content="Adverbs — each, over, scan and prior">
+<meta property="og:description" content="The six adverbs that turn thirty verbs into a language: each, over (fold), scan, each-prior, each-right and each-left, with the idioms they produce.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,46 +34,99 @@
 </header>
 <main id="main">
 <div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
-<div class="grp">Tutorials</div>
-<a href="../tutorials/index.html" class="active">All tutorials</a>
-<a href="../tutorials/tick-store.html">5M-row tick store</a>
-<a href="../tutorials/grafana-pipeline.html">Grafana pipeline</a>
-<a href="../tutorials/arrow-interop.html">Arrow → Python, zero copy</a>
-</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / Tutorials</div>
-<h1>Tutorials</h1>
-<p class="lead">Three walkthroughs that each end with something running. Every command is copyable, and
-every number quoted is one the tool prints for itself.</p>
+<div class="grp">Amber for Mortals</div>
+<a href="../learn/index.html">Start here</a>
+<a href="../learn/01-thinking-in-arrays.html">1 · Thinking in arrays</a>
+<a href="../learn/02-first-session.html">2 · Your first session</a>
+<a href="../learn/03-verbs.html">3 · Verbs</a>
+<a href="../learn/04-adverbs.html" class="active">4 · Adverbs</a>
+<a href="../learn/05-tables.html">5 · Dictionaries and tables</a>
+<a href="../learn/06-qsql.html">6 · qSQL</a>
+<a href="../learn/07-time-series.html">7 · Time series</a>
+<a href="../learn/08-performance.html">8 · Making it fast</a>
+<div class="grp">Then</div>
+<a href="../docs/language.html">Language reference</a>
+<a href="../tutorials/index.html">Applied tutorials</a>
+</aside><article class="doc-content prose">
+<div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../learn/index.html">Amber for Mortals</a> / 4 · Adverbs</div>
 
-<div class="grid" style="margin-top:30px;gap:16px">
-  <a class="card card-link tut-card" href="../tutorials/tick-store.html">
-    <span class="n">01 · 15 minutes</span>
-    <h3 style="margin:8px 0">Building a 5-million-row in-memory tick store in 60 seconds</h3>
-    <p class="small mb-0">Generate a realistic session, stamp the attributes that make the as-of join
-    a binary search, run TAQ analytics, and check the memory footprint with <code>\v</code>.</p>
-  </a>
-  <a class="card card-link tut-card" href="../tutorials/grafana-pipeline.html">
-    <span class="n">02 · 40 minutes</span>
-    <h3 style="margin:8px 0">Setting up an end-to-end Grafana &amp; Amber dashboard pipeline</h3>
-    <p class="small mb-0">Store &rarr; marts &rarr; <code>amberd</code> &rarr; the Go datasource &rarr;
-    provisioned panels. Including the two failures that look like something else.</p>
-  </a>
-  <a class="card card-link tut-card" href="../tutorials/arrow-interop.html">
-    <span class="n">03 · 20 minutes</span>
-    <h3 style="margin:8px 0">Interoperability: Arrow record batches from Amber to Python without copying</h3>
-    <p class="small mb-0">Prove pointer identity, stream 400 million rows a batch at a time, and
-    understand the one lifetime rule that makes it safe.</p>
-  </a>
+<span class="pill pill-accent" style="margin-bottom:14px;display:inline-flex">Chapter 4 of 8</span>
+
+<h1>Adverbs — each, over, scan and prior</h1>
+
+<p>An adverb takes a verb and returns a <em>new verb</em> that applies it differently. Six of them cover essentially everything, and they compose with every verb you know — which is why the vocabulary stays small.</p>
+
+<h2 id="over-collapse-a-list-to-a-value">Over ( / ) — collapse a list to a value</h2>
+
+<div class="code"><pre><code class="lang-q">+/ 1 2 3 4             / 10
+*/ 1 2 3 4             / 24
+|/ 1 2 3 4             / 4
+&amp;/ 1 2 3 4             / 1
+{x + y * y} / 0 1 2 3  / 14   -- any dyadic function folds</code></pre></div>
+
+<p>With a left argument, that value seeds the fold:</p>
+
+<div class="code"><pre><code class="lang-q">100 +/ 1 2 3           / 106</code></pre></div>
+
+<h2 id="scan-the-running-version-of-over">Scan ( \ ) — the running version of over</h2>
+
+<div class="code"><pre><code class="lang-q">+\ 1 2 3 4             / 1 3 6 10     -- running sum
+|\ 3 1 4 1 5           / 3 3 4 4 5    -- running maximum
+&amp;\ 3 1 4 1 5           / 3 1 1 1 1    -- running minimum
+*\ 1 2 3 4             / 1 2 6 24</code></pre></div>
+
+<div class="note">
+  <span class="note-title">Running maximum is a drawdown in one character</span>
+  <p><code>|\px</code> is the high-water mark of a price series, so <code>px - |\px</code> is the drawdown at every point, and <code>&amp;/px - |\px</code> is the maximum drawdown. No loop, no state, one pass.</p>
 </div>
 
-<h2>Before you start</h2>
-<p>All three assume the engine is built. Tutorials 2 and 3 also need the shared library and the Python
-bindings.</p>
-<div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/amber &amp;&amp; cd amber
-chmod +x a build.sh install.sh
-./build.sh --shared          # ./amber + libamber.so
-./a                          # sanity: the REPL opens</code></pre></div>
-<p>See the <a href="../docs/install.html">installation guide</a> if anything there surprises
-you.</p>
+<div class="code"><pre><code class="lang-q">px: 100 104 101 108 99 103
+|\ px                  / 100 104 104 108 108 108
+px - |\ px             / 0 0 -3 0 -9 -5
+&amp;/ px - |\ px          / -9      -- max drawdown</code></pre></div>
+
+<h2 id="each-apply-item-by-item">Each ( ' ) — apply item by item</h2>
+
+<p>Most verbs are already elementwise, so <code>'</code> is for when the items are themselves lists:</p>
+
+<div class="code"><pre><code class="lang-q"># &#x27; (&quot;ab&quot;; &quot;cde&quot;; &quot;&quot;)   / 2 3 0     -- length of each item
+| &#x27; (1 2; 3 4 5)       / (2 1; 5 4 3)  -- reverse each
++/ &#x27; (1 2; 3 4 5)      / 3 12          -- sum each</code></pre></div>
+
+<h2 id="each-prior-compare-neighbours">Each-prior ( ': ) — compare neighbours</h2>
+
+<div class="code"><pre><code class="lang-q">-&#x27;: 1 3 6 10           / 1 2 3 4      -- successive differences
+deltas 1 3 6 10        / 1 2 3 4      -- the library name for it
+{y - x} &#x27;: 1 3 6 10    / 1 2 3 4</code></pre></div>
+
+<p>This is the natural way to express "how much did it move" over a series, and it pairs with scan: <code>+\</code> and <code>-':</code> are inverses.</p>
+
+<h2 id="each-right-and-each-left">Each-right ( /: ) and each-left ( \: )</h2>
+
+<p>These fix one argument and sweep the other — the outer-product idiom:</p>
+
+<div class="code"><pre><code class="lang-q">1 2 3 +/: 10 20        / (11 21; 12 22; 13 23)
+1 2 3 +\: 10 20        / (11 12 13; 21 22 23)
+(!3) =\: !3            / (1 0 0; 0 1 0; 0 0 1)   -- identity matrix</code></pre></div>
+
+<h2 id="composing-them">Composing them</h2>
+
+<p>The point of adverbs is that they stack. A weighted average is a fold over a product; a correlation is three folds; a moving sum is a scan and a difference:</p>
+
+<div class="code"><pre><code class="lang-q">w: 1 2 3 4
+v: 10 20 30 40
+(+/ w * v) % +/ w      / 30.0    -- weighted mean, written out
+wavg[w; v]             / 30.0    -- ... and the library verb for it</code></pre></div>
+
+<div class="note">
+  <span class="note-title">Write the idiom, get the kernel</span>
+  <p><code>+/x*y</code> is recognised by the compiler and compiled to a single fused dot-product primitive — no intermediate product vector is ever written. The same is true of <code>+/x&lt;y</code>, <code>x@&amp;m</code> and <code>+/(a+s*b)@&amp;m</code>. Chapter 8 lists them.</p>
+</div>
+
+<div class="pager">
+  <a href="../learn/03-verbs.html"><span class="dir">Previous</span><span class="ttl">3 · Verbs</span></a>
+  <a class="next" href="../learn/05-tables.html"><span class="dir">Next</span><span class="ttl">5 · Dictionaries and tables</span></a>
+</div>
 </article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
 </main>
 <footer>

@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Amber tutorials</title>
-<meta name="description" content="Three end-to-end walkthroughs: build a 5-million-row in-memory tick store in 60 seconds, wire up a Grafana dashboard pipeline, and pass Arrow record batches into Python without copying.">
+<title>qSQL — querying tables</title>
+<meta name="description" content="select, exec, update and delete; by-clauses; where-clauses; sorted and limited selects; fby; and the functional forms underneath.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Amber tutorials">
-<meta property="og:description" content="Three end-to-end walkthroughs: build a 5-million-row in-memory tick store in 60 seconds, wire up a Grafana dashboard pipeline, and pass Arrow record batches into Python without copying.">
+<meta property="og:title" content="qSQL — querying tables">
+<meta property="og:description" content="select, exec, update and delete; by-clauses; where-clauses; sorted and limited selects; fby; and the functional forms underneath.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,46 +34,112 @@
 </header>
 <main id="main">
 <div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
-<div class="grp">Tutorials</div>
-<a href="../tutorials/index.html" class="active">All tutorials</a>
-<a href="../tutorials/tick-store.html">5M-row tick store</a>
-<a href="../tutorials/grafana-pipeline.html">Grafana pipeline</a>
-<a href="../tutorials/arrow-interop.html">Arrow → Python, zero copy</a>
-</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / Tutorials</div>
-<h1>Tutorials</h1>
-<p class="lead">Three walkthroughs that each end with something running. Every command is copyable, and
-every number quoted is one the tool prints for itself.</p>
+<div class="grp">Amber for Mortals</div>
+<a href="../learn/index.html">Start here</a>
+<a href="../learn/01-thinking-in-arrays.html">1 · Thinking in arrays</a>
+<a href="../learn/02-first-session.html">2 · Your first session</a>
+<a href="../learn/03-verbs.html">3 · Verbs</a>
+<a href="../learn/04-adverbs.html">4 · Adverbs</a>
+<a href="../learn/05-tables.html">5 · Dictionaries and tables</a>
+<a href="../learn/06-qsql.html" class="active">6 · qSQL</a>
+<a href="../learn/07-time-series.html">7 · Time series</a>
+<a href="../learn/08-performance.html">8 · Making it fast</a>
+<div class="grp">Then</div>
+<a href="../docs/language.html">Language reference</a>
+<a href="../tutorials/index.html">Applied tutorials</a>
+</aside><article class="doc-content prose">
+<div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../learn/index.html">Amber for Mortals</a> / 6 · qSQL</div>
 
-<div class="grid" style="margin-top:30px;gap:16px">
-  <a class="card card-link tut-card" href="../tutorials/tick-store.html">
-    <span class="n">01 · 15 minutes</span>
-    <h3 style="margin:8px 0">Building a 5-million-row in-memory tick store in 60 seconds</h3>
-    <p class="small mb-0">Generate a realistic session, stamp the attributes that make the as-of join
-    a binary search, run TAQ analytics, and check the memory footprint with <code>\v</code>.</p>
-  </a>
-  <a class="card card-link tut-card" href="../tutorials/grafana-pipeline.html">
-    <span class="n">02 · 40 minutes</span>
-    <h3 style="margin:8px 0">Setting up an end-to-end Grafana &amp; Amber dashboard pipeline</h3>
-    <p class="small mb-0">Store &rarr; marts &rarr; <code>amberd</code> &rarr; the Go datasource &rarr;
-    provisioned panels. Including the two failures that look like something else.</p>
-  </a>
-  <a class="card card-link tut-card" href="../tutorials/arrow-interop.html">
-    <span class="n">03 · 20 minutes</span>
-    <h3 style="margin:8px 0">Interoperability: Arrow record batches from Amber to Python without copying</h3>
-    <p class="small mb-0">Prove pointer identity, stream 400 million rows a batch at a time, and
-    understand the one lifetime rule that makes it safe.</p>
-  </a>
+<span class="pill pill-accent" style="margin-bottom:14px;display:inline-flex">Chapter 6 of 8</span>
+
+<h1>qSQL — querying tables</h1>
+
+<p>Everything so far has been the K layer. qSQL is a surface syntax on top of it: you type <code>select ... by ... from ... where ...</code> and the line is rewritten into the array code from the previous chapters before it runs.</p>
+
+<p>That matters in two ways. You can always drop back down to the array level, and anything you can express as an array operation can go inside a query.</p>
+
+<div class="code"><pre><code class="lang-q">trades: ([] sym: `a`b`a`b`a; px: 10 20 30 40 50.0; sz: 1 2 3 4 5)</code></pre></div>
+
+<h2 id="select">select</h2>
+
+<div class="code"><pre><code class="lang-q">select from trades
+select sym, px from trades
+select from trades where px &gt; 25
+select from trades where px &gt; 25, sz &lt; 5        / comma = AND
+select avg px by sym from trades                / grouped -&gt; keyed table
+select s: sum sz, n: # px by sym from trades    / named aggregates
+select vwap: wavg[sz; px] by sym from trades</code></pre></div>
+
+<div class="note">
+  <span class="note-title">Bare column names become column lookups</span>
+  <p>Inside a query, <code>px</code> means "the px column of the row set being considered", so <code>wavg[sz;px]</code> is just the library call you already know, applied to two columns. There is no separate expression language.</p>
 </div>
 
-<h2>Before you start</h2>
-<p>All three assume the engine is built. Tutorials 2 and 3 also need the shared library and the Python
-bindings.</p>
-<div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/amber &amp;&amp; cd amber
-chmod +x a build.sh install.sh
-./build.sh --shared          # ./amber + libamber.so
-./a                          # sanity: the REPL opens</code></pre></div>
-<p>See the <a href="../docs/install.html">installation guide</a> if anything there surprises
-you.</p>
+<h2 id="sorted-and-limited-selects">Sorted and limited selects</h2>
+
+<p>Since 2.2 the bracket clause gives you ordering and a row limit, in q's order: <em>where</em>, then <em>by/select</em>, then <em>sort</em>, then <em>limit</em>.</p>
+
+<div class="code"><pre><code class="lang-q">select[3] from trades             / first 3 rows
+select[-2] from trades            / last 2 rows
+select[&gt;px] from trades           / sorted by px descending
+select[&lt;px] from trades           / ... ascending
+select[2;&gt;px] from trades         / sort, THEN take 2
+select[&lt;sym;&gt;px] from trades      / two keys; the first listed is primary
+select[2;&gt;s] s: sum px by sym from trades   / works on a grouped result too</code></pre></div>
+
+<h2 id="exec-update-delete">exec, update, delete</h2>
+
+<div class="code"><pre><code class="lang-q">exec px from trades where sym = `a      / a plain vector, not a table
+exec px, sz from trades                 / several columns -&gt; a dict of vectors
+update px: px * 1.01 from trades where sym = `a
+update z: px * sz from trades           / add a computed column
+delete from trades where sz &lt; 2         / drop rows
+delete sz from trades                   / drop a column</code></pre></div>
+
+<p>These do not mutate in place — each returns a new table. Assign it if you want to keep it.</p>
+
+<h2 id="fby-an-aggregate-broadcast-back-over-rows">fby — an aggregate broadcast back over rows</h2>
+
+<p><code>fby</code> computes an aggregate per group and aligns it back to every row of that group, which is what you want for "rows above their group's average":</p>
+
+<div class="code"><pre><code class="lang-q">select from trades where px = (max; px) fby sym     / each sym&#x27;s top-priced rows
+select from trades where px &gt; (avg; px) fby sym
+select sym, m: (max; px) fby sym from trades        / ... or as a column
+fby[(sum; trades`sz); trades`sym]                   / the functional form</code></pre></div>
+
+<p>The group specification may be several columns, written as a list or as a table:</p>
+
+<div class="code"><pre><code class="lang-q">trades: ([] sym: `a`b`a`b`a; ex: `X`X`Y`Y`X; px: 10 20 30 40 50.0; sz: 1 2 3 4 5)
+fby[(max; trades`px); (trades`sym; trades`ex)]
+select from trades where px = (max; px) fby (sym; ex)</code></pre></div>
+
+<h2 id="the-functional-forms">The functional forms</h2>
+
+<p>Every template has a function underneath it. Reach for these when the query itself is computed:</p>
+
+<div class="code"><pre><code class="lang-q">t: ([] sym: `a`b`a; px: 10 20 30.0; sz: 1 2 3)
+qwhere[t; (t`px) &gt; 15]                       / select rows by a mask
+qselect[t; (,`v) ! ,{x[`px] * x`sz}]         / computed columns
+qby[t; `sym; (,`tot) ! ,{sum x`sz}]          / group aggregate -&gt; keyed table
+sel&quot;select from t where px &gt; 15&quot;              / the string form of the template</code></pre></div>
+
+<h2 id="where-the-template-does-and-does-not-work">Where the template does and does not work</h2>
+
+<p>Bare <code>select</code> is a line-level rewrite installed by the standard library. It works at the prompt, and in any file you pull in with <code>\l</code> from a running session.</p>
+
+<p>It does <strong>not</strong> work in a file run as <code>./amber script.k</code>, because that runs with no standard library loaded at all — neither the rewrite nor <code>sel</code> nor <code>qwhere</code> exists there. Load the library first:</p>
+
+<div class="code"><pre><code class="lang-sh">\l amber.k
+\l std.k
+\l qsql.k
+
+t: ([] sym: `a`b; px: 1 2.0)
+select from t where px &gt; 1</code></pre></div>
+
+<div class="pager">
+  <a href="../learn/05-tables.html"><span class="dir">Previous</span><span class="ttl">5 · Dictionaries and tables</span></a>
+  <a class="next" href="../learn/07-time-series.html"><span class="dir">Next</span><span class="ttl">7 · Time series</span></a>
+</div>
 </article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
 </main>
 <footer>
