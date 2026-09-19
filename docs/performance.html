@@ -193,7 +193,7 @@ kernels; multiplying by 1.0 to "make it numeric" throws that away.</li>
 <li><strong>Pre-warm large allocations.</strong> The first build of a big intermediate costs roughly
 twice the steady state. Do it when a session opens, not on the user's first query.</li>
 <li><strong>Set attributes when you can honour them.</strong> <code>`s</code> on a sorted column turns
-a linear find into a binary search — see <a href="../blog/attributes.html">one byte at offset
+a linear find into a binary search — see <a href="../blog/03-attributes.html">one byte at offset
 −13</a>.</li>
 <li><strong>Reach for more processes before more threads.</strong> <code>peach</code> forks, and on a
 small core count the copy can cost more than the parallelism returns.</li>
