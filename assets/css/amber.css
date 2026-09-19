@@ -46,6 +46,20 @@
   --maxw: 1180px;
   --nav-h: 60px;
 
+  /* Mobile menu sheet. FULLY OPAQUE on purpose: the sheet used to be
+     color-mix(var(--bg) 97%, transparent) and leaned on backdrop-filter to hide
+     the page behind it. It cannot -- .nav already carries a backdrop-filter,
+     which makes it a backdrop root, so the sheet's own filter only ever sampled
+     the (empty) nav bar and never the article underneath. The remaining 3% let
+     every large heading ghost straight through the open menu. */
+  --menu-bg:   #0d0d13;
+  --menu-edge: rgba(255, 255, 255, 0.10);
+  --scrim:     rgba(4, 4, 8, 0.62);
+
+  /* Custom scrollbars -- see section 17 */
+  --sb-thumb:       rgba(255, 255, 255, 0.17);
+  --sb-thumb-hover: rgba(255, 176, 32, 0.72);
+
   --font-sans: "Inter", "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI",
                Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular,
@@ -85,6 +99,13 @@ html[data-theme="light"] {
 
   --shadow:    0 18px 50px -22px rgba(30, 25, 15, .28);
   --shadow-lg: 0 40px 90px -34px rgba(30, 25, 15, .32);
+
+  --menu-bg:   #ffffff;
+  --menu-edge: rgba(15, 14, 20, 0.12);
+  --scrim:     rgba(28, 24, 18, 0.38);
+
+  --sb-thumb:       rgba(15, 14, 20, 0.20);
+  --sb-thumb-hover: rgba(183, 106, 0, 0.70);
 }
 
 /* code blocks stay dark in light mode — deliberate, they are terminal output */
@@ -258,22 +279,85 @@ html[data-theme="light"] #theme-toggle .moon { display: none; }
 @media (max-width: 940px) {
   .nav-links { display: none; }
   .nav-toggle { display: inline-flex; }
+
+  /* The open menu is a SHEET, not a translucent overlay: opaque background, a
+     scrim behind it, and the page scroll locked while it is up. Nothing behind
+     it can read through, so it can never sit on top of the article text. */
   .nav-links.open {
     display: flex; flex-direction: column; align-items: stretch; gap: 2px;
     position: absolute; top: var(--nav-h); left: 0; right: 0;
-    background: color-mix(in srgb, var(--bg) 97%, transparent);
-    backdrop-filter: blur(18px);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 18px 18px; margin: 0;
-    /* never taller than the viewport below the bar, and scroll its own overflow
-       so a long menu can't blanket the whole page; a shadow lifts it off the
-       content it drops over. */
-    max-height: calc(100dvh - var(--nav-h)); overflow-y: auto;
-    box-shadow: 0 18px 40px color-mix(in srgb, var(--bg) 40%, #000);
+    margin: 0;
+    padding: 10px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+    background: var(--menu-bg);
+    border-bottom: 1px solid var(--menu-edge);
+    border-radius: 0 0 18px 18px;
+    box-shadow: 0 26px 60px -18px rgba(0, 0, 0, .62),
+                0 1px 0 var(--menu-edge) inset;
+    /* never taller than the viewport below the bar; scrolls its own overflow
+       and does NOT chain that scroll to the page behind it. */
+    max-height: calc(100dvh - var(--nav-h));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    animation: nav-sheet-in .24s var(--ease) both;
   }
-  .nav-links.open a { padding: 10px 12px; }
+  .nav-links.open a {
+    padding: 11px 12px; border-radius: 10px;
+    animation: nav-item-in .26s var(--ease) both;
+  }
+  /* a short stagger so the sheet unfurls instead of appearing all at once */
+  .nav-links.open a:nth-child(1) { animation-delay: .02s }
+  .nav-links.open a:nth-child(2) { animation-delay: .05s }
+  .nav-links.open a:nth-child(3) { animation-delay: .08s }
+  .nav-links.open a:nth-child(4) { animation-delay: .11s }
+  .nav-links.open a:nth-child(5) { animation-delay: .14s }
+  .nav-links.open a:nth-child(6) { animation-delay: .17s }
+  .nav-links.open a.active {
+    background: var(--accent-glow);
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
   .nav-links.open a.active::after { display: none; }
+
+  /* Landscape phones and tablets: a full-bleed sheet with the links hugging the
+     left edge looks broken on a wide, short screen. Anchor a card under the
+     burger instead. */
+  @media (min-width: 560px) {
+    .nav-links.open {
+      left: auto; right: 16px;
+      width: min(320px, calc(100vw - 32px));
+      border-radius: 16px;
+      margin-top: 6px;
+      border: 1px solid var(--menu-edge);
+    }
+  }
 }
+
+@keyframes nav-sheet-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes nav-item-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* The scrim sits under .nav (z-index 60) and over everything else, so the sheet
+   reads as a layer above a dimmed page. Created by assets/js/amber.js, so every
+   page gets it without touching 25 HTML files. */
+.nav-scrim {
+  position: fixed; inset: 0; z-index: 55;
+  background: var(--scrim);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0; pointer-events: none;
+  transition: opacity .22s var(--ease);
+}
+.nav-scrim.on { opacity: 1; pointer-events: auto; }
+@media (min-width: 941px) { .nav-scrim { display: none; } }
+
+/* page scroll lock while the sheet is open */
+html.nav-open, html.nav-open body { overflow: hidden; }
+html.nav-open { overscroll-behavior: none; }
 
 /* ---- 5. Buttons --------------------------------------------------------- */
 
@@ -507,6 +591,23 @@ td code, th code { white-space: nowrap; }
 .toc a:hover { color: var(--text-dim); }
 .toc a.active { color: var(--accent); border-left-color: var(--accent); }
 .toc a.lvl3 { padding-left: 24px; }
+
+/* Phones: the sidebar becomes a plain block at the top of the page.  This has
+   to come AFTER the base .sidebar/.toc rules -- as a media query it carries no
+   extra specificity, so when it sat up beside .docs-layout it was dead code and
+   the sidebar stayed `position: sticky`, pinning itself under the nav bar and
+   sliding over the article text on every docs page. */
+@media (max-width: 860px) {
+  .sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding-right: 0;
+    padding-bottom: 18px;
+  }
+}
 
 .doc-content { min-width: 0; }
 .doc-content > h2 { scroll-margin-top: calc(var(--nav-h) + 20px); padding-top: .3em; }
@@ -799,6 +900,115 @@ html.has-js .reveal.in { opacity: 1; transform: none; transition: opacity .6s va
 :root { --s-amber: #c77b1e; --s-numpy: #3987e5; }
 html[data-theme="light"] { --s-amber: #B26B00; --s-numpy: #1668B0; }
 
-/* ---- Scrollbars: hidden everywhere; overflowing content still scrolls ---- */
-html, body, * { scrollbar-width: none; -ms-overflow-style: none; }
-*::-webkit-scrollbar { display: none; width: 0; height: 0; }
+/* ---- 17. Scrollbars ------------------------------------------------------
+   The platform default bar is a grey slab that ignores the design system and,
+   on Windows, reserves a chunky gutter inside every code block and table. This
+   replaces it everywhere a region can scroll: a thin, fully rounded thumb on a
+   transparent track, inset from the edge with the border/background-clip trick
+   so it floats rather than butting against the content, and picking up the
+   accent on hover. Firefox gets the same two colours through the standard
+   `scrollbar-*` properties.
+   -------------------------------------------------------------------------- */
+
+html,
+.nav-links.open,
+.sidebar,
+.toc,
+.table-wrap,
+.terminal-body,
+.diagram,
+.install-bar,
+pre {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sb-thumb) transparent;
+}
+
+html::-webkit-scrollbar,
+.nav-links.open::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar,
+.toc::-webkit-scrollbar,
+.table-wrap::-webkit-scrollbar,
+.terminal-body::-webkit-scrollbar,
+.diagram::-webkit-scrollbar,
+.install-bar::-webkit-scrollbar,
+pre::-webkit-scrollbar { width: 10px; height: 10px; }
+
+html::-webkit-scrollbar-track,
+.nav-links.open::-webkit-scrollbar-track,
+.sidebar::-webkit-scrollbar-track,
+.toc::-webkit-scrollbar-track,
+.table-wrap::-webkit-scrollbar-track,
+.terminal-body::-webkit-scrollbar-track,
+.diagram::-webkit-scrollbar-track,
+.install-bar::-webkit-scrollbar-track,
+pre::-webkit-scrollbar-track { background: transparent; }
+
+html::-webkit-scrollbar-thumb,
+.nav-links.open::-webkit-scrollbar-thumb,
+.sidebar::-webkit-scrollbar-thumb,
+.toc::-webkit-scrollbar-thumb,
+.table-wrap::-webkit-scrollbar-thumb,
+.terminal-body::-webkit-scrollbar-thumb,
+.diagram::-webkit-scrollbar-thumb,
+.install-bar::-webkit-scrollbar-thumb,
+pre::-webkit-scrollbar-thumb {
+  background: var(--sb-thumb);
+  border-radius: 999px;
+  border: 3px solid transparent;      /* inset the thumb from the track edge */
+  background-clip: padding-box;
+  transition: background-color .18s var(--ease);
+}
+
+html::-webkit-scrollbar-thumb:hover,
+.nav-links.open::-webkit-scrollbar-thumb:hover,
+.sidebar::-webkit-scrollbar-thumb:hover,
+.toc::-webkit-scrollbar-thumb:hover,
+.table-wrap::-webkit-scrollbar-thumb:hover,
+.terminal-body::-webkit-scrollbar-thumb:hover,
+.diagram::-webkit-scrollbar-thumb:hover,
+.install-bar::-webkit-scrollbar-thumb:hover,
+pre::-webkit-scrollbar-thumb:hover {
+  background: var(--sb-thumb-hover);
+  background-clip: padding-box;
+}
+
+html::-webkit-scrollbar-corner,
+.table-wrap::-webkit-scrollbar-corner,
+pre::-webkit-scrollbar-corner { background: transparent; }
+
+/* Code blocks and tables keep dark chrome in light mode, so their thumb has to
+   stay light or it disappears against the dark surface. */
+html[data-theme="light"] .terminal-body,
+html[data-theme="light"] .code pre,
+html[data-theme="light"] pre.code { scrollbar-color: rgba(255,255,255,.22) transparent; }
+html[data-theme="light"] .terminal-body::-webkit-scrollbar-thumb,
+html[data-theme="light"] .code pre::-webkit-scrollbar-thumb,
+html[data-theme="light"] pre.code::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.22); background-clip: padding-box;
+}
+
+/* A scrollable region gets a soft edge fade so a clipped list reads as "there
+   is more" rather than "this was cut off". Only applied when it actually
+   overflows -- assets/js/amber.js adds .can-scroll -- so a short menu keeps its
+   first and last item at full contrast. */
+.can-scroll {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px,
+                      #000 calc(100% - 18px), transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 14px,
+                      #000 calc(100% - 18px), transparent 100%);
+}
+/* Fade only the edge that actually has more behind it, so the first item is at
+   full contrast until you have scrolled past it, and the last one is at full
+   contrast once you reach the end. */
+.can-scroll.at-top {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
+}
+.can-scroll.at-end {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 14px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-links.open, .nav-links.open a { animation: none !important; }
+  .nav-scrim { transition: none; }
+}

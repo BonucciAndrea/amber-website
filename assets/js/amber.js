@@ -27,25 +27,63 @@
     var burger = document.getElementById("nav-toggle");
     var links = document.getElementById("nav-links");
     if (burger && links) {
+      /* One scrim for the whole site, built here so none of the 25 pages needs
+         extra markup. It sits under .nav and over the article, which is what
+         makes the open sheet read as a layer rather than a transparency. */
+      var scrim = document.createElement("div");
+      scrim.className = "nav-scrim";
+      scrim.setAttribute("aria-hidden", "true");
+      document.body.appendChild(scrim);
+
       var setOpen = function (open) {
         links.classList.toggle("open", open);
+        scrim.classList.toggle("on", open);
         burger.setAttribute("aria-expanded", open ? "true" : "false");
+        /* Lock the page while the sheet is up. Without this the sheet's own
+           scroll chains to the document the moment it hits an end stop, which
+           on a phone drags the article around underneath the menu. The lock is
+           overflow-based rather than the position:fixed trick, because the nav
+           is position:sticky and pinning the body would drop it off screen. */
+        document.documentElement.classList.toggle("nav-open", open);
+        if (open) {
+          /* Fade the edges only when there is genuinely more to scroll to. */
+          links.classList.toggle("can-scroll", links.scrollHeight > links.clientHeight + 1);
+          markEdges();
+        } else {
+          links.classList.remove("can-scroll", "at-top", "at-end");
+          links.scrollTop = 0;
+        }
       };
+
+      /* Which edge is showing more content, so only that edge gets faded. */
+      var markEdges = function () {
+        var top = links.scrollTop <= 1;
+        var end = links.scrollTop + links.clientHeight >= links.scrollHeight - 1;
+        links.classList.toggle("at-top", top && !end);
+        links.classList.toggle("at-end", end && !top);
+      };
+      links.addEventListener("scroll", markEdges, { passive: true });
+
       burger.addEventListener("click", function (e) {
         e.stopPropagation();
         setOpen(!links.classList.contains("open"));
       });
-      /* Dismiss the menu on any interaction, so it can never sit on top of the
-         page while you scroll or after you pick a destination. */
+      /* Dismiss once a destination is picked, on Escape, and on a tap outside
+         (the scrim covers everything outside, so that is the usual path).
+         Deliberately NOT on scroll: the menu scrolls itself now, and closing on
+         any scroll event made a long menu impossible to use. */
       links.addEventListener("click", function (e) { if (e.target.closest("a")) setOpen(false); });
-      window.addEventListener("scroll", function () {
-        if (links.classList.contains("open")) setOpen(false);
-      }, { passive: true });
+      scrim.addEventListener("click", function () { setOpen(false); });
       document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape" && links.classList.contains("open")) setOpen(false);
+        if (e.key === "Escape" && links.classList.contains("open")) { setOpen(false); burger.focus(); }
       });
       document.addEventListener("click", function (e) {
         if (links.classList.contains("open") && !links.contains(e.target) && e.target !== burger) setOpen(false);
+      });
+      /* Rotating the phone can take the layout back to the desktop nav while
+         the sheet is open, which would otherwise leave the page scroll locked. */
+      window.addEventListener("resize", function () {
+        if (window.innerWidth > 940 && links.classList.contains("open")) setOpen(false);
       });
     }
   }
