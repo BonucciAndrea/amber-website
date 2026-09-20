@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Pit — make a market, one line of Amber</title>
+<meta name="description" content="You are the market maker. Order flow hits you 20 times a second and your quote is one line of Amber, re-evaluated on every tick. Quote too tight and you are picked off; too wide and you never trade.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="The Pit — make a market, one line of Amber">
+<meta property="og:description" content="Order flow hits you 20 times a second. Your quote is one line of Amber, re-evaluated every tick. Same seed, same tape — so scores are comparable.">
+<meta property="og:site_name" content="Amber">
+<meta property="og:url" content="https://amber-lang.org/projects/tape">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/amber.css?v=3">
+<link rel="stylesheet" href="../assets/tape/tape.css?v=1">
+<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<style>
+  .tp-head { padding: 22px 0 14px; }
+  .tp-head-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 28px; }
+  .tp-head h1 { margin: 8px 0 8px; font-size: clamp(1.7rem, 1.2rem + 1.6vw, 2.3rem); }
+  .tp-head .lead { max-width: 66ch; margin: 0; }
+  .tp-head .lead code { font-family: var(--font-mono); font-size: .92em; color: var(--accent-soft); }
+  :root[data-theme="light"] { --code-bg: #0a0a0f; }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v2.2.0</span></a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../learn/index.html">Learn</a><a href="../docs/">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a><a href="../projects/" class="active">Projects</a><a href="../notepad.html">Notepad</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+<section class="tp-head">
+  <div class="wrap">
+    <div class="breadcrumb"><a href="../index.html">Home</a> / <a href="./index.html">Projects</a> / The Pit</div>
+    <div class="tp-head-row">
+      <div>
+        <h1>You are the market maker.</h1>
+        <p class="lead">Order flow hits you twenty times a second. Your quote is <strong>one line of Amber</strong>,
+        re-evaluated on every tick, and the whole market — the tape, the fills, your inventory, your P&amp;L —
+        runs inside the engine. Quote too tight and informed flow picks you off; quote too wide and you never
+        trade at all. The same seed is the same tape, so two scores mean something.</p>
+      </div>
+      <span class="tp-chip"><span class="tp-led booting" id="tp-led"></span><span id="tp-status">starting the engine…</span></span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="tp-wrap">
+
+      <div>
+        <div class="tp-stage">
+          <canvas id="tp-canvas" aria-label="The mid price, your quoted band, and your fills"></canvas>
+          <div class="tp-clockwrap" id="tp-clock">60.0s</div>
+          <div class="tp-toast" id="tp-toast" role="status" aria-live="polite"></div>
+        </div>
+
+        <div class="tp-exprrow">
+          <label for="tp-expr">Your quote — two numbers, a bid and an ask. It re-runs on every tick.</label>
+          <div class="tp-input">
+            <span class="tp-sigil" aria-hidden="true">&gt;</span>
+            <input id="tp-expr" type="text" spellcheck="false" autocapitalize="off" autocomplete="off"
+                   autocorrect="off" aria-describedby="tp-err">
+          </div>
+          <p class="tp-err" id="tp-err" role="alert" hidden></p>
+        </div>
+
+        <div class="tp-grid" id="tp-presets" style="margin-top:12px" aria-label="Example quotes"></div>
+
+        <div class="tp-row" style="margin-top:12px">
+          <button class="tp-btn primary" id="tp-start" type="button">Start round</button>
+          <button class="tp-btn" id="tp-pause" type="button" disabled>Pause</button>
+          <button class="tp-btn" id="tp-share" type="button">Share</button>
+          <span class="tp-seedwrap">seed <input id="tp-seed" type="number" min="1" max="99999" value="11"></span>
+        </div>
+
+        <p class="tp-note" id="tp-note"></p>
+      </div>
+
+      <aside>
+        <div class="tp-panel">
+          <h2>P&amp;L</h2>
+          <div class="tp-big" id="tp-pnl">0.00</div>
+          <dl class="tp-stats">
+            <dt>inventory</dt><dd id="tp-inv">0</dd>
+            <dt>fills</dt><dd id="tp-fills">0</dd>
+            <dt>edge captured</dt><dd id="tp-cap">0.00</dd>
+            <dt>max drawdown</dt><dd id="tp-dd">0.00</dd>
+            <dt>your spread</dt><dd id="tp-spread">0.0c</dd>
+          </dl>
+          <div class="tp-invtrack"><div id="tp-invbar"></div></div>
+        </div>
+
+        <div class="tp-panel">
+          <h2>The tape</h2>
+          <div class="tp-tape" id="tp-tape"></div>
+        </div>
+
+        <div class="tp-panel" id="tp-sumwrap" hidden>
+          <h2>Round summary</h2>
+          <pre class="tp-sum" id="tp-summary"></pre>
+          <p class="tp-hint">That table is a qSQL <code>select … by side</code> over the round's fills,
+          run in the engine when the round ends.</p>
+        </div>
+
+        <div class="tp-panel">
+          <h2>What's in scope</h2>
+          <dl class="tp-vars">
+            <dt>px</dt><dd>the current mid</dd>
+            <dt>inv</dt><dd>your inventory, + long / − short (cap 30)</dd>
+            <dt>pnl</dt><dd>cash + inventory marked at the mid</dd>
+            <dt>vol</dt><dd>recent realised volatility of the mid</dd>
+            <dt>flow</dt><dd>signed aggressive flow, + when buyers are lifting</dd>
+            <dt>t</dt><dd>seconds into the round</dd>
+          </dl>
+          <p class="tp-hint">Return two numbers. <code>px+-0.05 0.05</code> is a flat five-cent market;
+          subtracting a multiple of <code>inv</code> leans your quote against the position you already have.</p>
+          <p class="tp-hint">The mid is <code>px</code> and not <code>mid</code> on purpose: <code>mid</code> is a
+          real fin.k verb — the midpoint of a quote table — that <code>spreadbps</code>, <code>tsign</code> and
+          <code>effspread</code> all call, so the game leaves it alone.</p>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+      </div>
+      <div>
+        <h5>Documentation</h5>
+        <a href="../docs/index.html">Introduction</a>
+        <a href="../docs/language.html">Language &amp; qSQL</a>
+        <a href="../docs/tacit.html">Tacit programming</a>
+        <a href="../docs/benchmarks.html">Benchmarks</a>
+      </div>
+      <div>
+        <h5>Projects</h5>
+        <a href="./index.html">All projects</a>
+        <a href="./dots.html">Dots</a>
+        <a href="./tape.html">The Pit</a>
+        <a href="../notepad.html">Notepad</a>
+      </div>
+      <div>
+        <h5>Learn</h5>
+        <a href="../tutorials/index.html">Tutorials</a>
+        <a href="../blog/index.html">Blog</a>
+        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+      <span>A synthetic market for play. Not affiliated with kdb+ / KX Systems.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="../assets/js/amber.js" defer></script>
+<script>
+/* `worker` is resolved against THIS page. `sim` and `runtime` are resolved by
+   the worker against its OWN url (/assets/tape/), which is why they carry a
+   different prefix. The engine bundle is the Notepad's — one copy, shared by
+   every project page. */
+window.TAPE_CONFIG = {
+  worker: "../assets/tape/worker.js?v=1",
+  sim: "./sim.k?v=1",
+  runtime: ["../notepad/amber.wasm.js?v=2.2.0", "../notepad/amber.js?v=4"]
+};
+</script>
+<script src="../assets/tape/tape.js?v=1"></script>
+</body>
+</html>
