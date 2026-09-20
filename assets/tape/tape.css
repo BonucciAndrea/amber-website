@@ -185,3 +185,42 @@
 .tp-vars dd { margin: 0; font-size: .8rem; line-height: 1.45; color: var(--text-dim, #a2a3ae); }
 .tp-hint { margin: 10px 0 0; font-size: .79rem; line-height: 1.55; color: var(--text-faint, #6e6f7b); }
 .tp-hint code { font-family: var(--font-mono, ui-monospace, monospace); color: var(--text-dim, #a2a3ae); }
+
+/* ---- legend under the controls ---- */
+.tp-legend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px;
+  margin: 10px 0 0; font-size: .76rem; color: var(--text-faint, #6e6f7b);
+}
+.tp-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.tp-legend .tp-legend-sp { color: var(--text-faint, #6e6f7b); opacity: .85; }
+.tp-key { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.tp-key.mid { height: 2px; border-radius: 2px; background: var(--text, #ecedf1); }
+.tp-key.band { background: rgba(255,176,32,.28); border: 1px solid rgba(255,176,32,.5); }
+.tp-key.buy { width: 9px; height: 9px; border-radius: 50%; background: var(--accent, #ffb020); }
+.tp-key.sell { width: 9px; height: 9px; border-radius: 50%; background: var(--cyan, #56d4dd); }
+
+/* ---- the how-to section ---- */
+.tp-howto { padding: 30px 0 10px; }
+.tp-howto h2 {
+  margin: 0 0 10px; font-size: clamp(1.3rem, 1.1rem + .7vw, 1.65rem);
+  letter-spacing: -.01em;
+}
+.tp-howto .lead { max-width: 74ch; margin: 0; }
+.tp-howto .card h3 {
+  margin: 0 0 8px; font-size: .92rem; letter-spacing: .01em;
+  color: var(--accent-soft, #ffcb6b);
+}
+.tp-howto .card p { margin: 0 0 8px; font-size: .88rem; line-height: 1.62; color: var(--text-dim, #a2a3ae); }
+.tp-howto .card p:last-child { margin-bottom: 0; }
+.tp-h3 {
+  margin: 26px 0 10px; font: 600 .78rem var(--font-sans, system-ui, sans-serif);
+  letter-spacing: .07em; text-transform: uppercase; color: var(--text-faint, #6e6f7b);
+}
+.tp-list { margin: 0; padding-left: 1.15em; max-width: 78ch; }
+.tp-list li { margin: 0 0 9px; font-size: .9rem; line-height: 1.62; color: var(--text-dim, #a2a3ae); }
+.tp-list li strong { color: var(--text, #ecedf1); font-weight: 600; }
+.tp-howto code {
+  font-family: var(--font-mono, ui-monospace, monospace); font-size: .9em;
+  color: var(--accent-soft, #ffcb6b);
+}
+.tp-howto p { color: var(--text-dim, #a2a3ae); }

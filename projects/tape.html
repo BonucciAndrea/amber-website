@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/amber.css?v=3">
-<link rel="stylesheet" href="../assets/tape/tape.css?v=1">
+<link rel="stylesheet" href="../assets/tape/tape.css?v=2">
 <script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 <style>
   .tp-head { padding: 22px 0 14px; }
@@ -91,6 +91,14 @@
         </div>
 
         <p class="tp-note" id="tp-note"></p>
+
+        <p class="tp-legend">
+          <span><i class="tp-key mid"></i>the mid</span>
+          <span><i class="tp-key band"></i>your bid–ask</span>
+          <span><i class="tp-key buy"></i>you bought</span>
+          <span><i class="tp-key sell"></i>you sold</span>
+          <span class="tp-legend-sp">Space pauses · edit the quote mid-round and it takes effect on the next tick</span>
+        </p>
       </div>
 
       <aside>
@@ -138,6 +146,79 @@
       </aside>
 
     </div>
+  </div>
+</section>
+
+<section class="tp-howto">
+  <div class="wrap">
+    <h2>How to play</h2>
+    <p class="lead">A market maker does not predict the price. They stand in the middle, quote a price
+    to buy and a price to sell, and try to earn the difference faster than the market takes it back.
+    That is the whole game, and it is harder than it sounds.</p>
+
+    <div class="grid grid-3" style="margin:22px 0 10px">
+      <div class="card">
+        <h3>1 · You quote both sides</h3>
+        <p>Your line returns two numbers: a <strong>bid</strong> (where you will buy) and an
+        <strong>ask</strong> (where you will sell). <code>px+-0.05 0.05</code> is five cents either
+        side of the mid.</p>
+        <p>Buyers and sellers arrive about twelve times a second. A buyer who is willing to pay your
+        ask lifts it, and you are now <em>short</em>. A seller who will take your bid hits it, and
+        you are <em>long</em>. You never choose to trade — you only choose your prices.</p>
+      </div>
+      <div class="card">
+        <h3>2 · Tight quotes get picked off</h3>
+        <p>Each arriving order moves the mid a little in the direction it traded. So the flow that
+        takes your quote tends to be <strong>right</strong>: you sell just before the price rises,
+        and buy just before it falls. That is <em>adverse selection</em>, and it is what makes the
+        <code>suicide</code> preset lose money on every seed despite trading constantly.</p>
+        <p>Widening your quote earns more per fill and gets you fewer of the bad ones — up to a
+        point, after which you simply stop trading.</p>
+      </div>
+      <div class="card">
+        <h3>3 · Inventory is the other risk</h3>
+        <p>Whatever you are holding is marked at the mid, so a position that moves against you costs
+        you money even if you never trade again. Left alone, one-sided flow will push you to the
+        position cap of 30.</p>
+        <p>The fix is to <strong>lean</strong>: subtract a multiple of <code>inv</code> from both
+        prices, so the longer you are the cheaper you quote, and the market flattens you for free.
+        That is the whole of <code>px+(-0.05 0.05)-0.005*inv</code>.</p>
+      </div>
+    </div>
+
+    <h3 class="tp-h3">Reading the screen</h3>
+    <ul class="tp-list">
+      <li><strong>The white line</strong> is the mid. <strong>The amber band</strong> is your own bid
+      and ask, drawn around it — when the band is wide you are quoting defensively.</li>
+      <li><strong>Amber dots</strong> are fills where you bought, <strong>cyan dots</strong> where
+      you sold. Their size is the trade size.</li>
+      <li><strong>Edge captured</strong> is the total distance between your fill prices and the mid
+      at the moment each one happened. It is your gross income; P&amp;L is what is left after the
+      market moves against your position.</li>
+      <li><strong>Max drawdown</strong> is the worst fall from your best P&amp;L so far. Two quotes
+      can end at the same number and be wildly different trades — this is where you see it.</li>
+      <li><strong>The tape</strong> prints every fill: side, size, price, and the edge in cents
+      versus the mid at that instant. A run of negative numbers means you are being run over.</li>
+    </ul>
+
+    <h3 class="tp-h3">A progression worth trying</h3>
+    <ol class="tp-list">
+      <li>Run <strong>flat 5c</strong> once, all the way through. Watch the inventory bar drift to one
+      side and stay there, and watch the P&amp;L swing with it.</li>
+      <li>Run <strong>suicide</strong> (a tenth of a cent each side). It trades on almost every tick
+      and still loses. That is adverse selection on its own, with nothing else going on.</li>
+      <li>Run <strong>skew</strong>. The same five-cent market, plus one term that leans against
+      inventory. Compare the max drawdown, not the P&amp;L.</li>
+      <li>Now write your own. Try a wider base, or make the width depend on <code>vol</code>, or
+      shade the whole quote in the direction of <code>flow</code>.</li>
+    </ol>
+
+    <h3 class="tp-h3">Comparing scores</h3>
+    <p>The tape is generated from the <strong>seed</strong>, up front, before you trade. The same seed
+    is the same market, every time, for everyone — so <strong>Share</strong> copies a link carrying
+    both your quote and the seed, and whoever opens it is trading against exactly the tape you did.
+    Changing the seed gives you a different market to test against, which is the honest way to find
+    out whether a quote is good or merely lucky.</p>
   </div>
 </section>
 </main>
@@ -189,6 +270,6 @@ window.TAPE_CONFIG = {
   runtime: ["../notepad/amber.wasm.js?v=2.2.0", "../notepad/amber.js?v=5"]
 };
 </script>
-<script src="../assets/tape/tape.js?v=1"></script>
+<script src="../assets/tape/tape.js?v=2"></script>
 </body>
 </html>

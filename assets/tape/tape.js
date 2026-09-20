@@ -112,11 +112,17 @@ function absorb(line) {
   var v = line.split(";"), o = {};
   for (var j = 0; j < FIELDS.length; j++) o[FIELDS[j]] = Number(v[j]);
   S.last = o;
-  S.hist.push({ px: o.px, bid: o.bid, ask: o.ask, pnl: o.pnl, inv: o.inv });
+  S.hist.push({ tk: o.tk, px: o.px, bid: o.bid, ask: o.ask, pnl: o.pnl, inv: o.inv });
   if (S.hist.length > HIST) S.hist.shift();
+  // Drop markers that have scrolled off the window on every tick, not only on
+  // ticks that produced a fill, or stale ones linger until the next fill.
+  while (S.fills.length && S.fills[0].tk < S.hist[0].tk) S.fills.shift();
   if (o.fs !== 0) {
-    S.fills.push({ tk: o.tk, side: o.fs, p: o.fp, z: o.fz, i: S.hist.length - 1 });
-    if (S.fills.length > 400) S.fills.shift();
+    // Anchor the marker to the absolute tick, never to a position in the
+    // history array: once the window is full, "the last slot" is the same
+    // slot forever, so every fill would pile up on the right-hand edge and
+    // older ones would never scroll left with the price.
+    S.fills.push({ tk: o.tk, side: o.fs, p: o.fp, z: o.fz });
     // The tape is written here rather than in paint(): several ticks can be
     // absorbed in one batch, and paint() only ever sees the last of them, so
     // printing there would drop every fill but the final one.
@@ -228,10 +234,12 @@ function draw() {
   for (j = 0; j < h.length; j++) { var x2 = X(j); if (j === 0) ctx.moveTo(x2, Y(h[j].px)); else ctx.lineTo(x2, Y(h[j].px)); }
   ctx.strokeStyle = COL.mid; ctx.lineWidth = 1.6 * dpr; ctx.stroke();
 
-  // fills: amber where we bought, cyan where we sold
-  var base = S.hist.length - h.length;
+  // fills: amber where we bought, cyan where we sold. The index is derived
+  // from the tick of the window's first sample, so a marker stays glued to
+  // the price it happened at as the window scrolls.
+  var t0 = h[0].tk;
   for (j = 0; j < S.fills.length; j++) {
-    var f = S.fills[j], idx = f.i - base;
+    var f = S.fills[j], idx = f.tk - t0;
     if (idx < 0 || idx >= h.length) continue;
     ctx.beginPath();
     ctx.arc(X(idx), Y(f.p), (2.1 + 0.5 * Math.min(4, f.z)) * dpr, 0, 6.2832);
