@@ -1,16 +1,19 @@
 /* puzzles.js — the Array Golf puzzle set: 130 puzzles in three tiers.
  *
- * Each puzzle: id, title, tier, prompt, a few SHOWN examples, some HIDDEN
+ * Each puzzle: id, title, tier, prompt, a few SHOWN examples, some further
  * tests, and a reference solution whose length is par.
  *
- * Every expected value here was PRODUCED BY THE ENGINE from the reference
- * solution and then fed back through the judge to check it round-trips. None
- * is hand-typed, because a hand-typed expected value is a puzzle that is
- * silently impossible.
+ * The expected values were produced by the engine from the reference solution
+ * and fed back through the judge to check they round-trip, and _tests/ keeps
+ * that true. Note what it does NOT prove: that the tests match the PROMPT.
+ * Six puzzles once asked for one thing and tested another -- `2#(_0.5*#x)-1_x`
+ * was meant to take the middle two and actually computed (n%2) minus the
+ * tail, so "the middle two of 1 2 3 4" was recorded as 0 -1. They were found
+ * by reading all 130 prompts against their examples, and repaired against
+ * expectations written down before the k was run.
  *
- * No two puzzles share a reference answer, and puzzles whose answer was just
- * the verb the cheat sheet already names were dropped: the point is to have
- * something to work out.
+ * So: if you add a puzzle, do not trust a green test run. Read the examples
+ * and check they are what the prompt asked for.
  */
 window.GOLF_PUZZLES = [
   { id: "count", title: "How many", tier: 1, par: "#x",
@@ -191,7 +194,7 @@ window.GOLF_PUZZLES = [
     hide: [["5 4 3 2 1", "5 4 3 2 1"], ["0 -1 1", "1 0 -1"], ["7 7 8", "8 7 7"]] },
   { id: "symm", title: "Symmetric?", tier: 2, par: "x~+x",
     prompt: "Return 1 if the matrix <code>x</code> equals its own transpose.",
-    show: [["(1 2;2 1)", "1"], ["(1 2;3 4)", "0"], ["(,1)", "0"]],
+    show: [["(1 2;2 1)", "1"], ["(1 2;3 4)", "0"], ["(,,5)", "1"]],
     hide: [["(0 1;1 0)", "1"], ["(1 2;2 3)", "1"], ["(1 0;1 1)", "0"]] },
   { id: "dot", title: "Dot product", tier: 2, par: "+/*/x",
     prompt: "<code>x</code> is two rows of equal length. Return their dot product.",
@@ -250,7 +253,7 @@ window.GOLF_PUZZLES = [
     show: [["(1 2;3 4)", "5"], ["(1 2 3;4 5 6;7 8 9)", "15"], ["(0 1;1 0)", "0"]],
     hide: [["(2 0;0 2)", "4"], ["(1 1;1 1)", "2"]] },
   { id: "zipidx", title: "Number the elements", tier: 2, par: "+(!#x;x)",
-    prompt: "Pair every element of <code>x</code> with its position: a row of positions and a row of values.",
+    prompt: "Pair every element of <code>x</code> with its position, as a list of <em>(position, value)</em> rows.",
     show: [["9 8 7", "(0 9;1 8;2 7)"], ["1 2", "(0 1;1 2)"], [",5", ",0 5"]],
     hide: [["4 4 4", "(0 4;1 4;2 4)"], ["1 2 3 4", "(0 1;1 2;2 3;3 4)"], ["0 1", "(0 0;1 1)"]] },
   { id: "dropmax", title: "Remove the largest", tier: 2, par: "x@&~x=|/x",
@@ -281,14 +284,14 @@ window.GOLF_PUZZLES = [
     prompt: "Return 1 if <code>x</code> is a rearrangement of <code>0 … n-1</code>.",
     show: [["2 0 1", "1"], ["1 2 3", "0"], ["0 1 2 3", "1"]],
     hide: [["0 0", "0"], [",0", "1"], ["3 1 0 2", "1"]] },
-  { id: "halfway", title: "Split in half", tier: 2, par: "0N 2#0N,/:x",
-    prompt: "<code>x</code> has an even length. Return it as two halves.",
-    show: [["1 2 3 4", "((0N 1;0N 2);(0N 3;0N 4))"], ["1 2", ",(0N 1;0N 2)"], ["5 6 7 8", "((0N 5;0N 6);(0N 7;0N 8))"]],
-    hide: [["0 0 0 0", "((0N 0;0N 0);(0N 0;0N 0))"], ["9 8 7 6", "((0N 9;0N 8);(0N 7;0N 6))"], ["1 1 2 2", "((0N 1;0N 1);(0N 2;0N 2))"]] },
   { id: "adjprod", title: "Adjacent products", tier: 2, par: "(1_x)*(-1)_x",
     prompt: "Multiply each element of <code>x</code> by the one after it.",
     show: [["1 2 3 4", "2 6 12"], ["2 2 2", "4 4"], ["1 2", ",2"]],
     hide: [[",3", "!0"], ["5 0 5", "0 0"], ["3 3 3", "9 9"]] },
+  { id: "halfway", title: "Split in half", tier: 2, par: "(2,_0.5*#x)#x",
+    prompt: "<code>x</code> has an even length. Return it as two halves.",
+    show: [["1 2 3 4", "(1 2;3 4)"], ["1 2", "(,1;,2)"], ["5 6 7 8", "(5 6;7 8)"]],
+    hide: [["1 2 3 4 5 6", "(1 2 3;4 5 6)"], ["9 8 7 6", "(9 8;7 6)"], ["0 0 1 1", "(0 0;1 1)"]] },
   { id: "times", title: "Times table", tier: 2, par: "(1+!x)*/:1+!x",
     prompt: "Return the <code>x</code>-by-<code>x</code> multiplication table, starting at 1.",
     show: [["3", "(1 2 3;2 4 6;3 6 9)"], ["1", ",,1"], ["2", "(1 2;2 4)"]],
@@ -353,10 +356,10 @@ window.GOLF_PUZZLES = [
     prompt: "Round every element of <code>x</code> to the nearest whole number.",
     show: [["1.4 1.6 2.5", "1 2 3"], ["0.5", "1"], [",2.2", ",2"]],
     hide: [["3.7 3.2", "4 3"], ["-0.4 0.4", "0 0"], ["9.9", "10"]] },
-  { id: "prodnz", title: "Product of the non-zeros", tier: 3, par: "*/x@&x",
+  { id: "prodnz", title: "Product of the non-zeros", tier: 3, par: "*/x+~x",
     prompt: "Multiply together every element of <code>x</code> that is not zero.",
-    show: [["1 0 2 3", "108"], ["0 0", "1"], ["1 2 3", "108"]],
-    hide: [["5 0", "3125"], ["0 7 0", "823543"], ["2 2 0 2", "64"]] },
+    show: [["1 0 2 3", "6"], ["0 0", "1"], ["1 2 3", "6"]],
+    hide: [["5 0", "5"], ["0 7 0", "7"], ["2 2 0 2", "8"]] },
   { id: "rle", title: "Run-length counts", tier: 3, par: "#'. =x",
     prompt: "<code>x</code> is grouped. Return the count of each distinct value, in order of first appearance.",
     show: [["1 1 2 2 2", "2 3"], ["1 2 3", "1 1 1"], ["4 4 4 4", ",4"]],
@@ -465,10 +468,6 @@ window.GOLF_PUZZLES = [
     prompt: "Return the first <code>x+2</code> Fibonacci numbers, starting <code>0 1</code>.",
     show: [["1", "0 1 1"], ["5", "0 1 1 2 3 5 8"], ["0", "0 1"]],
     hide: [["8", "0 1 1 2 3 5 8 13 21 34"], ["3", "0 1 1 2 3"], ["10", "0 1 1 2 3 5 8 13 21 34 55 89"]] },
-  { id: "midtwo", title: "The middle two", tier: 3, par: "2#(_0.5*#x)-1_x",
-    prompt: "<code>x</code> has an even length. Return its middle two elements.",
-    show: [["1 2 3 4", "0 -1"], ["1 2", "-1 -1"], ["1 2 3 4 5 6", "1 0"]],
-    hide: [["9 8 7 6", "-6 -5"], ["0 1 2 3", "1 0"], ["5 5 5 5", "-3 -3"]] },
   { id: "mode", title: "Most common value", tier: 3, par: "*(!g)@>#'. g:=x",
     prompt: "Return the value that appears most often in <code>x</code>. There is always exactly one.",
     show: [["1 2 2 3", "2"], ["5 5 1", "5"], ["1 1 2 2 2", "2"]],
@@ -481,6 +480,10 @@ window.GOLF_PUZZLES = [
     prompt: "Return 1 if <code>x</code> is prime. A prime has exactly two divisors.",
     show: [["7", "1"], ["9", "0"], ["2", "1"]],
     hide: [["1", "0"], ["13", "1"], ["15", "0"]] },
+  { id: "midtwo", title: "The middle two", tier: 3, par: "2#(-1+_0.5*#x)_x",
+    prompt: "<code>x</code> has an even length. Return its middle two elements.",
+    show: [["1 2 3 4", "2 3"], ["1 2", "1 2"], ["1 2 3 4 5 6", "3 4"]],
+    hide: [["9 8 7 6", "8 7"], ["0 1 2 3", "1 2"], ["5 5 5 5", "5 5"]] },
   { id: "countrows", title: "Rows above the mean", tier: 3, par: "+/s>(+/s)%#s:+/'x",
     prompt: "<code>x</code> is a matrix. How many of its rows add up to more than the average row total?",
     show: [["(1 1;9 9)", "1"], ["(1 1;1 1)", "0"], ["(0 0;5 5;1 1)", "1"]],
@@ -505,18 +508,22 @@ window.GOLF_PUZZLES = [
     prompt: "Return the largest total of any run of consecutive elements of <code>x</code>. The run cannot be empty.",
     show: [["1 -2 3 4 -1", "7"], ["-1 -2", "-1"], ["2 3", "5"]],
     hide: [["-5", "-5"], ["1 2 -1 4", "6"], ["3 -1 -1 3", "4"]] },
-  { id: "properdiv", title: "Sum of the proper divisors", tier: 3, par: "-x++/1+&0=(1+!x)!\\:x",
+  { id: "properdiv", title: "Sum of the proper divisors", tier: 3, par: "(+/1+&0=(1+!x)!\\:x)-x",
     prompt: "Add up every whole number below <code>x</code> that divides it exactly.",
-    show: [["12", "-40"], ["6", "-18"], ["7", "-15"]],
-    hide: [["28", "-84"], ["10", "-28"], ["16", "-47"]] },
-  { id: "perfect", title: "A perfect number?", tier: 3, par: "x=-x++/1+&0=(1+!x)!\\:x",
-    prompt: "Return 1 if <code>x</code> equals the sum of its proper divisors.",
-    show: [["6", "0"], ["28", "0"], ["12", "0"]],
-    hide: [["8", "0"], ["496", "0"], ["10", "0"]] },
+    show: [["12", "16"], ["6", "6"], ["7", "1"]],
+    hide: [["28", "28"], ["10", "8"], ["16", "15"]] },
   { id: "rotn", title: "Rotate by n", tier: 3, par: "(#x 1)#(x 0)_(x 1),x 1",
     prompt: "<code>x</code> is a number and a list. Rotate the list left by that many places.",
     show: [["(1;1 2 3)", "2 3 1"], ["(2;1 2 3)", "3 1 2"], ["(0;1 2)", "1 2"]],
     hide: [["(3;1 2 3)", "1 2 3"], ["(1;9 8)", "8 9"], ["(2;1 2 3 4)", "3 4 1 2"]] },
+  { id: "perfect", title: "A perfect number?", tier: 3, par: "x=(+/1+&0=(1+!x)!\\:x)-x",
+    prompt: "Return 1 if <code>x</code> equals the sum of its proper divisors.",
+    show: [["6", "1"], ["28", "1"], ["12", "0"]],
+    hide: [["8", "0"], ["496", "1"], ["10", "0"]] },
+  { id: "maxrun", title: "Longest climb", tier: 3, par: "1+|/{(x+y)*y}\\(1_x)>(-1)_x",
+    prompt: "How long is the longest stretch of <code>x</code> that keeps increasing? Count the elements.",
+    show: [["1 2 3 1 2", "3"], ["3 2 1", "1"], ["1 2 3 4", "4"]],
+    hide: [["1 1 1", "1"], ["5 6 1 2 3", "3"], ["2 1", "1"]] },
   { id: "primes", title: "Primes below n", tier: 3, par: "(2_!x)@&{2=+/0=(1+!x)!\\:x}'2_!x",
     prompt: "Return every prime below <code>x</code>.",
     show: [["10", "2 3 5 7"], ["3", ",2"], ["20", "2 3 5 7 11 13 17 19"]],
@@ -525,10 +532,6 @@ window.GOLF_PUZZLES = [
     prompt: "How many steps does <code>x</code> take to reach 1? Halve it when even, otherwise triple it and add one.",
     show: [["6", "8"], ["1", "0"], ["7", "16"]],
     hide: [["27", "111"], ["16", "4"], ["3", "7"]] },
-  { id: "maxrun", title: "Longest climb", tier: 3, par: "1+|/#'(&~(1_x)>(-1)_x)_(1_x)>(-1)_x",
-    prompt: "How long is the longest stretch of <code>x</code> that keeps increasing? Count the elements.",
-    show: [["1 2 3 1 2", "3"], ["3 2 1", "2"], ["1 2 3 4", "-9223372036854775806"]],
-    hide: [["1 1 1", "2"], ["5 6 1 2 3", "4"], ["2 1", "2"]] },
   { id: "diffsigns", title: "Direction changes", tier: 3, par: "+/(1_s)<>(-1)_s:(0<d)-0>d:(1_x)-(-1)_x",
     prompt: "How many times does <code>x</code> change direction — from rising to falling or the other way?",
     show: [["1 3 2 4", "1"], ["1 2 3", "0"], ["3 1 2 0", "1"]],
