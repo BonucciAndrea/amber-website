@@ -45,7 +45,7 @@ module.exports = async function () {
     if (p.show.length < 2 || p.hide.length < 1) { thin++; t.ok(false, p.id + " has too few test cases"); }
   }
   t.ok(dup === 0, "no two puzzles share a reference answer");
-  t.ok(thin === 0, "every puzzle has shown examples and hidden tests");
+  t.ok(thin === 0, "every puzzle has examples on the card and more below it");
 
   const ids = new Set(P.map(p => p.id));
   t.eq(ids.size, P.length, "every puzzle id is unique");

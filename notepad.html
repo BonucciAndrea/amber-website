@@ -328,6 +328,10 @@
         <a href="./docs/protocol.html">Wire protocol</a>
         <a href="./docs/capi.html">C API</a>
         <a href="./docs/benchmarks.html">Benchmarks</a>
+        <a href="./docs/performance.html">Writing fast Amber</a>
+        <a href="./docs/internals.html">Engine internals</a>
+        <a href="./docs/development.html">Development &amp; testing</a>
+        <a href="./docs/gotchas.html">Gotchas</a>
       </div>
       <div>
         <h5>Ecosystem</h5>
@@ -344,8 +348,10 @@
         <a href="./learn/index.html">Amber for Mortals</a>
         <a href="./tutorials/index.html">Tutorials</a>
         <a href="./blog/index.html">Blog</a>
-        <a href="./projects/">Projects</a><a href="./notepad.html">Notepad</a>
+        <a href="./projects/index.html">Projects</a>
+        <a href="./notepad.html">Notepad</a>
         <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+        <a href="https://github.com/BonucciAndrea" target="_blank" rel="noopener">All repositories</a>
       </div>
     </div>
     <div class="foot-bottom">
@@ -771,7 +777,7 @@
   }
   function onReady(v) {
     if (ready) return;
-    ready = true; version = v || "2.1.0";
+    ready = true; version = v || "2.2.0";
     runBtn.disabled = false;
     status("ready", readyText());
     if (pendingRun !== null) { var p = pendingRun; pendingRun = null; run(p); }

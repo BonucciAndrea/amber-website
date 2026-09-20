@@ -5,7 +5,7 @@
 # hand-written libc in src/wsys), the .k stdlib and examples are baked into the VFS by
 # genfs.py, and the linked module is base64-embedded for assets/notepad/amber.js.
 #
-#   AMBER_SRC=/path/to/amber CLANG=clang WLD=wasm-ld tools/notepad-wasm/build.sh
+#   AMBER_SRC=/path/to/amber CLANG=clang WLD=wasm-ld _tools/notepad-wasm/build.sh
 #
 # Build from a release tag (e.g. `git -C amber archive v2.1.0 | tar -x -C /some/dir`).
 # stubs/ holds what 2.1.0 needs beyond src/wsys: sys/ioctl.h, isatty() and the terminal
