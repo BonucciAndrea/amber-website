@@ -1,0 +1,63 @@
+# Tests
+
+Tests for the pages under `projects/`, plus the Notepad's statement splitter.
+
+```sh
+node _tests/run.js            # everything
+node _tests/run.js golf       # one suite (substring match)
+```
+
+Node only — no install, no dependencies. Exits non-zero if anything fails.
+
+## Why this directory is named `_tests`
+
+The site is built by `actions/jekyll-build-pages`, and **Jekyll skips any file
+or directory whose name begins with `_`**. So this lives in the repo, is
+version-controlled alongside the code it tests, and never reaches the
+deployed site. `.vercelignore` covers the same ground if the site is ever
+deployed through Vercel instead.
+
+## What they run against
+
+Every suite boots the **same engine bundle the site serves**
+(`assets/notepad/amber.wasm.js`) and loads the **same `.k` file the page
+loads** — `assets/tape/sim.k`, `assets/sweep/sweep.k`, `assets/golf/golf.k`.
+Presets, puzzle sets and per-grid setup are read out of the shipped
+`.js` files rather than restated here, so a test failing means the page is
+broken, not that a copy drifted out of date.
+
+| suite | what it holds down |
+|---|---|
+| `notepad` | a multi-line function must actually work; all 12 bundled examples run clean |
+| `dots` | every preset at every grid size returns exactly `N` bytes in printable range; the clamp survives NaN, ±∞, atoms, short vectors |
+| `tape` | `pnl = cash + inv*px` on every tick; same seed → same round; the inventory cap holds; a crossed quote is not free money; no-spread quoting loses and skewed quoting wins; chart markers stay on their own tick |
+| `sweep` | bounded neighbours don't wrap; 200 boards of first-click safety; flood fill never reveals a mine; flags, losing, winning |
+| `golf` | **every puzzle's own reference answer passes all its tests**, every puzzle rejects a constant, no two puzzles share an answer, the judge never throws on half-typed input |
+
+## The one that matters most
+
+`golf` is the suite worth running before every deploy. A puzzle whose
+reference solution stops passing is a puzzle **nobody can solve**, and nothing
+about the page would look wrong — it would just quietly be impossible. The
+same check is what generated the expected values in the first place: each was
+produced by the engine from the reference solution and fed back through the
+judge to confirm it round-trips.
+
+## Adding a game
+
+Add `_tests/<name>.test.js` exporting `async function () { … return failures }`
+and list it in `run.js`. Use `lib.js`:
+
+```js
+const { boot, suite } = require("./lib");
+module.exports = async function () {
+  const t = suite("My game — assets/mygame/mygame.k");
+  const { ev } = await boot("assets/mygame/mygame.k");
+  t.eq(ev("1+1"), "2", "arithmetic still works");
+  return t.done();
+};
+```
+
+`boot()` returns a fresh engine; passing a path also loads that `.k` file,
+flattening each statement to one line first — a lambda body that still
+contains a newline defines without complaint and then returns nothing.

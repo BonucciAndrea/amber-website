@@ -119,7 +119,7 @@ function render(digits, mineOuts, err) {
   var solved = bytes > 0 && digits && digits.length === nAll && digits.indexOf("0") < 0;
   var hidePass = digits ? (digits.slice(nShow).match(/1/g) || []).length : 0;
   if (E.hidden) {
-    E.hidden.textContent = digits === null ? "" : hidePass + " of " + p.hide.length + " hidden tests pass";
+    E.hidden.textContent = digits === null ? "" : hidePass + " of " + p.hide.length + " further tests pass";
     E.hidden.className = "gf-hidden" + (digits === null ? "" : solved ? " pass" : hidePass ? " part" : " fail");
   }
 

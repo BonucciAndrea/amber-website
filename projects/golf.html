@@ -51,7 +51,7 @@
         <h1>Say it in fewer bytes.</h1>
         <p class="lead">A hundred and thirty small problems, in three tiers. Write an expression in terms of
         <code>x</code> that solves each one, and the engine judges it <strong>as you type</strong> —
-        against the examples you can see and against tests you cannot. The score is the number of
+        against the examples on screen and a few more besides. The score is the number of
         characters. The warm-ups are two or three; the hardest run past thirty.</p>
       </div>
       <span class="gf-chip"><span class="gf-led booting" id="gf-led"></span><span id="gf-status">starting the engine…</span></span>
@@ -130,6 +130,10 @@
           <p class="gf-hint">A half-written expression is judged rather than thrown, because golf is
           typed one character at a time and most of what the judge sees is not valid yet. An error
           just means no test passed.</p>
+          <p class="gf-hint">The extra tests are not shown, but they are not secret either: the
+          judge runs in your browser, so every case ships with the page and anyone who opens
+          <code>assets/golf/puzzles.js</code> can read them. They are out of the way, not hidden
+          from you — there is nowhere to hide them.</p>
           <p class="gf-hint"><strong>Par</strong> is a known short solution, not a proven minimum.
           If you get under it, you have found something better — and the share link carries your
           expression so you can prove it.</p>
@@ -185,6 +189,6 @@ window.GOLF_CONFIG = {
   runtime: ["../notepad/amber.wasm.js?v=2.2.0", "../notepad/amber.js?v=5"]
 };
 </script>
-<script src="../assets/golf/golf.js?v=3"></script>
+<script src="../assets/golf/golf.js?v=4"></script>
 </body>
 </html>

@@ -1,0 +1,5 @@
+# Dev-only. Jekyll already skips _-prefixed directories; this covers a
+# Vercel deploy, which does not.
+_tests
+tools
+pack_amber_website.py
