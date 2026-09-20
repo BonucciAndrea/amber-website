@@ -43,5 +43,8 @@
   <url><loc>https://amber-lang.org/learn/08-performance.html</loc><lastmod>2026-09-19</lastmod></url>
   <url><loc>https://amber-lang.org/projects/</loc><lastmod>2026-09-20</lastmod></url>
   <url><loc>https://amber-lang.org/projects/dots.html</loc><lastmod>2026-09-20</lastmod></url>
-  <url><loc>https://amber-lang.org/projects/tape.html</loc><lastmod>2026-09-20</lastmod></url>
+  <url><loc>https://amber-lang.org/projects/tape.html</lastmod></url>
+
+  <url><loc>https://amber-lang.org/projects/sweep.html</loc><lastmod>2026-09-20</lastmod></url>
+  <url><loc>https://amber-lang.org/projects/golf.html</loc><lastmod>2026-09-20</lastmod></url>
 </urlset>

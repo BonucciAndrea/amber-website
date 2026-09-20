@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Array Golf — 18 puzzles, scored in bytes</title>
+<meta name="description" content="Eighteen array puzzles. Write the shortest Amber expression that passes every test. The engine judges you as you type, and counts the bytes.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Array Golf — 18 puzzles, scored in bytes">
+<meta property="og:description" content="Write the shortest Amber expression that passes every test. Judged as you type by the real engine, scored in bytes.">
+<meta property="og:site_name" content="Amber">
+<meta property="og:url" content="https://amber-lang.org/projects/golf">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/amber.css?v=3">
+<link rel="stylesheet" href="../assets/golf/golf.css?v=1">
+<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<style>
+  .gf-head { padding: 22px 0 14px; }
+  .gf-head-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 28px; }
+  .gf-head h1 { margin: 8px 0 8px; font-size: clamp(1.7rem, 1.2rem + 1.6vw, 2.3rem); }
+  .gf-head .lead { max-width: 66ch; margin: 0; }
+  .gf-head .lead code { font-family: var(--font-mono); font-size: .92em; color: var(--accent-soft); }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v2.2.0</span></a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../learn/index.html">Learn</a><a href="../docs/">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a><a href="../projects/" class="active">Projects</a><a href="../notepad.html">Notepad</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+<section class="gf-head">
+  <div class="wrap">
+    <div class="breadcrumb"><a href="../index.html">Home</a> / <a href="./index.html">Projects</a> / Array Golf</div>
+    <div class="gf-head-row">
+      <div>
+        <h1>Say it in fewer bytes.</h1>
+        <p class="lead">Eighteen small problems. Write an expression in terms of <code>x</code> that
+        solves each one, and the engine judges it <strong>as you type</strong> — against the examples
+        you can see and against tests you cannot. The score is the number of characters. Most of
+        these are two or three.</p>
+      </div>
+      <span class="gf-chip"><span class="gf-led booting" id="gf-led"></span><span id="gf-status">starting the engine…</span></span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="gf-wrap">
+
+      <aside>
+        <div class="gf-panel" style="padding:12px">
+          <div class="gf-ttl" style="padding:0 8px 8px">
+            <h2 style="font-size:.74rem;letter-spacing:.07em;text-transform:uppercase;color:var(--text-faint)">Puzzles</h2>
+            <span class="gf-counts"><b id="gf-solved">0 / 18</b></span>
+          </div>
+          <div class="gf-list" id="gf-list"></div>
+        </div>
+        <div class="gf-panel">
+          <h2 style="margin:0 0 8px;font:600 .74rem var(--font-sans);letter-spacing:.07em;text-transform:uppercase;color:var(--text-faint)">Enough k to start</h2>
+          <dl class="gf-cheat">
+            <dt>+/x</dt><dd>sum — <code>/</code> folds a verb over a list</dd>
+            <dt>+\x</dt><dd>the same fold, keeping every step</dd>
+            <dt>|x</dt><dd>reverse · <code>|/x</code> is the maximum</dd>
+            <dt>#x</dt><dd>count · <code>n#x</code> takes n</dd>
+            <dt>?x</dt><dd>distinct</dd>
+            <dt>&amp;x</dt><dd>where — the indices of the 1s</dd>
+            <dt>&lt;x</dt><dd>grade — the indices that would sort x</dd>
+            <dt>x@i</dt><dd>index · <code>f'x</code> applies f to each</dd>
+            <dt>,/x</dt><dd>join a list of lists</dd>
+            <dt>~</dt><dd>match, exactly · <code>=</code> only compares</dd>
+          </dl>
+          <p class="gf-hint">Everything runs in your browser. Progress is kept on this device only.</p>
+        </div>
+      </aside>
+
+      <div>
+        <div class="gf-panel">
+          <div class="gf-ttl">
+            <h2 id="gf-title">…</h2>
+            <span class="gf-counts">you <b id="gf-bytes">—</b> · par <b id="gf-par">—</b></span>
+          </div>
+          <p class="gf-prompt" id="gf-prompt"></p>
+
+          <div class="gf-inputrow">
+            <label for="gf-expr">Your expression — judged as you type</label>
+            <div class="gf-input">
+              <span class="gf-sigil" aria-hidden="true">{</span>
+              <input id="gf-expr" type="text" spellcheck="false" autocapitalize="off"
+                     autocomplete="off" autocorrect="off" aria-describedby="gf-err">
+              <span class="gf-sigil" aria-hidden="true" style="padding:0 12px 0 4px">}</span>
+            </div>
+            <p class="gf-err" id="gf-err" role="alert" hidden></p>
+          </div>
+
+          <div class="gf-tests" id="gf-tests"></div>
+          <p class="gf-hidden" id="gf-hidden"></p>
+          <p class="gf-verdict" id="gf-verdict"></p>
+
+          <div class="gf-row">
+            <button class="gf-btn" id="gf-prev" type="button">← Previous</button>
+            <button class="gf-btn" id="gf-next" type="button">Next →</button>
+            <button class="gf-btn" id="gf-share" type="button">Share</button>
+            <button class="gf-btn" id="gf-reset" type="button">Clear progress</button>
+          </div>
+          <div class="gf-toast" id="gf-toast" role="status" aria-live="polite"></div>
+        </div>
+
+        <div class="gf-panel">
+          <h2 style="margin:0 0 8px;font:600 .74rem var(--font-sans);letter-spacing:.07em;text-transform:uppercase;color:var(--text-faint)">How the judging works</h2>
+          <p class="gf-hint">Your expression becomes a one-argument function and is run against
+          every test by the engine itself. The comparison is <code>~</code>, <strong>match</strong>,
+          not <code>=</code> — so <code>1 2 3</code> and <code>1 2 3.0</code> are not the same
+          answer, and something of the wrong shape cannot slip through by conforming.</p>
+          <p class="gf-hint">A half-written expression is judged rather than thrown, because golf is
+          typed one character at a time and most of what the judge sees is not valid yet. An error
+          just means no test passed.</p>
+          <p class="gf-hint"><strong>Par</strong> is a known short solution, not a proven minimum.
+          If you get under it, you have found something better — and the share link carries your
+          expression so you can prove it.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+      </div>
+      <div>
+        <h5>Documentation</h5>
+        <a href="../docs/index.html">Introduction</a>
+        <a href="../docs/language.html">Language &amp; qSQL</a>
+        <a href="../docs/tacit.html">Tacit programming</a>
+        <a href="../docs/benchmarks.html">Benchmarks</a>
+      </div>
+      <div>
+        <h5>Projects</h5>
+        <a href="./index.html">All projects</a>
+        <a href="./dots.html">Dots</a>
+        <a href="./tape.html">The Pit</a>
+        <a href="./sweep.html">Sweep</a>
+      </div>
+      <div>
+        <h5>Learn</h5>
+        <a href="../tutorials/index.html">Tutorials</a>
+        <a href="../blog/index.html">Blog</a>
+        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+      <span>Not affiliated with kdb+ / KX Systems.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="../assets/js/amber.js" defer></script>
+<script src="../assets/golf/puzzles.js?v=1"></script>
+<script>
+window.GOLF_CONFIG = {
+  worker: "../assets/engine/kworker.js?v=1",
+  src: "../golf/golf.k?v=1",
+  runtime: ["../notepad/amber.wasm.js?v=2.2.0", "../notepad/amber.js?v=5"]
+};
+</script>
+<script src="../assets/golf/golf.js?v=1"></script>
+</body>
+</html>
