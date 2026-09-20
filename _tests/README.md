@@ -50,6 +50,13 @@ also written out in plain JavaScript from its prompt, and the two
 implementations must agree. A puzzle with no oracle fails the suite, so a new
 one cannot be added without saying what it does twice, in two languages.
 
+That is also now how puzzles get written: the candidate's k and its oracle are
+run side by side and the puzzle is only kept if they agree on every input. The
+most recent batch of 26 went in that way, and the four the process rejected
+were rejected because the ORACLE was wrong — it assumed an array where the
+input held an atom — which is the process working in the direction it is
+supposed to.
+
 ## Adding a game
 
 Add `_tests/<name>.test.js` exporting `async function () { … return failures }`

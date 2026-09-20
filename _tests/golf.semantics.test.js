@@ -90,6 +90,9 @@ const digits = (n, b) => { if (n === 0) return [0]; const o = []; while (n > 0) 
 const divisorsOf = n => { const o = []; for (let d = 1; d <= n; d++) if (n % d === 0) o.push(d); return o; };
 const groups = a => { const m = new Map(); a.forEach(v => m.set(v, (m.get(v) || 0) + 1)); return m; };
 const str = a => V(a).map(o => o.c).join("");
+/* Builds a char VECTOR. The atom rule belongs to the parser -- a "x" literal
+   is a char atom, but anything joined or produced is a string, so ","/(,"x")
+   is the one-character string ,"x" and not the atom x. */
 const chars = s => [...s].map(c => ({ c }));
 const T = m => m[0].map((_, j) => m.map(r => r[j]));
 
@@ -236,7 +239,37 @@ const O = {
   countwords: x => str(x).split(" ").length,
   vowels: x => [...str(x)].filter(c => "aeiou".includes(c)).length,
   charcodes: x => mapv(x, o => o.c.charCodeAt(0)),
-  joincommas: x => chars(x.map(str).join(","))
+  joincommas: x => chars(x.map(str).join(",")),
+  // ---- added later, each written from its prompt before the k was trusted ----
+  rledec: x => V(x[0]).flatMap((v, i) => Array(V(x[1])[i]).fill(v)),
+  hamming: x => V(x[0]).filter((v, i) => v !== V(x[1])[i]).length,
+  revwords: x => chars(str(x).split(" ").reverse().join(" ")),
+  digroot: x => { let n = x; while (n > 9) n = sum(digits(n, 10)); return n; },
+  rowbits: x => x.map(r => V(r).reduce((s, b) => s * 2 + b, 0)),
+  rot180: x => [...x.map(V)].reverse().map(r => [...r].reverse()),
+  maxgap: x => { const a = asc(V(x)); return Math.max(...a.slice(1).map((v, i) => v - a[i])); },
+  secdiff: x => { const d = V(x).slice(1).map((v, i) => v - V(x)[i]); return d.slice(1).map((v, i) => v - d[i]); },
+  adjsum: x => V(x).slice(1).map((v, i) => v + V(x)[i]),
+  variance: x => { const a = V(x), m = sum(a) / a.length; return sum(a.map(v => (v - m) * (v - m))) / a.length; },
+  invperm: x => gradeUp(V(x)),
+  applyperm: x => V(x[0]).map(i => V(x[1])[i]),
+  intersect: x => V(x[0]).filter(v => V(x[1]).includes(v)),
+  except: x => V(x[0]).filter(v => !V(x[1]).includes(v)),
+  magic: x => { const m = x.map(V), n = m.length;
+    const s = [...m.map(sum), ...T(m).map(sum), sum(m.map((r, i) => r[i])), sum(m.map((r, i) => r[n - 1 - i]))];
+    return new Set(s).size === 1 ? 1 : 0; },
+  det2: x => x[0][0] * x[1][1] - x[0][1] * x[1][0],
+  kth: x => asc(V(x[1]))[x[0]],
+  normrows: x => x.map(r => { const a = V(r), t = sum(a); return a.map(v => v / t); }),
+  collatzmax: x => { let n = x, m = x; while (n !== 1) { n = n % 2 ? 3 * n + 1 : n / 2; if (n > m) m = n; } return m; },
+  doubled: x => [...groups(V(x)).values()].filter(c => c > 1).length,
+  revbits: x => { const b = digits(x, 2); while (b.length < 8) b.unshift(0); return b.reverse().reduce((s, v) => s * 2 + v, 0); },
+  caesar: x => chars([...str(x)].map(c => String.fromCharCode(97 + (c.charCodeAt(0) - 97 + 3) % 26)).join("")),
+  bordersum: x => { const m = x.map(V), n = m.length, w = m[0].length; let t = 0;
+    for (let i = 0; i < n; i++) for (let j = 0; j < w; j++) if (i === 0 || j === 0 || i === n - 1 || j === w - 1) t += m[i][j];
+    return t; },
+  sumprimes: x => { let t = 0; for (let n = 2; n < x; n++) if (divisorsOf(n).length === 2) t += n; return t; },
+  localmax: x => { const a = V(x); let c = 0; for (let i = 1; i < a.length - 1; i++) if (a[i] > a[i - 1] && a[i] > a[i + 1]) c++; return c; }
 };
 
 module.exports = async function () {
