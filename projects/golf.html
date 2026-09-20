@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Array Golf — 18 puzzles, scored in bytes</title>
-<meta name="description" content="Eighteen array puzzles. Write the shortest Amber expression that passes every test. The engine judges you as you type, and counts the bytes.">
+<title>Array Golf — 130 puzzles, scored in bytes</title>
+<meta name="description" content="130 array puzzles in three tiers. Write the shortest Amber expression that passes every test. The engine judges you as you type, and counts the bytes.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Array Golf — 18 puzzles, scored in bytes">
+<meta property="og:title" content="Array Golf — 130 puzzles, scored in bytes">
 <meta property="og:description" content="Write the shortest Amber expression that passes every test. Judged as you type by the real engine, scored in bytes.">
 <meta property="og:site_name" content="Amber">
 <meta property="og:url" content="https://amber-lang.org/projects/golf">
@@ -16,8 +16,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/css/amber.css?v=3">
-<link rel="stylesheet" href="../assets/golf/golf.css?v=1">
+<link rel="stylesheet" href="../assets/css/amber.css?v=4">
+<link rel="stylesheet" href="../assets/golf/golf.css?v=3">
 <script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 <style>
   .gf-head { padding: 22px 0 14px; }
@@ -49,10 +49,10 @@
     <div class="gf-head-row">
       <div>
         <h1>Say it in fewer bytes.</h1>
-        <p class="lead">Eighteen small problems. Write an expression in terms of <code>x</code> that
-        solves each one, and the engine judges it <strong>as you type</strong> — against the examples
-        you can see and against tests you cannot. The score is the number of characters. Most of
-        these are two or three.</p>
+        <p class="lead">A hundred and thirty small problems, in three tiers. Write an expression in terms of
+        <code>x</code> that solves each one, and the engine judges it <strong>as you type</strong> —
+        against the examples you can see and against tests you cannot. The score is the number of
+        characters. The warm-ups are two or three; the hardest run past thirty.</p>
       </div>
       <span class="gf-chip"><span class="gf-led booting" id="gf-led"></span><span id="gf-status">starting the engine…</span></span>
     </div>
@@ -67,7 +67,7 @@
         <div class="gf-panel" style="padding:12px">
           <div class="gf-ttl" style="padding:0 8px 8px">
             <h2 style="font-size:.74rem;letter-spacing:.07em;text-transform:uppercase;color:var(--text-faint)">Puzzles</h2>
-            <span class="gf-counts"><b id="gf-solved">0 / 18</b></span>
+            <span class="gf-counts"><b id="gf-solved">0 / 130</b></span>
           </div>
           <div class="gf-list" id="gf-list"></div>
         </div>
@@ -177,7 +177,7 @@
 </footer>
 
 <script src="../assets/js/amber.js" defer></script>
-<script src="../assets/golf/puzzles.js?v=1"></script>
+<script src="../assets/golf/puzzles.js?v=3"></script>
 <script>
 window.GOLF_CONFIG = {
   worker: "../assets/engine/kworker.js?v=1",
@@ -185,6 +185,6 @@ window.GOLF_CONFIG = {
   runtime: ["../notepad/amber.wasm.js?v=2.2.0", "../notepad/amber.js?v=5"]
 };
 </script>
-<script src="../assets/golf/golf.js?v=1"></script>
+<script src="../assets/golf/golf.js?v=3"></script>
 </body>
 </html>

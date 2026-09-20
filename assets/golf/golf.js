@@ -22,6 +22,15 @@ var S = { ready: false, i: 0, expr: "", best: {}, pending: 0, seq: 0 };
 try { S.best = JSON.parse(localStorage.getItem(STORE) || "{}") || {}; } catch (e) { S.best = {}; }
 function saveBest() { try { localStorage.setItem(STORE, JSON.stringify(S.best)); } catch (e) {} }
 
+/* A best used to be just a byte count, which meant the solution itself was
+   thrown away the moment you moved on. It is {b: bytes, s: expression} now;
+   an older entry is a bare number, so read through this. */
+function bestOf(id) {
+  var v = S.best[id];
+  if (v === undefined || v === null) return null;
+  return typeof v === "number" ? { b: v, s: "" } : v;
+}
+
 /* ------------------------------------------------------------------ worker */
 var W = null, nextId = 1, waiting = {};
 
@@ -117,13 +126,16 @@ function render(digits, mineOuts, err) {
   if (E.verdict) {
     if (digits === null) { E.verdict.textContent = ""; E.verdict.className = "gf-verdict"; }
     else if (solved) {
-      var prev = S.best[p.id];
-      if (bytes > 0 && (prev === undefined || bytes < prev)) { S.best[p.id] = bytes; saveBest(); buildList(); }
-      var b = S.best[p.id];
+      var prev = bestOf(p.id);
+      if (bytes > 0 && (!prev || bytes < prev.b)) {
+        S.best[p.id] = { b: bytes, s: S.expr.trim() };
+        saveBest(); buildList();
+      }
+      var b = bestOf(p.id).b;
       E.verdict.className = "gf-verdict ok";
       E.verdict.textContent = "Solved in " + bytes + (bytes === 1 ? " byte" : " bytes") +
         (bytes < p.par.length ? " — under par!" : bytes === p.par.length ? " — par." : " — par is " + p.par.length + ".") +
-        (b < bytes ? "  (your best: " + b + ")" : "");
+        (b < bytes ? "  Your best is " + b + "." : "");
     } else {
       E.verdict.className = "gf-verdict";
       E.verdict.textContent = "";
@@ -153,15 +165,26 @@ function toast(m) {
   toastT = setTimeout(function () { E.toast.classList.remove("on"); }, 2400);
 }
 
+var TIERS = { 1: "Warm-up", 2: "Harder", 3: "Hardest" };
+
 function buildList() {
   if (!E.list) return;
   E.list.innerHTML = "";
+  var tier = 0;
   P.forEach(function (p, j) {
+    if (p.tier !== tier) {
+      tier = p.tier;
+      var h = document.createElement("div");
+      h.className = "gf-tier";
+      h.textContent = TIERS[tier] || ("Tier " + tier);
+      E.list.appendChild(h);
+    }
     var b = document.createElement("button");
     b.type = "button";
-    b.className = "gf-item" + (j === S.i ? " on" : "") + (S.best[p.id] !== undefined ? " done" : "");
+    var bv = bestOf(p.id);
+    b.className = "gf-item" + (j === S.i ? " on" : "") + (bv ? " done" : "");
     b.innerHTML = '<span class="gf-itn">' + esc(p.title) + '</span>' +
-                  '<span class="gf-itb">' + (S.best[p.id] !== undefined ? S.best[p.id] : "") + '</span>';
+                  '<span class="gf-itb">' + (bv ? bv.b : "") + '</span>';
     b.addEventListener("click", function () { go(j); });
     E.list.appendChild(b);
   });
@@ -173,11 +196,17 @@ function go(j) {
   var p = P[S.i];
   if (E.title) E.title.textContent = p.title;
   if (E.prompt) E.prompt.innerHTML = p.prompt;
-  S.expr = "";
-  if (E.expr) { E.expr.value = ""; E.expr.focus({ preventScroll: true }); }
+  var saved = bestOf(p.id);
+  S.expr = saved && saved.s ? saved.s : "";
+  if (E.expr) {
+    E.expr.value = S.expr;
+    try { E.expr.focus({ preventScroll: true }); } catch (e) {}
+    E.expr.select();
+  }
   buildList();
   render(null, null, "");
   writeHash();
+  if (S.expr) judge();          // show it as solved again straight away
 }
 
 /* ------------------------------------------------------------------- share */

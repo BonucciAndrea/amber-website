@@ -1012,3 +1012,17 @@ html[data-theme="light"] pre.code::-webkit-scrollbar-thumb {
   .nav-links.open, .nav-links.open a { animation: none !important; }
   .nav-scrim { transition: none; }
 }
+
+/* ---- 21. No ligatures on code ------------------------------------------
+   JetBrains Mono merges symbol pairs into single glyphs: #? != -> <= |> =>
+   and so on. That is pleasant in a curly-brace language and actively wrong
+   for an array one, where < = > ~ ! | / # and @ are separate verbs that sit
+   next to each other constantly. A merged glyph reads as a character that is
+   not there, or hides one that is -- `#?x` looked like `?x`, and `&x=|/x`
+   morphed in the middle. Turn the feature off wherever code is shown or
+   typed. */
+code, pre, kbd, samp, input, textarea, .mono,
+[class*="gf-"], [class*="tp-"], [class*="sw-"], [class*="dots-"], [class*="np-"] {
+  font-variant-ligatures: none !important;
+  font-feature-settings: "liga" 0, "clig" 0, "calt" 0 !important;
+}

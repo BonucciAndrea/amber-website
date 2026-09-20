@@ -126,3 +126,18 @@
 .gf-cheat { display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; margin: 10px 0 0; }
 .gf-cheat dt { font: 600 .82rem var(--font-mono, ui-monospace, monospace); color: var(--accent-soft, #ffcb6b); }
 .gf-cheat dd { margin: 0; font-size: .8rem; color: var(--text-dim, #a2a3ae); line-height: 1.45; }
+
+/* Ligatures off: the symbols are distinct verbs, not a curly-brace language's
+   operators, and JetBrains Mono merges pairs like #? != <= |> into one glyph. */
+input, code, pre, .gf-test, .gf-cheat dt, .tp-tape, .tp-sum, .sw-src, .dots-vars dt {
+  font-variant-ligatures: none !important;
+  font-feature-settings: "liga" 0, "clig" 0, "calt" 0 !important;
+}
+
+.gf-tier {
+  margin: 10px 0 2px; padding: 0 .7em;
+  font: 600 .68rem var(--font-sans, system-ui, sans-serif);
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-faint, #6e6f7b);
+}
+.gf-tier:first-child { margin-top: 0; }
