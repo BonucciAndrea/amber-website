@@ -13,7 +13,8 @@ const SUITES = [
   ["dots", "./dots.test.js"],
   ["tape", "./tape.test.js"],
   ["sweep", "./sweep.test.js"],
-  ["golf", "./golf.test.js"]
+  ["golf", "./golf.test.js"],
+  ["semantics", "./golf.semantics.test.js"]
 ];
 
 (async () => {

@@ -302,8 +302,8 @@ window.GOLF_PUZZLES = [
     hide: [["1 2 4 8", "1"], ["0 1", "1"], ["2 2", "0"]] },
   { id: "base3", title: "Base three", tier: 3, par: "3\\x",
     prompt: "Return the base-three digits of <code>x</code>.",
-    show: [["10", "1 0 1"], ["1", ",1"], ["27", "1 0 0 0"]],
-    hide: [["0", "!0"], ["80", "2 2 2 2"], ["5", "1 2"]] },
+    show: [["10", "1 0 1"], ["9", "1 0 0"], ["27", "1 0 0 0"]],
+    hide: [["5", "1 2"], ["80", "2 2 2 2"], ["2", ",2"]] },
   { id: "bin2dec", title: "Binary to decimal", tier: 3, par: "2/x",
     prompt: "<code>x</code> is a list of bits, most significant first. Return the number.",
     show: [["1 0 1", "5"], ["1 1 1 1", "15"], ["0 0 1", "1"]],
@@ -402,7 +402,7 @@ window.GOLF_PUZZLES = [
     hide: [["(5 1 3;9 8 7)", "(1 3 5;7 8 9)"], ["(2 2;1 1)", "(2 2;1 1)"], ["(0 1;1 0)", "(0 1;0 1)"]] },
   { id: "matadd", title: "Add two matrices", tier: 3, par: "(x 0)+x 1",
     prompt: "<code>x</code> is two matrices of the same shape. Add them.",
-    show: [["((1 2;3 4);(1 1;1 1))", "(2 3;4 5)"], ["((0 0;0 0);(1 2;3 4))", "(1 2;3 4)"], ["((,1);(,2))", ",3"]],
+    show: [["((1 2;3 4);(1 1;1 1))", "(2 3;4 5)"], ["((0 0;0 0);(1 2;3 4))", "(1 2;3 4)"], ["((1 1;2 2);(3 3;4 4))", "(4 4;6 6)"]],
     hide: [["((1 2;3 4);(4 3;2 1))", "(5 5;5 5)"], ["((9 9;9 9);(1 1;1 1))", "(10 10;10 10)"], ["((1 2 3;4 5 6);(1 1 1;1 1 1))", "(2 3 4;5 6 7)"]] },
   { id: "signs", title: "Signs", tier: 3, par: "(0<x)-0>x",
     prompt: "Replace every element of <code>x</code> with -1, 0 or 1 according to its sign.",
@@ -532,8 +532,8 @@ window.GOLF_PUZZLES = [
     prompt: "How many steps does <code>x</code> take to reach 1? Halve it when even, otherwise triple it and add one.",
     show: [["6", "8"], ["1", "0"], ["7", "16"]],
     hide: [["27", "111"], ["16", "4"], ["3", "7"]] },
-  { id: "diffsigns", title: "Direction changes", tier: 3, par: "+/(1_s)<>(-1)_s:(0<d)-0>d:(1_x)-(-1)_x",
+  { id: "diffsigns", title: "Direction changes", tier: 3, par: "+/~(1_s)=(-1)_s:(0<d)-0>d:(1_x)-(-1)_x",
     prompt: "How many times does <code>x</code> change direction — from rising to falling or the other way?",
-    show: [["1 3 2 4", "1"], ["1 2 3", "0"], ["3 1 2 0", "1"]],
-    hide: [["1 1 1", "0"], ["5 4 5 4", "1"], ["1 2 1", "1"]] }
+    show: [["1 3 2 4", "2"], ["1 2 3", "0"], ["3 1 2 0", "2"]],
+    hide: [["1 1 1", "0"], ["5 4 5 4", "2"], ["1 2 1", "1"]] }
 ];

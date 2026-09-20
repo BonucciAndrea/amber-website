@@ -62,7 +62,30 @@ var PRESETS = [
   // NB, the 8 wrapped neighbour index vectors the harness precomputes — no
   // loop over cells, no loop over neighbours. A dead cell is 0, which has
   // zero magnitude and so draws nothing.
-  ["life",      "`f$b::lf b", "`prng 9; b:N?2; lf:{n:+/x@NB; `i$(n=3)|x&n=2}"]
+  ["life",      "`f$b::lf b", "`prng 9; b:N?2; lf:{n:+/x@NB; `i$(n=3)|x&n=2}"],
+  // Life again, but keeping a fading memory of where the cells have been.
+  // The expression must not END on a `::` assignment: a lambda whose last
+  // statement is a global assign returns a projection rather than the value,
+  // so it closes on a bare `v`.
+  ["trails",    "v::(`f$b::lf b)|0.9*v; v", "`prng 9; b:N?2; v:`f$b; lf:{n:+/x@NB; `i$(n=3)|x&n=2}"],
+  // Five gliders, placed at fractions of the grid so they fit at any size.
+  ["gliders",   "`f$b::lf b", "b:N#0; gl:{[o]o+(1;G+2;(2*G);(2*G)+1;(2*G)+2)}; os:{[a;b](G*_a*G)+_b*G}; b[,/gl'(os[0.05;0.05];os[0.35;0.55];os[0.6;0.15];os[0.78;0.7])]:1; lf:{n:+/x@NB; `i$(n=3)|x&n=2}"],
+  // B36/S23 -- Life plus birth on six, which gives it replicators.
+  ["highlife",  "`f$b::hl b", "`prng 4; b:N?2; hl:{n:+/x@NB; `i$((n=3)|x&n=2)|(~x)&n=6}"],
+  // B2/S -- nothing survives a turn, so a single domino explodes outwards.
+  ["seeds",     "`f$b::sd b", "b:N#0; c:(_N%2)+_G%2; b[(c;c+1)]:1; sd:{n:+/x@NB; `i$(~x)&n=2}"],
+  // B3/S45678 -- grows into a coral crust and then holds its shape.
+  ["coral",     "`f$b::co b", "`prng 5; b:N?2; co:{n:+/x@NB; `i$((~x)&n=3)|x&n>3}"],
+  // B3678/S34678 -- symmetric under swapping alive and dead.
+  ["day/night", "`f$b::dn b", "`prng 11; b:N?2; dn:{n:+/x@NB; `i$((~x)&(n=3)|n>5)|x&(n=3)|(n=4)|n>5}"],
+  // Brian's Brain: three states. Firing cells are amber, the refractory
+  // trail behind them is cyan.
+  ["brains",    "b::bb b; (b=1)-0.5*b=2", "`prng 6; b:N?3; bb:{f:x=1; n:+/f@NB; `i$((x=0)&n=2)+2*x=1}"],
+  // A cyclic cellular automaton: a cell eats its neighbour if that neighbour
+  // is the next colour round. Spiral waves appear on their own.
+  ["cyclic",    "-1+2*(`f$b::cy b)%K-1", "`prng 3; K:10; b:N?K; cy:{nx:K!x+1; f:|/(x@NB)=\\:nx; (f*nx)+(1-f)*x}"],
+  // A majority rule: noise anneals into large smooth domains.
+  ["anneal",    "`f$b::an b", "`prng 8; b:N?2; an:{n:x++/x@NB; `i$(n>5)|n=4}"]
 ];
 
 var DEFAULT = 0;          // rings — the page should be moving before anything is clicked
