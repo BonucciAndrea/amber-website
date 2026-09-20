@@ -31,6 +31,23 @@ var PRESETS = [
   ["rings",     "sin t-R", ""],
   ["ripple",    "sin (0.1*t)+(0.3*X)+0.3*Y", ""],
   ["cursor",    "sin (2*t)-%((X-mx)*(X-mx))+((Y-my)*(Y-my))", ""],
+  // A radial wave multiplied by a hyperbolic one: the product is four-fold
+  // symmetric, so the whole frame is a mandala that breathes as cos 0.5*t
+  // rescales the rings.
+  ["kaleido",   "sin (0.4*%((X-cx)*(X-cx))+((Y-cy)*(Y-cy)))*cos 0.5*t+0.25*(X-cx)*(Y-cy)%8", ""],
+  // The same two ingredients added rather than multiplied, with the twist
+  // term falling off as 1/R^2 -- which is what curls the rings into a spiral.
+  ["vortex",    "sin (1.1*R)-(9*(X-cx)*(Y-cy))%(1+(R*R))-2*t", ""],
+  ["mandala",   "sin (0.9*R)-(0.5*t)+2*sin (0.22*(X-cx)*(Y-cy))%(1+0.1*R)", ""],
+  // Two copies of the grid rotated at slightly different rates; where they
+  // interfere you get moire turbulence that never repeats.
+  ["turbulence", "sin ((0.5*(X-cx)*cos t)+(0.5*(Y-cy)*sin t))*sin ((0.5*(X-cx)*cos 1.1*t)-(0.5*(Y-cy)*sin 1.1*t))", ""],
+  // An actual escape-time Julia set. 18{...}/ iterates z->z^2+c over the WHOLE
+  // grid at once -- the state is a 5-tuple of N-vectors (zr, zi, escape count,
+  // and c carried along because a k lambda sees globals, not the enclosing
+  // function's locals). c walks the circle of radius 0.7885, so the set morphs
+  // between dendrite and disk. sin of the escape count bands the exterior.
+  ["julia",     "cr:0.7885*cos 0.27*t; ci:0.7885*sin 0.27*t; s:18{[s](((s 3)+((s 0)*s 0)-(s 1)*s 1);((s 4)+2*(s 0)*s 1);((s 2)+4>((s 0)*s 0)+(s 1)*s 1);s 3;s 4)}/(0.055*X-cx;0.055*Y-cy;N#0;cr;ci); sin (0.85*`f$s 2)-1.5*t", ""],
   ["saddle",    "(X-mx)*(Y-my)%64", ""],
   ["blobs",     "{sin x}@(0.6*X)*sin 0.6*Y+t", ""],
   ["plaid",     "(sin (0.4*X)+t)*cos (0.4*Y)-t", ""],

@@ -97,11 +97,17 @@
 
 /* ---- pills and buttons ---- */
 .dots-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.dots-row.scroll {
-  flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
-  padding-bottom: 2px; margin-bottom: -2px;
+
+/* The presets are a grid, not a scrolling rail: every example should be
+   visible at once, because the ones you cannot see are the ones nobody
+   tries. auto-fill sizes the columns to the container, so the same markup
+   gives ~8 across on a desktop and 3 on a phone. */
+.dots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 6px;
 }
-.dots-row.scroll::-webkit-scrollbar { display: none; }
+.dots-grid .dots-pill { text-align: center; padding-inline: .5em; }
 
 .dots-pill, .dots-btn, #dots-grids button {
   font: 500 .78rem var(--font-sans, ui-sans-serif, system-ui, sans-serif);
