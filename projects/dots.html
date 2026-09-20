@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dots — one Amber expression, 1024 dots, every frame</title>
+<meta name="description" content="A grid of dots drawn by one line of Amber, re-evaluated every frame by the real interpreter compiled to WebAssembly. No per-pixel callback: X and Y are whole vectors, so your expression is one array operation over every cell.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Dots — one Amber expression, 1024 dots, every frame">
+<meta property="og:description" content="Type an expression of t, X and Y. The real Amber engine evaluates it over the whole grid at once, 60 times a second, in your browser.">
+<meta property="og:site_name" content="Amber">
+<meta property="og:url" content="https://amber-lang.org/projects/dots">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/amber.css?v=3">
+<link rel="stylesheet" href="../assets/dots/dots.css?v=1">
+<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<style>
+  .dt-head { padding: 22px 0 14px; }
+  /* The site's nav and breadcrumb sit above the grid, so the grid gets a
+     tighter cap here than the component's default: the expression box has to
+     stay on screen with it. */
+  .dots-wrap { --dots-stage-max: 50vh; }
+  .dt-head-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 28px; }
+  .dt-head h1 { margin: 8px 0 8px; font-size: clamp(1.7rem, 1.2rem + 1.6vw, 2.3rem); }
+  .dt-head .lead { max-width: 64ch; margin: 0; }
+  .dt-head .lead code { font-family: var(--font-mono); font-size: .92em; color: var(--accent-soft); }
+  /* In light mode the grid keeps its dark plate: the dots are tuned for it. */
+  :root[data-theme="light"] { --dots-bg: #0a0a0f; }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v2.2.0</span></a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../learn/index.html">Learn</a><a href="../docs/">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a><a href="../projects/" class="active">Projects</a><a href="../notepad.html">Notepad</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+<section class="dt-head">
+  <div class="wrap">
+    <div class="breadcrumb"><a href="../index.html">Home</a> / <a href="./index.html">Projects</a> / Dots</div>
+    <div class="dt-head-row">
+      <div>
+        <h1>One expression. 1024 dots. Every frame.</h1>
+        <p class="lead">Type an expression of <code>t</code>, <code>X</code> and <code>Y</code>. The real Amber
+        interpreter — compiled to WebAssembly, running on this page — evaluates it once per frame over the
+        <strong>whole grid at once</strong>. There is no per-pixel callback: <code>X</code> and <code>Y</code> are
+        1024-element vectors, and your line is a single array operation.</p>
+      </div>
+      <span class="dots-chip"><span class="dots-led booting" id="dots-led"></span><span id="dots-status">starting the engine…</span></span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="dots-wrap">
+
+      <div>
+        <div class="dots-stage">
+          <canvas id="dots-canvas" aria-label="A grid of dots drawn by your expression"></canvas>
+          <div class="dots-toast" id="dots-toast" role="status" aria-live="polite"></div>
+        </div>
+
+        <div class="dots-exprrow">
+          <label for="dots-expr">Your expression — it re-runs as you type</label>
+          <div class="dots-input">
+            <span class="dots-sigil" aria-hidden="true">&gt;</span>
+            <input id="dots-expr" type="text" spellcheck="false" autocapitalize="off" autocomplete="off"
+                   autocorrect="off" aria-describedby="dots-err">
+          </div>
+          <p class="dots-err" id="dots-err" role="alert" hidden></p>
+        </div>
+
+        <div class="dots-row scroll" id="dots-presets" style="margin-top:12px" aria-label="Examples"></div>
+
+        <div class="dots-row" style="margin-top:12px">
+          <span id="dots-grids" role="group" aria-label="Grid size"></span>
+          <button class="dots-btn" id="dots-pause" type="button" aria-pressed="false">Pause</button>
+          <button class="dots-btn" id="dots-reset" type="button">Restart</button>
+          <button class="dots-btn" id="dots-dice" type="button">Surprise me</button>
+          <button class="dots-btn" id="dots-share" type="button">Share</button>
+          <button class="dots-btn" id="dots-png" type="button">PNG</button>
+          <button class="dots-btn" id="dots-rec" type="button">Record</button>
+        </div>
+
+        <details class="dots-setup" id="dots-setupwrap">
+          <summary>Setup — runs once, for expressions that keep state</summary>
+          <textarea id="dots-setup" spellcheck="false" autocapitalize="off" autocomplete="off"
+                    aria-label="Setup code, runs once"></textarea>
+          <div class="dots-row" style="margin-top:8px">
+            <button class="dots-btn" id="dots-setuprun" type="button">Run setup</button>
+            <span style="font-size:.76rem;color:var(--text-faint)">or Ctrl-Enter</span>
+          </div>
+        </details>
+
+        <p class="dots-perf" id="dots-perf"></p>
+      </div>
+
+      <aside>
+        <div class="dots-panel">
+          <h2>What's in scope</h2>
+          <dl class="dots-vars">
+            <dt>t</dt><dd>seconds since the last restart</dd>
+            <dt>X</dt><dd>column of each cell, <code>0</code>…<code>G-1</code></dd>
+            <dt>Y</dt><dd>row of each cell</dd>
+            <dt>i</dt><dd>flat index, <code>0</code>…<code>N-1</code></dd>
+            <dt>R</dt><dd>distance from the centre</dd>
+            <dt>mx my</dt><dd>the cursor, in cells — <code>md</code> is 1 while pressed</dd>
+            <dt>cx cy</dt><dd>the centre of the grid</dd>
+            <dt>G N</dt><dd>grid size, and <code>N</code> = <code>G*G</code> cells</dd>
+            <dt>NB</dt><dd>the 8 wrapped neighbour index vectors, for Life-style rules</dd>
+          </dl>
+          <p class="dots-note">The result is read as one value per cell, clamped to
+          <code>-1</code>…<code>1</code>. Size is magnitude; colour is sign — amber positive,
+          cyan negative. An atom fills the grid, so <code>1</code> is a legal expression.</p>
+        </div>
+
+        <div class="dots-panel">
+          <h2>Why X and Y are capitals</h2>
+          <p class="dots-note"><code>x</code> and <code>y</code> are k's implicit lambda parameters, so a
+          global <code>x</code> would be shadowed the moment your expression contains
+          <code>{…}</code> — as in <code>{sin x}@X</code>. Capitals stay visible inside a lambda.</p>
+          <p class="dots-note">Two more traps worth knowing: <code>!</code> with an atom on the left is
+          <em>mod</em>, not rotate (<code>2!X</code>), and with a vector on the left it builds a
+          <em>dictionary</em>. <code>%</code> on one argument is square root.</p>
+        </div>
+
+        <div class="dots-panel">
+          <h2>Under it</h2>
+          <p class="dots-note">The same C99 engine that runs natively, compiled to wasm32 — not a
+          reimplementation and not a subset. A frame crosses the boundary once, as one string of
+          <code>N</code> bytes, so nothing is parsed per cell.</p>
+          <p class="dots-note">Want the whole language instead of one line?
+          <a href="../notepad.html">Open the Notepad</a>.</p>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+      </div>
+      <div>
+        <h5>Documentation</h5>
+        <a href="../docs/index.html">Introduction</a>
+        <a href="../docs/language.html">Language &amp; qSQL</a>
+        <a href="../docs/tacit.html">Tacit programming</a>
+        <a href="../docs/benchmarks.html">Benchmarks</a>
+      </div>
+      <div>
+        <h5>Projects</h5>
+        <a href="./index.html">All projects</a>
+        <a href="./dots.html">Dots</a>
+        <a href="../notepad.html">Notepad</a>
+      </div>
+      <div>
+        <h5>Learn</h5>
+        <a href="../tutorials/index.html">Tutorials</a>
+        <a href="../blog/index.html">Blog</a>
+        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+      <span>Not affiliated with kdb+ / KX Systems.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="../assets/js/amber.js" defer></script>
+<script>
+/* `worker` is resolved against THIS page; `runtime` is resolved by the worker,
+   against its own URL (/assets/dots/), which is why the two prefixes differ.
+   The engine bundle is the Notepad's — one copy, served to both pages. */
+window.DOTS_CONFIG = {
+  worker: "../assets/dots/worker.js?v=1",
+  runtime: ["../notepad/amber.wasm.js?v=2.2.0", "../notepad/amber.js?v=4"]
+};
+</script>
+<script src="../assets/dots/dots.js?v=1"></script>
+</body>
+</html>

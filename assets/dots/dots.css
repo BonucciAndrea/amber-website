@@ -1,0 +1,200 @@
+/* dots.css — Dots component styles.
+ *
+ * Every colour is read from a site token with a fallback, so this file drops
+ * into the Amber website (which defines --accent, --surface, --border, …) and
+ * also works in the standalone folder, where index.html defines the same
+ * handful of tokens itself. The renderer reads --dots-pos / --dots-neg /
+ * --dots-bg from the document, so retheming the dots is a CSS change.
+ */
+
+:root {
+  --dots-pos: var(--accent, #ffb020);
+  --dots-neg: var(--cyan, #56d4dd);
+  --dots-bg: var(--code-bg, #0a0a0f);
+}
+
+.dots-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+  gap: 22px;
+  align-items: start;
+}
+@media (max-width: 880px) {
+  .dots-wrap { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+}
+
+/* ---- the grid ---- */
+.dots-stage {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  /* Bounded by viewport height, not just column width: the grid and the input
+     that drives it have to be on screen together, or the page reads as a
+     picture rather than as something you type into. A host page with more
+     chrome above the grid (the site's nav and breadcrumb) can lower the cap
+     by setting --dots-stage-max. */
+  width: min(100%, var(--dots-stage-max, 58vh));
+  border: 1px solid var(--border, rgba(255,255,255,.09));
+  border-radius: var(--radius, 14px);
+  background: var(--dots-bg);
+  overflow: hidden;
+  box-shadow: var(--shadow, 0 18px 50px -18px rgba(0,0,0,.75));
+}
+#dots-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;           /* dragging on the grid drives mx/my, it does not scroll */
+  cursor: crosshair;
+}
+
+.dots-toast {
+  position: absolute; left: 50%; bottom: 14px; transform: translate(-50%, 8px);
+  padding: .5em .9em; border-radius: 999px;
+  background: rgba(0, 0, 0, .78); color: #fff;
+  border: 1px solid var(--border-strong, rgba(255,255,255,.16));
+  font: 500 .78rem var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+  opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease;
+  max-width: calc(100% - 28px); text-align: center;
+}
+.dots-toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---- the expression ---- */
+.dots-exprrow { margin-top: 14px; }
+.dots-exprrow label {
+  display: block; margin-bottom: 6px;
+  font: 500 .74rem var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+  color: var(--text-faint, #6e6f7b); letter-spacing: .02em;
+}
+.dots-input {
+  display: flex; align-items: center; gap: 0;
+  border: 1px solid var(--border, rgba(255,255,255,.09));
+  border-radius: var(--radius-sm, 8px);
+  background: var(--code-bg, #0a0a0f);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.dots-input:focus-within {
+  border-color: var(--accent, #ffb020);
+  box-shadow: 0 0 0 3px var(--accent-glow, rgba(255,176,32,.16));
+}
+.dots-input .dots-sigil {
+  padding: 0 2px 0 12px; flex: none;
+  font: 500 1rem var(--font-mono, ui-monospace, "JetBrains Mono", monospace);
+  color: var(--text-faint, #6e6f7b); user-select: none;
+}
+#dots-expr {
+  flex: 1 1 auto; min-width: 0;
+  padding: 13px 12px 13px 6px;
+  border: 0; outline: 0; background: transparent;
+  color: var(--text, #ecedf1);
+  font: 500 clamp(.92rem, .86rem + .28vw, 1.06rem) var(--font-mono, ui-monospace, "JetBrains Mono", monospace);
+}
+#dots-expr.bad { color: var(--red, #ff6b6b); }
+.dots-err {
+  margin: 8px 0 0; padding: 0;
+  font: 500 .78rem var(--font-mono, ui-monospace, "JetBrains Mono", monospace);
+  color: var(--red, #ff6b6b);
+}
+
+/* ---- pills and buttons ---- */
+.dots-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dots-row.scroll {
+  flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+  padding-bottom: 2px; margin-bottom: -2px;
+}
+.dots-row.scroll::-webkit-scrollbar { display: none; }
+
+.dots-pill, .dots-btn, #dots-grids button {
+  font: 500 .78rem var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+  color: var(--text-dim, #a2a3ae); cursor: pointer; white-space: nowrap;
+  background: var(--surface, rgba(255,255,255,.028));
+  border: 1px solid var(--border, rgba(255,255,255,.09));
+  border-radius: 999px; padding: .44em .9em;
+  transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+.dots-pill:hover, .dots-btn:hover, #dots-grids button:hover {
+  color: var(--text, #ecedf1);
+  border-color: var(--border-strong, rgba(255,255,255,.16));
+  background: var(--surface-2, rgba(255,255,255,.055));
+}
+.dots-pill:focus-visible, .dots-btn:focus-visible, #dots-grids button:focus-visible {
+  outline: 2px solid var(--accent, #ffb020); outline-offset: 2px;
+}
+.dots-pill.on, #dots-grids button.on {
+  color: var(--accent-ink, #1a1204);
+  background: var(--accent, #ffb020);
+  border-color: var(--accent, #ffb020);
+}
+.dots-btn.on { color: var(--red, #ff6b6b); border-color: var(--red, #ff6b6b); }
+#dots-grids { display: inline-flex; gap: 6px; }
+
+/* ---- the side panel ---- */
+.dots-panel {
+  border: 1px solid var(--border, rgba(255,255,255,.09));
+  border-radius: var(--radius, 14px);
+  background: var(--surface, rgba(255,255,255,.028));
+  padding: 16px;
+}
+.dots-panel + .dots-panel { margin-top: 14px; }
+.dots-panel h2 {
+  margin: 0 0 10px; font: 600 .8rem var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+  letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint, #6e6f7b);
+}
+.dots-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  font: 500 .74rem var(--font-mono, ui-monospace, monospace);
+  color: var(--text-dim, #a2a3ae);
+  border: 1px solid var(--border, rgba(255,255,255,.09));
+  background: var(--surface, rgba(255,255,255,.028));
+  border-radius: 999px; padding: .38em .8em; white-space: nowrap;
+}
+.dots-led { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint, #6e6f7b); flex: none; }
+.dots-led.booting { background: var(--accent, #ffb020); animation: dotsPulse 1.1s ease-in-out infinite; }
+.dots-led.ready { background: var(--green, #5ddba0); box-shadow: 0 0 0 3px rgba(93, 219, 160, .22); }
+.dots-led.error { background: var(--red, #ff6b6b); }
+@keyframes dotsPulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+
+/* bound-name reference */
+.dots-vars { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 7px 12px; }
+.dots-vars dt {
+  font: 600 .82rem var(--font-mono, ui-monospace, monospace);
+  color: var(--accent-soft, #ffcb6b);
+}
+.dots-vars dd {
+  margin: 0; font-size: .82rem; line-height: 1.45;
+  color: var(--text-dim, #a2a3ae);
+}
+
+.dots-note {
+  margin: 12px 0 0; font-size: .8rem; line-height: 1.55;
+  color: var(--text-faint, #6e6f7b);
+}
+.dots-note code, .dots-vars code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  color: var(--text-dim, #a2a3ae);
+}
+
+/* setup box */
+.dots-setup { margin-top: 14px; }
+.dots-setup > summary {
+  cursor: pointer; list-style: none;
+  font: 500 .74rem var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+  color: var(--text-faint, #6e6f7b);
+}
+.dots-setup > summary::-webkit-details-marker { display: none; }
+.dots-setup > summary::before { content: "▸ "; }
+.dots-setup[open] > summary::before { content: "▾ "; }
+#dots-setup {
+  display: block; width: 100%; margin-top: 8px; min-height: 66px; resize: vertical;
+  padding: 10px 12px; border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--border, rgba(255,255,255,.09));
+  background: var(--code-bg, #0a0a0f); color: var(--text, #ecedf1);
+  font: 500 .82rem var(--font-mono, ui-monospace, monospace);
+}
+#dots-setup:focus-visible { outline: 0; border-color: var(--accent, #ffb020); }
+
+.dots-perf {
+  margin: 12px 0 0;
+  font: 500 .78rem var(--font-mono, ui-monospace, monospace);
+  color: var(--text-faint, #6e6f7b); min-height: 1.2em;
+}
+.dots-perf strong { color: var(--accent-soft, #ffcb6b); font-weight: 600; }
