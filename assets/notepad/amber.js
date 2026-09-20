@@ -47,7 +47,18 @@ function statements(src) {
     const code = /^\\/.test(raw) ? raw.replace(/\s+$/, "") : stripComment(raw);
     if (!code.trim()) continue;
     const prev = out[out.length - 1];
-    if (/^\s/.test(code) && prev && !/^\\/.test(prev.code)) prev.code += "\n" + code;
+    // A continued line is joined with a SPACE, not a newline. A lambda body
+    // that still contains a newline defines without complaint and then
+    // returns nothing when it is called -- no error, just a function that
+    // silently does not work:
+    //     f:{[a]
+    //       b:a+1;
+    //       b*2
+    //       }
+    //     f 3      / gave no result at all; now gives 8
+    // The native REPL has never had this problem because it joins a continued
+    // line into one before evaluating it. This does the same.
+    if (/^\s/.test(code) && prev && !/^\\/.test(prev.code)) prev.code += " " + code.replace(/^\s+/, "");
     else out.push({ line: n + 1, code: code.replace(/^\s+/, "") });
   }
   return out;
