@@ -176,7 +176,9 @@ vector, so the idiomatic spelling is also the fast one. Prefer these over hand-r
 </div>
 <p>Everything here is a general rewrite of the bytecode: a fused primitive falls back to the primitives it
 replaces for any operand shape it does not handle, so it never changes an answer. <code>\disasm</code> shows
-whether an expression fused.</p>
+whether an expression fused. How the fusion pass was built, and why a rewrite that can silently change
+an answer is worse than no rewrite at all, is in
+<a href="../blog/07-two-point-one.html">two point one: the engine gets fused</a>.</p>
 
 <h2>A short checklist</h2>
 

@@ -96,7 +96,9 @@ completely.</p>
 asking"</em> — which is what a Flight server, a Polars scan, and any consumer with a memory budget
 actually need. That is the <code>ArrowArrayStream</code>, and it belongs out here, where it can grow,
 rather than inside the engine, where it would be the largest single feature in the tree and would be
-paid for by every user who never touches Arrow.</p>
+paid for by every user who never touches Arrow.
+<a href="../blog/zero-copy-arrow.html">Zero-copy interop</a> walks the same boundary from the other
+side: what it takes to hand an Amber buffer to Python without a copy, and how to keep that safe.</p>
 
 <h3>A batch is a window, not a slice</h3>
 <p>The obvious way to stream a table in batches is to cut it into pieces. That copies every byte, once

@@ -79,6 +79,8 @@ grammar shows through, and they are properties of the host, not bugs.</p>
     <code>. x</code>) to avoid the ambiguity.</li>
   </ul>
 </div>
+<p class="small">The first of those rules and the qSQL-in-any-script change both arrived in 2.0.0;
+<a href="../blog/06-two-point-oh.html">two point oh</a> is the account of what they cost to add.</p>
 
 <h2>Types and nulls</h2>
 <div class="table-wrap">
@@ -185,7 +187,9 @@ first <code>CROWS</code> rows (default 20) then <code>..</code> — and the cap 
 <em>before</em> formatting, so previewing a million-row table is instant.</p>
 
 <h2>qSQL — select, exec, update, delete</h2>
-<p>At the prompt, type the query. Bare column names like <code>wavg[sz;px]</code> just work.</p>
+<p>At the prompt, type the query. Bare column names like <code>wavg[sz;px]</code> just work.
+How this layer was put on top of a K interpreter — tables, the join family, and a parser that accepts
+bare qSQL — is in <a href="../blog/02-the-q-layer.html">teaching K to speak q</a>.</p>
 
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">gentq 100000                               / sets the globals: trades, quotes
 select from trades where px&gt;150
@@ -342,7 +346,8 @@ like["AAPL"; "AA*"]          / 1b</code></pre></div>
 <p><code>-8!x</code> encodes any K value to a byte vector; <code>-9!y</code> decodes it back,
 byte-exact including attributes, nulls and infinities. <code>peach</code> ships worker results over
 this wire instead of formatting and reparsing text, and <code>amber-tick</code>'s store files are
-literally <code>-8!</code> values.</p>
+literally <code>-8!</code> values. The encoding, and the rest of what turned the language into
+something you can deploy, is in <a href="../blog/05-platform.html">from language to platform</a>.</p>
 
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">b:-8!+`a`b!(1 2 3;4 5 6)        / table -&gt; compact byte vector
 (-9!b)~+`a`b!(1 2 3;4 5 6)      / 1b — exact</code></pre></div>

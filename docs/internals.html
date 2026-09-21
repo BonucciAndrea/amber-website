@@ -152,6 +152,10 @@ saves. <code>peach</code> is separate and coarser: it forks processes from a poo
 crossover, and on a small core count with large intermediates
 <a href="../docs/benchmarks.html">it can sit above your workload entirely</a>.</p>
 
+<p>The arena, the SIMD layer and the branch-free as-of join were built together, and
+<a href="../blog/04-native-kernels.html">down to the metal</a> is the account of that —
+including the measurements that decided each threshold.</p>
+
 <h3>Multiversioned kernels and idiom fusion (2.1)</h3>
 <p><code>src/simd.c</code> is compiled with <code>__attribute__((target_clones("avx2","default")))</code> on
 x86-64 ELF builds without <code>-march</code>: GCC emits an AVX2 body and a baseline body for every kernel and an
