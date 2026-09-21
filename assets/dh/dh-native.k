@@ -1,11 +1,22 @@
 / ============================================================================
-/ dh.k (browser build) - Durre-Heesch D-reducibility check for the four colour theorem
-/ Vectorised port of github.com/BonucciAndrea/DurreHeesch. The native version reads
-/ all 2822 configurations from U_2822.conf; this one carries a few inline.
-/ A configuration is (V;R;E;adj): V vertices, the first R form the ring, E = how many
-/ ring colourings extend directly (from the data file, 0N if unknown), adj = 0-based
-/ neighbour lists.
+/ dh.k  -  Durre-Heesch D-reducibility check of Steinberger's 2822 configurations
+/ Amber port of github.com/BonucciAndrea/DurreHeesch (Dreducing_graphs_final.py)
+/ .
+/ The Python walks one ring colouring at a time. Here every step works on whole
+/ columns: all essential colourings of a ring at once, every Kempe interchange
+/ of a batch at once. A set of colourings is a list of n digit vectors (digit j
+/ = colour of ring vertex j), one element per colouring.
 / ============================================================================
+
+DIR:"./"                                  / the folder that holds U_2822.conf
+
+/ ---- parse: blocks split on blank lines; line 1 = "V R E 0", then V adjacency rows
+L:{x@&~x="\r"}'0:DIR,"U_2822.conf"
+cut:&0=#'L
+blk:{L@x+!y-x}'[0,1+-1_cut;cut]
+blk:blk@&3<#'blk
+conf:{h:. x 1;(h 0;h 1;h 2;{-1+2_. x}'x@3+!h 0)}'blk
+
 / ---- essential colourings of an n-ring (colour 0 then 1, 2 before 3, last <> 0)
 step:{c:x 0;l:x 1;m:x 2;nl:(4!l+1),(4!l+2),(4!l+3);m3:m,m,m;k:&~nl>m3+1;(((4*c,c,c)+nl)@k;nl@k;(m3|nl)@k)}
 ess:{[n]s:(n-2) step/(,1;,1;,1);c:s[0]@&~0=s 1;{4!_x%y}[c]'|*\1,(n-1)#4}
@@ -70,17 +81,7 @@ kr2:{[q]DC::D@\:CAND;
  {[q;s;sn]g:&s=sn;$[#g;kgroup[q;sn;g];0]}[q;s]'2*1+!_CN%2;0}
 
 / ---- one configuration: 1 = D-reducible
-
-/ ---- check one configuration: `ring`extendable`expected`reducible`ms
-check:{[c]V::c 0;R::c 1;A::c 3;t0:`t[];ring R;G::extend[];e:+/G;
- CACHE::();NOC::0;BUD::50000000;kround'0 1 2;
+run1:{[i]c:conf i;V::c 0;R::c 1;A::c 3;t0:`t[];ring R;G::extend[];e:+/G;
+ CACHE::();NOC::0;BUD::200000000;kround'0 1 2;
  {$[NOC;kround'0 1 2;keval'CACHE];+/G}/0;
- `ring`extendable`expected`good`reducible`ms!(R;e;c 2;+/G;&/G;_(`t[]-t0)%1000)}
-
-/ ---- a few of Steinberger's 2822 configurations (numbered as in U_2822.conf)
-c1:(10;6;16;(1 8 5;2 7 8 0;3 6 7 1;4 6 2;5 9 6 3;0 8 9 4;9 7 2 3 4;6 9 8 1 2;1 7 9 5 0;8 7 6 4 5))
-c11:(17;10;630;(1 14 9;2 15 14 0;3 15 1;4 11 10 15 2;5 11 3;6 12 11 4;7 12 5;8 13 12 6;9 16 10 13 7;0 14 16 8;16 15 3 11 13 8;5 12 13 10 3 4;7 13 11 5 6;8 10 11 12 7;1 15 16 9 0;3 10 16 14 1 2;14 15 10 8 9))
-c18:(19;11;1430;(1 12 10;2 11 12 0;3 11 1;4 13 11 2;5 13 3;6 17 14 13 4;7 16 17 5;8 16 6;9 18 16 7;10 15 14 18 8;0 12 15 9;3 13 15 12 1 2;1 11 15 10 0;5 14 15 11 3 4;17 18 9 15 13 5;12 11 13 14 9 10;8 18 17 6 7;16 18 14 5 6;9 14 17 16 8))
-c27:(20;12;3350;(1 18 11;2 19 18 0;3 16 17 19 1;4 14 16 2;5 14 3;6 15 14 4;7 15 5;8 12 15 6;9 12 7;10 13 17 12 8;11 13 9;0 18 13 10;9 17 16 15 7 8;18 19 17 9 10 11;5 15 16 3 4;7 12 16 14 5 6;14 15 12 17 2 3;13 19 2 16 12 9;1 19 13 11 0;2 17 13 18 1))
-/ a wheel: one interior vertex of degree 6 inside a 6-ring. Not D-reducible.
-wheel:(7;6;11;(1 5 6;2 0 6;3 1 6;4 2 6;5 3 6;0 4 6;0 1 2 3 4 5))
+ ok:(&/G)&e=c 2;(i+1;R;e;c 2;ok;_(`t[]-t0)%1000)}

@@ -74,6 +74,29 @@ module.exports = async function () {
   t.eq(field(wout, "reducible"), 0, "the degree-6 wheel is NOT D-reducible");
   t.eq(field(wout, "good"), field(wout, "extendable"), "wheel: the Kempe game adds no colourings");
 
+  // --- the mathematics, against an oracle written from the report's definitions ---
+  const O = require("./dh-oracle");
+  const rows = s => s.replace(/[(),]/g, " ").split("\n").map(r => r.trim().split(/\s+/).filter(Boolean).map(Number)).filter(r => r.length);
+  for (const m of [2, 4, 6, 8, 10]) {
+    const mine = new Set(rows(ev("a2b'arrows " + m)).map(r => O.canon(r).join("")));
+    const thm = new Set(O.blockDecompositions(m).map(r => O.canon(r).join("")));
+    t.ok(mine.size === thm.size && [...thm].every(x => mine.has(x)),
+      m + " sectors: ArrowGen/ArrowToBlock builds exactly the decompositions of Theorem 6.6.4 (" + thm.size + ")");
+  }
+  const bdTable = ["012131", "010203", "012321", "010232", "012103"];   // report, table after Figure 2.4
+  t.eq(O.sectors([0, 1, 0, 1, 0, 1], 2).length, 6, "report: (0,1,0,1,0,1) has six sectors under ω = 2");
+  t.eq(O.sectors([0, 1, 0, 1, 0, 1], 1).length, 1, "report: and a single sector under ω = 1");
+  t.ok(bdTable.every(x => O.blockDecompositions(6).some(r => r.join("") === x)) && O.blockDecompositions(6).length === 5,
+    "report: its five block decompositions are exactly the report's table");
+  t.eq(O.essential(6).map(c => c.join("")).indexOf("012121") + 1, 21, "report: (0,1,2,1,2,1) is the 21st essential colouring");
+  const B = conf("c1"), bdRes = O.dReducible(B.V, B.R, B.adj);
+  t.eq(bdRes.stages.join(" "), "16 21 23 27 30 31", "report: Birkhoff's diamond reaches every colouring at stage 5 (Φ = Φ5)");
+  for (const name of ["c1", "c11", "wheel"]) {
+    const c = conf(name), o = O.dReducible(c.V, c.R, c.adj), out = ev("check " + name);
+    t.eq(field(out, "reducible"), o.reducible ? 1 : 0, name + ": dh.k and the oracle agree it is " + (o.reducible ? "" : "NOT ") + "D-reducible");
+    t.eq(field(out, "good"), o.stages[o.stages.length - 1], name + ": same number of good colourings at the fixed point");
+  }
+
   // --- every playground preset runs clean, statement by statement ---
   const EX = readWindowGlobal("assets/dh/examples.js", "DH_EXAMPLES");
   for (const ex of EX) {

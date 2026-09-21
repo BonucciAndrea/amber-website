@@ -286,6 +286,49 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
 .play-bar .hint{font-family:var(--mono);font-size:.7rem;color:#71737f}
 .play pre{margin:0;padding:14px 18px;min-height:3.2em;border-top:1px solid var(--code-br);overflow-x:auto;
   font-family:var(--mono);font-size:.805rem;line-height:1.6;color:#9ee493;white-space:pre}
+
+/* ── figures ──────────────────────────────────────────────────────────── */
+:root{--c0:#3987e5;--c1:#c98500;--c2:#d55181;--c3:#008300;--py:#5b8def;--am:#c8800f}
+html[data-theme="light"]{--c0:#2a78d6;--c1:#eda100;--c2:#e87ba4;--c3:#008300;--py:#2159bd;--am:#b06400}
+.fig svg{font-family:var(--mono)}
+.fig .e{stroke:var(--border2);stroke-width:1.5}
+.fig .er{stroke:var(--dim);stroke-width:2.5}
+.fig .v{stroke:var(--bg);stroke-width:2}
+.fig .v0{fill:var(--c0)}.fig .v1{fill:var(--c1)}.fig .v2{fill:var(--c2)}.fig .v3{fill:var(--c3)}
+.fig .vq{fill:var(--surface2);stroke:var(--border2);stroke-width:1.5;stroke-dasharray:3 3}
+.fig .vt{font-size:12px;font-weight:600;text-anchor:middle}
+.fig .vt0,.fig .vt3{fill:#fff}.fig .vt1,.fig .vt2{fill:#15151b}.fig .vtq{fill:var(--faint)}
+.fig .ft{font-family:var(--sans);font-size:14px;font-weight:600;fill:var(--text);text-anchor:middle}
+.fig .fs{font-size:11px;fill:var(--faint);text-anchor:middle}
+.fig .rg{fill:none;stroke:var(--border2);stroke-width:1.5}
+.fig .sa{fill:none;stroke-width:5;stroke-linecap:round}
+.fig .sa01{stroke:var(--dim)}.fig .sa23{stroke:var(--faint);stroke-dasharray:1 7}
+.fig .sl{font-size:12px;fill:var(--dim);text-anchor:middle}
+.fig .ch{fill:none;stroke-width:3;stroke-dasharray:7 5}
+.fig .ch01{stroke:var(--c0)}.fig .ch23{stroke:var(--c2)}
+.fig .gl{stroke:var(--border);stroke-width:1}
+.fig .ax{font-size:11px;fill:var(--faint);text-anchor:middle}
+.fig .rl{font-size:12px;fill:var(--dim);text-anchor:end}
+.fig .db{stroke:var(--border2);stroke-width:2}
+.fig .dp{fill:var(--py);stroke:var(--bg);stroke-width:2}
+.fig .da{fill:var(--am);stroke:var(--bg);stroke-width:2}
+.fig .dl{font-size:12px;font-weight:600;fill:var(--text)}
+.fig .dn{font-size:11px;fill:var(--faint)}
+.fig .hit{fill:transparent;cursor:default;outline:none}
+.fig .hit:hover,.fig .hit:focus-visible{fill:var(--surface2)}
+.fig .frame{position:relative}
+.tip{position:absolute;pointer-events:none;background:var(--bg2);border:1px solid var(--border2);border-radius:9px;
+  padding:8px 11px;font-size:.78rem;line-height:1.5;box-shadow:0 10px 28px -12px rgba(0,0,0,.6);white-space:nowrap}
+.tip b{font-family:var(--mono);color:var(--text)}.tip span{color:var(--faint)}
+.tip i{display:inline-block;width:12px;height:2px;vertical-align:middle;margin-right:6px}
+.key{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px}
+.key.kp{background:var(--py)}.key.ka{background:var(--am)}
+details.src{margin:1.6em 0}
+details.src summary{cursor:pointer;font-size:.92rem;color:var(--dim);padding:10px 14px;border:1px solid var(--border);
+  border-radius:11px;background:var(--surface);list-style-position:inside}
+details.src summary:hover{color:var(--text)}
+details.src[open] summary{border-radius:11px 11px 0 0}
+details.src .code{margin-top:0;border-top-left-radius:0;border-top-right-radius:0}
 </style>
 <script>document.documentElement.className+=" js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
 </head>
@@ -320,7 +363,7 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
   <p class="dek">A proof of the four colour theorem ends in a program that checks 2822 small graphs. Here is that program, moved from Python loops to Amber columns: over 100 times faster on every ring size both versions finished, and small enough to run on this page.</p>
   <div class="meta">
     <span class="tag">algorithms</span>
-    <span>2026-09-21</span><span class="sep">·</span><span>13 min read</span>
+    <span>2026-09-21</span><span class="sep">·</span><span>16 min read</span>
     <span class="sep">·</span><span>Andrea Bonucci</span>
   </div>
 </div></div></header><article><div class="col">
@@ -329,21 +372,32 @@ so that no two countries sharing a border get the same colour. It was the first 
 proved with a computer, and every proof since has kept a large mechanical core: a list of small
 graphs, each of which has to be checked, one by one, by a program.</p>
 
-<p>I wrote one of those programs in Python some time ago:
-<a href="https://github.com/BonucciAndrea/DurreHeesch" target="_blank" rel="noopener">github.com/BonucciAndrea/DurreHeesch</a>.
-It runs the Dürre–Heesch reducibility check on Steinberger's 2822 configurations. It is correct, and
-it is slow: about three minutes for a single configuration with a 13-vertex ring, and hours once the
-rings reach 15 or 16. This post rewrites it in Amber. It is not a line-by-line translation. Every
+<p>In 2023, for a bachelor project in computer-assisted proofs, four classmates (Abel, Tomas, Lex and
+Jordy) and I wrote one of those programs in Python:
+<a href="https://github.com/BonucciAndrea/DurreHeesch" target="_blank" rel="noopener">github.com/BonucciAndrea/DurreHeesch</a>,
+with the mathematics written up in <a href="../assets/dh/4_Color_Theorem.pdf">our report</a> (PDF).
+It runs the Dürre–Heesch reducibility check on Steinberger's 2822 configurations, and it did the job:
+every one of them checked out as D-reducible, after a twelve-hour run on a high-end PC. One configuration
+at a time it is not fast, though: about three minutes for a 13-vertex ring on today's machine, and hours
+once the rings reach 15 or 16. This post rewrites it in Amber. It is not a line-by-line translation. Every
 step of the algorithm becomes an operation on whole columns: all ring colourings at once, every
 Kempe interchange at once. On the configurations both versions have finished, the Amber one is
 <b>over 100 times faster</b> at every ring size. At the bottom of the page is the checker itself, running in your browser.</p>
 
 <div class="stats">
   <div><div class="v">2822</div><div class="l">configurations to check</div></div>
-  <div><div class="v">19 min → 8 s</div><div class="l">configs 1–38: Python vs Amber</div></div>
+  <div><div class="v">8 s</div><div class="l">configs 1–38 in Amber; 19 min in Python</div></div>
   <div><div class="v">~140×</div><div class="l">faster on ring-13 configurations</div></div>
-  <div><div class="v">~90</div><div class="l">lines of Amber</div></div>
+  <div><div class="v">87</div><div class="l">lines of Amber</div></div>
 </div>
+
+<div class="note ok"><b>Credits</b>
+<p>The Python program, the report and the mathematics this post builds on are joint work by
+<strong>Abel, Tomas, Lex, Jordy and Andrea</strong>, a bachelor project in the Computer-Assisted
+Proofs track (February 2023). The algorithm and its optimisations (the tree of good colourings, shared
+block decompositions and the possibility-list search) are the group's, described in
+<a href="../assets/dh/4_Color_Theorem.pdf">the report</a>; the twelve-hour run of all 2822 configurations
+was done on Lex's machine. This post adds only the Amber port.</p></div>
 
 <h2>The proof in one paragraph</h2>
 
@@ -376,6 +430,14 @@ first is Birkhoff's diamond, 10 vertices with a 6-ring:</p>
 
 <p>In Amber a configuration is one list, <code>(V;R;E;adj)</code>, with 0-based neighbour lists. The
 browser version at the bottom of this page carries five of them. The native script reads all 2822.</p>
+
+<figure class="wide fig">
+  <div class="frame"><svg viewBox="0 0 640 330" role="img" aria-labelledby="f1t"><title id="f1t">Birkhoff's diamond twice: a ring colouring that extends to the four interior vertices, and one that does not.</title><line x1="160.0" y1="37.0" x2="253.5" y2="91.0" class="er"/><line x1="160.0" y1="37.0" x2="66.5" y2="91.0" class="er"/><line x1="160.0" y1="37.0" x2="160.0" y2="101.8" class="e"/><line x1="253.5" y1="91.0" x2="253.5" y2="199.0" class="er"/><line x1="253.5" y1="91.0" x2="191.2" y2="145.0" class="e"/><line x1="253.5" y1="91.0" x2="160.0" y2="101.8" class="e"/><line x1="253.5" y1="199.0" x2="160.0" y2="253.0" class="er"/><line x1="253.5" y1="199.0" x2="160.0" y2="188.2" class="e"/><line x1="253.5" y1="199.0" x2="191.2" y2="145.0" class="e"/><line x1="160.0" y1="253.0" x2="66.5" y2="199.0" class="er"/><line x1="160.0" y1="253.0" x2="160.0" y2="188.2" class="e"/><line x1="66.5" y1="199.0" x2="66.5" y2="91.0" class="er"/><line x1="66.5" y1="199.0" x2="160.0" y2="188.2" class="e"/><line x1="66.5" y1="199.0" x2="128.8" y2="145.0" class="e"/><line x1="66.5" y1="91.0" x2="160.0" y2="101.8" class="e"/><line x1="66.5" y1="91.0" x2="128.8" y2="145.0" class="e"/><line x1="160.0" y1="188.2" x2="191.2" y2="145.0" class="e"/><line x1="160.0" y1="188.2" x2="128.8" y2="145.0" class="e"/><line x1="191.2" y1="145.0" x2="160.0" y2="101.8" class="e"/><line x1="191.2" y1="145.0" x2="128.8" y2="145.0" class="e"/><line x1="160.0" y1="101.8" x2="128.8" y2="145.0" class="e"/><circle cx="160.0" cy="37.0" r="13" class="v v0"/><text x="160.0" y="41.2" class="vt vt0">0</text><circle cx="253.5" cy="91.0" r="13" class="v v1"/><text x="253.5" y="95.2" class="vt vt1">1</text><circle cx="253.5" cy="199.0" r="13" class="v v0"/><text x="253.5" y="203.2" class="vt vt0">0</text><circle cx="160.0" cy="253.0" r="13" class="v v1"/><text x="160.0" y="257.2" class="vt vt1">1</text><circle cx="66.5" cy="199.0" r="13" class="v v0"/><text x="66.5" y="203.2" class="vt vt0">0</text><circle cx="66.5" cy="91.0" r="13" class="v v2"/><text x="66.5" y="95.2" class="vt vt2">2</text><circle cx="160.0" cy="188.2" r="13" class="v v3"/><text x="160.0" y="192.4" class="vt vt3">3</text><circle cx="191.2" cy="145.0" r="13" class="v v2"/><text x="191.2" y="149.2" class="vt vt2">2</text><circle cx="160.0" cy="101.8" r="13" class="v v3"/><text x="160.0" y="106.0" class="vt vt3">3</text><circle cx="128.8" cy="145.0" r="13" class="v v1"/><text x="128.8" y="149.2" class="vt vt1">1</text><text x="160" y="295" class="ft">extends directly</text><text x="160" y="313" class="fs">ring 0 1 0 1 0 2 → interior 3 2 3 1</text><line x1="480.0" y1="37.0" x2="573.5" y2="91.0" class="er"/><line x1="480.0" y1="37.0" x2="386.5" y2="91.0" class="er"/><line x1="480.0" y1="37.0" x2="480.0" y2="101.8" class="e"/><line x1="573.5" y1="91.0" x2="573.5" y2="199.0" class="er"/><line x1="573.5" y1="91.0" x2="511.2" y2="145.0" class="e"/><line x1="573.5" y1="91.0" x2="480.0" y2="101.8" class="e"/><line x1="573.5" y1="199.0" x2="480.0" y2="253.0" class="er"/><line x1="573.5" y1="199.0" x2="480.0" y2="188.2" class="e"/><line x1="573.5" y1="199.0" x2="511.2" y2="145.0" class="e"/><line x1="480.0" y1="253.0" x2="386.5" y2="199.0" class="er"/><line x1="480.0" y1="253.0" x2="480.0" y2="188.2" class="e"/><line x1="386.5" y1="199.0" x2="386.5" y2="91.0" class="er"/><line x1="386.5" y1="199.0" x2="480.0" y2="188.2" class="e"/><line x1="386.5" y1="199.0" x2="448.8" y2="145.0" class="e"/><line x1="386.5" y1="91.0" x2="480.0" y2="101.8" class="e"/><line x1="386.5" y1="91.0" x2="448.8" y2="145.0" class="e"/><line x1="480.0" y1="188.2" x2="511.2" y2="145.0" class="e"/><line x1="480.0" y1="188.2" x2="448.8" y2="145.0" class="e"/><line x1="511.2" y1="145.0" x2="480.0" y2="101.8" class="e"/><line x1="511.2" y1="145.0" x2="448.8" y2="145.0" class="e"/><line x1="480.0" y1="101.8" x2="448.8" y2="145.0" class="e"/><circle cx="480.0" cy="37.0" r="13" class="v v0"/><text x="480.0" y="41.2" class="vt vt0">0</text><circle cx="573.5" cy="91.0" r="13" class="v v1"/><text x="573.5" y="95.2" class="vt vt1">1</text><circle cx="573.5" cy="199.0" r="13" class="v v0"/><text x="573.5" y="203.2" class="vt vt0">0</text><circle cx="480.0" cy="253.0" r="13" class="v v1"/><text x="480.0" y="257.2" class="vt vt1">1</text><circle cx="386.5" cy="199.0" r="13" class="v v2"/><text x="386.5" y="203.2" class="vt vt2">2</text><circle cx="386.5" cy="91.0" r="13" class="v v3"/><text x="386.5" y="95.2" class="vt vt3">3</text><circle cx="480.0" cy="188.2" r="13" class="vq"/><text x="480.0" y="192.4" class="vt vtq">?</text><circle cx="511.2" cy="145.0" r="13" class="vq"/><text x="511.2" y="149.2" class="vt vtq">?</text><circle cx="480.0" cy="101.8" r="13" class="vq"/><text x="480.0" y="106.0" class="vt vtq">?</text><circle cx="448.8" cy="145.0" r="13" class="vq"/><text x="448.8" y="149.2" class="vt vtq">?</text><text x="480" y="295" class="ft">does not extend</text><text x="480" y="313" class="fs">ring 0 1 0 1 2 3 → needs a Kempe swap</text></svg></div>
+  <figcaption>Configuration 1, Birkhoff's diamond: six ring vertices (the outer cycle) around four interior
+  ones. The numbers are colours. Of its 31 essential ring colourings, 16 extend straight into the interior,
+  like the one on the left. The other 15, like the one on the right, have to be rescued by Kempe swaps. The
+  drawing is computed from the neighbour lists in <code>U_2822.conf</code> (a Tutte embedding).</figcaption>
+</figure>
 
 <h2>Step 1: every colouring of the ring, at once</h2>
 
@@ -420,14 +482,33 @@ a plain JavaScript backtracking search as well.</p>
 <p>Pick one of the three ways to split the four colours into two pairs, say {0,1} and {2,3}. Around
 the ring, consecutive vertices whose colours lie in the same pair form a <b>Kempe sector</b>. Inside
 the configuration, sectors of the same kind may be joined by Kempe chains; the sectors joined
-together form a <b>block</b>. Because the graph is planar, chains can't cross, so the possible block
-decompositions are the non-crossing partitions of the sectors. That makes them Catalan numbers:
-1, 2, 5, 14, 42, 132 for 2 to 12 sectors.</p>
+together form a <b>block</b>. Which groupings are possible is a theorem (6.6.4 in Fritsch &amp; Fritsch,
+<i>The Four-Color Theorem</i>): a grouping of the sectors is a block decomposition exactly when every block
+holds sectors of one type, no two blocks interleave around the ring, and two blocks that touch at one
+point touch at exactly one more. <a href="../assets/dh/4_Color_Theorem.pdf">Our report</a> (§2.2) turns each
+decomposition into a sequence of up and down arrows, one per sector, with as many ups as downs and never
+more downs than ups in any prefix. Those are Dyck words, so a ring with <i>m</i> sectors has
+Catalan(<i>m</i>/2) decompositions: 1, 2, 5, 14, 42, 132 for 2 to 12 sectors. The code generates them from
+the arrows, and the test suite checks the result against the theorem directly.</p>
+
+<figure class="wide fig">
+  <div class="frame"><svg viewBox="0 0 640 360" role="img" aria-labelledby="f2t"><title id="f2t">An 8-ring coloured 0 1 2 3 0 1 2 3 splits into four Kempe sectors under the pairing {0,1} and {2,3}. Either a {0,1} chain joins S0 and S2, or a {2,3} chain joins S1 and S3; planarity rules out both.</title><circle cx="160" cy="150" r="100" class="rg"/><path d="M76.7,55.5 A126,126 0 0 1 243.3,55.5" class="sa sa01"/><text x="160.0" y="11.0" class="sl">S0</text><path d="M254.5,66.7 A126,126 0 0 1 254.5,233.3" class="sa sa23"/><text x="303.0" y="154.0" class="sl">S1</text><path d="M243.3,244.5 A126,126 0 0 1 76.7,244.5" class="sa sa01"/><text x="160.0" y="297.0" class="sl">S2</text><path d="M65.5,233.3 A126,126 0 0 1 65.5,66.7" class="sa sa23"/><text x="17.0" y="154.0" class="sl">S3</text><path d="M160.0,63.0 C176.0,126.0 176.0,174.0 160.0,237.0" class="ch ch01"/><circle cx="121.7" cy="57.6" r="12" class="v v0"/><text x="121.7" y="61.8" class="vt vt0">0</text><circle cx="198.3" cy="57.6" r="12" class="v v1"/><text x="198.3" y="61.8" class="vt vt1">1</text><circle cx="252.4" cy="111.7" r="12" class="v v2"/><text x="252.4" y="115.9" class="vt vt2">2</text><circle cx="252.4" cy="188.3" r="12" class="v v3"/><text x="252.4" y="192.5" class="vt vt3">3</text><circle cx="198.3" cy="242.4" r="12" class="v v0"/><text x="198.3" y="246.6" class="vt vt0">0</text><circle cx="121.7" cy="242.4" r="12" class="v v1"/><text x="121.7" y="246.6" class="vt vt1">1</text><circle cx="67.6" cy="188.3" r="12" class="v v2"/><text x="67.6" y="192.5" class="vt vt2">2</text><circle cx="67.6" cy="111.7" r="12" class="v v3"/><text x="67.6" y="115.9" class="vt vt3">3</text><text x="160" y="318" class="ft">blocks {S0,S2} {S1} {S3}</text><text x="160" y="336" class="fs">a {0,1} chain joins S0 and S2</text><circle cx="480" cy="150" r="100" class="rg"/><path d="M396.7,55.5 A126,126 0 0 1 563.3,55.5" class="sa sa01"/><text x="480.0" y="11.0" class="sl">S0</text><path d="M574.5,66.7 A126,126 0 0 1 574.5,233.3" class="sa sa23"/><text x="623.0" y="154.0" class="sl">S1</text><path d="M563.3,244.5 A126,126 0 0 1 396.7,244.5" class="sa sa01"/><text x="480.0" y="297.0" class="sl">S2</text><path d="M385.5,233.3 A126,126 0 0 1 385.5,66.7" class="sa sa23"/><text x="337.0" y="154.0" class="sl">S3</text><path d="M567.0,150.0 C504.0,136.0 456.0,136.0 393.0,150.0" class="ch ch23"/><circle cx="441.7" cy="57.6" r="12" class="v v0"/><text x="441.7" y="61.8" class="vt vt0">0</text><circle cx="518.3" cy="57.6" r="12" class="v v1"/><text x="518.3" y="61.8" class="vt vt1">1</text><circle cx="572.4" cy="111.7" r="12" class="v v2"/><text x="572.4" y="115.9" class="vt vt2">2</text><circle cx="572.4" cy="188.3" r="12" class="v v3"/><text x="572.4" y="192.5" class="vt vt3">3</text><circle cx="518.3" cy="242.4" r="12" class="v v0"/><text x="518.3" y="246.6" class="vt vt0">0</text><circle cx="441.7" cy="242.4" r="12" class="v v1"/><text x="441.7" y="246.6" class="vt vt1">1</text><circle cx="387.6" cy="188.3" r="12" class="v v2"/><text x="387.6" y="192.5" class="vt vt2">2</text><circle cx="387.6" cy="111.7" r="12" class="v v3"/><text x="387.6" y="115.9" class="vt vt3">3</text><text x="480" y="318" class="ft">blocks {S0} {S2} {S1,S3}</text><text x="480" y="336" class="fs">a {2,3} chain joins S1 and S3</text></svg></div>
+  <figcaption>An 8-ring coloured 0 1 2 3 0 1 2 3, under the pairing {0,1} | {2,3}: four sectors,
+  alternating type (solid arcs are {0,1} sectors, dotted arcs {2,3} sectors). Inside the configuration, either a {0,1} chain joins S0 and S2 (left) or a {2,3} chain
+  joins S1 and S3 (right). They can't both exist, because they would cross, and one of them must exist.
+  These are the only two block decompositions, Catalan(2) = 2.</figcaption>
+</figure>
 
 <p>Swapping the two colours of each pair throughout a block gives another proper colouring. A ring
-colouring is <em>good</em> under a partition if, <b>whatever</b> the true block decomposition is,
-some combination of block swaps turns it into a colouring that is already good. Repeat until
-nothing changes. If every colouring ends up good, the configuration is D-reducible.</p>
+colouring becomes good if there is <b>some</b> partition such that, <b>whatever</b> the true block
+decomposition is, some combination of block swaps turns it into a colouring that is already good.
+Repeat until nothing changes. The report calls the sets this builds Φ<sub>0</sub> ⊂ Φ<sub>1</sub> ⊂ …; if
+the last one holds every ring colouring, the configuration is D-reducible. Birkhoff's diamond gets there in
+five rounds, 16 → 21 → 23 → 27 → 30 → 31 good colourings, which is the report's Φ = Φ<sub>5</sub>.</p>
+
+<p>One shortcut is safe and saves half the work. Swapping inside <em>every</em> block of one type just
+renames two colours everywhere, which gives an equivalent colouring. So one block of each type can
+always be left alone; the code never swaps the first two blocks.</p>
 
 <p>The swap has a neat form. Colours are 0–3, and the partition that pairs 0 with <i>q</i>+1 swaps
 exactly the colours that differ by XOR <i>q</i>+1. A Kempe interchange is an XOR on a subset of the
@@ -470,6 +551,13 @@ a single one of the other 20.</p>
 
 <h2>Python vs Amber</h2>
 
+<figure class="wide fig">
+  <div class="frame"><svg viewBox="0 0 640 330" role="img" aria-labelledby="f3t" id="dumbbell"><title id="f3t">Mean time per configuration by ring size, Python against Amber, on a log scale. Amber is 100 to 140 times faster at every ring size both versions finished.</title><line x1="64.0" y1="28" x2="64.0" y2="292" class="gl"/><text x="64.0" y="308" class="ax">1 ms</text><line x1="144.3" y1="28" x2="144.3" y2="292" class="gl"/><text x="144.3" y="308" class="ax">10 ms</text><line x1="224.6" y1="28" x2="224.6" y2="292" class="gl"/><text x="224.6" y="308" class="ax">100 ms</text><line x1="305.0" y1="28" x2="305.0" y2="292" class="gl"/><text x="305.0" y="308" class="ax">1 s</text><line x1="385.3" y1="28" x2="385.3" y2="292" class="gl"/><text x="385.3" y="308" class="ax">10 s</text><line x1="465.6" y1="28" x2="465.6" y2="292" class="gl"/><text x="465.6" y="308" class="ax">100 s</text><line x1="545.9" y1="28" x2="545.9" y2="292" class="gl"/><text x="545.9" y="308" class="ax">1000 s</text><text x="52" y="56.1" class="rl">ring 10</text><line x1="142.8" y1="52.1" x2="308.1" y2="52.1" class="db"/><circle cx="308.1" cy="52.1" r="6" class="dp"/><text x="322.1" y="56.1" class="dl">114×</text><circle cx="142.8" cy="52.1" r="6" class="da"/><rect x="64" y="34.0" width="546" height="36.3" class="hit" tabindex="0" data-ring="10" data-n="7" data-py="1.1 s" data-am="10 ms" data-x="114"/><text x="52" y="92.4" class="rl">ring 11</text><line x1="196.1" y1="88.4" x2="366.4" y2="88.4" class="db"/><circle cx="366.4" cy="88.4" r="6" class="dp"/><text x="380.4" y="92.4" class="dl">132×</text><circle cx="196.1" cy="88.4" r="6" class="da"/><rect x="64" y="70.3" width="546" height="36.3" class="hit" tabindex="0" data-ring="11" data-n="9" data-py="5.8 s" data-am="44 ms" data-x="132"/><text x="52" y="128.7" class="rl">ring 12</text><line x1="259.2" y1="124.7" x2="421.9" y2="124.7" class="db"/><circle cx="421.9" cy="124.7" r="6" class="dp"/><text x="435.9" y="128.7" class="dl">106×</text><circle cx="259.2" cy="124.7" r="6" class="da"/><rect x="64" y="106.6" width="546" height="36.3" class="hit" tabindex="0" data-ring="12" data-n="7" data-py="28.6 s" data-am="270 ms" data-x="106"/><text x="52" y="165.0" class="rl">ring 13</text><line x1="317.7" y1="161.0" x2="490.5" y2="161.0" class="db"/><circle cx="490.5" cy="161.0" r="6" class="dp"/><text x="504.5" y="165.0" class="dl">142×</text><circle cx="317.7" cy="161.0" r="6" class="da"/><rect x="64" y="142.9" width="546" height="36.3" class="hit" tabindex="0" data-ring="13" data-n="4" data-py="204 s" data-am="1.4 s" data-x="142"/><text x="52" y="201.3" class="rl">ring 14</text><line x1="385.0" y1="197.3" x2="546.0" y2="197.3" class="db"/><circle cx="546.0" cy="197.3" r="6" class="dp"/><text x="560.0" y="201.3" class="dl">101×</text><circle cx="385.0" cy="197.3" r="6" class="da"/><rect x="64" y="179.1" width="546" height="36.3" class="hit" tabindex="0" data-ring="14" data-n="1" data-py="1003 s" data-am="9.9 s" data-x="101"/><text x="52" y="237.6" class="rl">ring 15</text><circle cx="464.4" cy="233.6" r="6" class="da"/><text x="478.4" y="237.6" class="dn">Python not run</text><rect x="64" y="215.4" width="546" height="36.3" class="hit" tabindex="0" data-ring="15" data-n="1" data-py="" data-am="96.7 s" data-x="0"/><text x="52" y="273.9" class="rl">ring 16</text><circle cx="527.4" cy="269.9" r="6" class="da"/><text x="541.4" y="273.9" class="dn">Python not run</text><rect x="64" y="251.7" width="546" height="36.3" class="hit" tabindex="0" data-ring="16" data-n="1" data-py="" data-am="588 s" data-x="0"/></svg><div class="tip" id="dbTip" role="status" hidden></div></div>
+  <figcaption>Mean time per configuration, by ring size, on a log scale: <span class="key kp"></span> Python,
+  <span class="key ka"></span> Amber. The gap is the speedup. Rings 15 and 16 have only been run in Amber.
+  Hover or tab through the rows for the numbers; the tables below hold the same data.</figcaption>
+</figure>
+
 <p>Both run on one core of the same machine (WSL, gcc 13, CPython 3.12). The Python rows are the
 repository's code unchanged; the Amber rows are the native <code>dh.k</code>. Times are summed over
 the configurations of each ring size among configurations 1–38, the range the Python run finished.</p>
@@ -510,6 +598,10 @@ small rings that costs nothing; at rings 15 and 16 there are many more interchan
 grows about 10× per ring size where Python's grows about 6×. The vectorised version wins by doing
 more work, much faster.</p>
 
+<p>For scale, the report's own timing table has configuration 27 at 2 min 7 s on a home computer, and
+checking all 2822 configurations took twelve hours on a high-end PC running several at once. The same configuration takes Amber
+0.29 s on one core.</p>
+
 <h2>What parallelism adds</h2>
 
 <p>The configurations are independent, so the obvious move is to run several at once. With separate
@@ -523,12 +615,155 @@ memory reason. That result needed one change to the engine. <code>peach</code> h
 1024-item batches, so a job of a few dozen heavy tasks all lands on one thread. The measurement above
 used a build where the batch size shrinks for small jobs.</p>
 
+<h2>The whole program</h2>
+
+<p>Everything above is one file of 87 lines, with no dependencies beyond the Amber interpreter. It reads <code>U_2822.conf</code>, builds the colourings
+and block tables, and defines <code>run1 i</code>, which checks configuration <i>i</i> (0-based) and returns
+its number, ring size, directly extendable count, the count the file expects, the verdict and the time in ms.</p>
+
+<details class="src">
+  <summary>Show the whole file, <code>dh.k</code> (87 lines)</summary>
+  <div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">dh.k</span></div><pre><code class="l-q">/ ============================================================================
+/ dh.k  -  Durre-Heesch D-reducibility check of Steinberger's 2822 configurations
+/ Amber port of github.com/BonucciAndrea/DurreHeesch (Dreducing_graphs_final.py)
+/ .
+/ The Python walks one ring colouring at a time. Here every step works on whole
+/ columns: all essential colourings of a ring at once, every Kempe interchange
+/ of a batch at once. A set of colourings is a list of n digit vectors (digit j
+/ = colour of ring vertex j), one element per colouring.
+/ ============================================================================
+
+DIR:"./"                                  / the folder that holds U_2822.conf
+
+/ ---- parse: blocks split on blank lines; line 1 = "V R E 0", then V adjacency rows
+L:{x@&amp;~x="\r"}'0:DIR,"U_2822.conf"
+cut:&amp;0=#'L
+blk:{L@x+!y-x}'[0,1+-1_cut;cut]
+blk:blk@&amp;3&lt;#'blk
+conf:{h:. x 1;(h 0;h 1;h 2;{-1+2_. x}'x@3+!h 0)}'blk
+
+/ ---- essential colourings of an n-ring (colour 0 then 1, 2 before 3, last &lt;&gt; 0)
+step:{c:x 0;l:x 1;m:x 2;nl:(4!l+1),(4!l+2),(4!l+3);m3:m,m,m;k:&amp;~nl&gt;m3+1;(((4*c,c,c)+nl)@k;nl@k;(m3|nl)@k)}
+ess:{[n]s:(n-2) step/(,1;,1;,1);c:s[0]@&amp;~0=s 1;{4!_x%y}[c]'|*\1,(n-1)#4}
+
+/ ---- rank of a colouring: its successive colour steps (each 1..3) read in base 3
+didx:{[D]n:#D;+/(|*\1,(n-2)#3)*{-1+4!4+x}'(1_D)-(-1_D)}
+
+/ ---- block decompositions: ArrowGen + ArrowToBlock exactly as the Python builds them
+bits:{[s]{2!_x%y}[!*/s#2]'|*\1,(s-1)#2}
+arrows:{[s]B:bits s;ub:(+\B)-B;db:(!s)-ub;ok:&amp;/(B|~0=db-ub)&amp;(~B)|ub&lt;s%2;+B@\:&amp;ok}
+a2b:{{[l1;a]$[a;l1,*&amp;~@[(1+#l1)#0;l1;:;1];l1,$[0=n:l1?*|l1;*|l1;l1 n-1]]}/[,0;-1_x]}
+/ every allowed interchange of one decomposition, as a mask over sectors (blocks 0,1 stay)
+masks:{[bl]k:1+|/bl;$[k&lt;3;!0;+/{[bl;W;i]$[bl[i]&lt;2;0*W;(*/i#2)*2!_W%*/(bl[i]-2)#2]}[bl;!*/(k-2)#2]'!#bl]}
+DEC:{$[x&lt;2;();masks'a2b'arrows x]}'!17
+P2:*\1,16#2
+/ PAR:1 runs the interchange chunks on peach workers (needs an Amber whose peach grain
+/ adapts to small inputs, see README). CELLS = cells per chunk: small enough to stay in cache
+PAR:0;CELLS:125000
+peach:{`pe(x;y)}                        / as in std.k (a bare script run does not load std.k)
+X:0 1 2 3 1 0 3 2 2 3 0 1 3 2 1 0
+
+/ ---- ring-size cache: D = essential colourings, P = rank -&gt; position
+CN:0
+ring:{[n]$[n=CN;0;[D::ess n;P::@[(*/(n-2)#3)#-1;didx D;:;!#*D];CN::n]];0}
+
+/ ---- which ring colourings extend inside: a join over interior vertices, one
+/ column per live interior vertex, rows deduplicated as soon as a vertex is done
+stepv:{[v]nb:A v;rn:nb@&amp;nb&lt;R;pa:ACT?nb@&amp;(nb&gt;R-1)&amp;nb&lt;v;
+ sel:{[rn;pa;c]m:{[c;m;r]m&amp;~c=(D r)@RID}[c]/[(#RID)#1;rn];&amp;{[c;m;p]m&amp;~c=ACL p}[c]/[m;pa]}[rn;pa]'!4;
+ ix:,/sel;RID::RID ix;ACL::(ACL@\:ix),,,/(#'sel)#'!4;ACT::ACT,v;
+ keep:&amp;{[v;u]v&lt;|/A u}[v]'ACT;ACT::ACT keep;ACL::ACL keep;k:#ACT;
+ $[k;[w:|*\1,(k-1)#4;u:?(RID*4*w 0)++/w*ACL;RID::_u%4*w 0;ACL::{[u;p]4!_u%p}[u]'w];RID::?RID];0}
+extend:{RID::!#*D;ACT::!0;ACL::();stepv'R+!V-R;@[(#*D)#0;RID;:;1]}
+
+/ ---- Kempe game. For the rows g (of cand) whose partition-q ring has sn sectors:
+/ build every allowed interchange as one flat column, relabel, look it up in G
+/ relabel-to-first-occurrence as a state machine: state = which label each colour got
+/ (base 5, 0 = none yet); one lookup per vertex gives the label and the next state
+Z:!625;ZM:{[z;c](5!_z%*/c#5)-1}[Z]'!4;ZK:+/~0&gt;ZM
+NXT:,/+{[d]m:ZM d;Z+(m&lt;0)*(ZK+1)**/d#5}'!4
+LAB:,/+{[d]m:ZM d;m+(m&lt;0)*ZK-m}'!4
+/ same machine with the previous label folded into the state, emitting the rank digit
+Y:!2500;YK:4*_Y%4;YP:4!Y
+NX:,/+{[d]k:YK+d;(4*NXT k)+LAB k}'!4
+RD:,/+{[d]l:LAB YK+d;(4!4+l-YP)-1}'!4
+/ digits of one chunk: vertex j of every (interchange,row) cell, swapped or not, via
+/ SWT[cell's mask slot, sector, colour]; the fold relabels and ranks in one pass
+kv:{[ds;swt;ft;s;j]k:(4*s 0)+swt@ft+(#ft)#ds j;(NX k;(3*s 1)+RD k)}
+/ kcell is pure (reads globals, writes none), so chunks can run on peach workers
+kcell:{[q;r]m:#r;T:#TT;ft:64*_(!m*T)%m;ds:{[r;d;i]d[r]+4*i r}[r]'[DC;SID];
+ a:!T*64;dd:4!a;b:2!_(TT@_a%64)%P2@_(64!a)%4;swt:dd+b*(X@(4*dd)+q+1)-dd;
+ z:0*ft;(CAND r;P@(kv[ds;swt;ft]/[(z+4;z);1+!CN-1])1;MP;m)}
+kstore:{[e]$[BUD&gt;#e 1;[BUD::BUD-#e 1;CACHE::CACHE,,e];NOC::1];keval e}
+keval:{[e]MPX::e 2;ok:kok[G@e 1;e 3];G::@[G;(e 0)@&amp;ok;:;1];0}
+kok:{[gf;m]&amp;/{[gf;m;p]|/{[gf;m;x]gf@(x*m)+!m}[gf;m]'p}[gf;m]'MPX}
+kgo:{[q;g;ms]u:?,/ms;TT::u;MP::TT?/:ms;ch:(0N;1|_CELLS%#TT)#g;kstore'$[PAR&amp;1&lt;#ch;peach[kcell[q];ch];kcell[q]'ch];0}
+kgroup:{[q;sn;g]ms:DEC sn;$[(0=#ms)|0=&amp;/1,#'ms;0;kgo[q;g;ms]]}
+kround:{[q]CAND::&amp;~G;$[#CAND;kr2 q;0]}
+kr2:{[q]DC::D@\:CAND;
+ out:{[q;x](x=0)|x=q+1}[q]'DC;SID::+\(,(#CAND)#0),~(1_out)=-1_out;
+ S:1+*|SID;lo:*|out;SID::{[S;lo;x]x*~lo&amp;x=S-1}[S;lo]'SID;s:S-lo;
+ {[q;s;sn]g:&amp;s=sn;$[#g;kgroup[q;sn;g];0]}[q;s]'2*1+!_CN%2;0}
+
+/ ---- one configuration: 1 = D-reducible
+run1:{[i]c:conf i;V::c 0;R::c 1;A::c 3;t0:`t[];ring R;G::extend[];e:+/G;
+ CACHE::();NOC::0;BUD::200000000;kround'0 1 2;
+ {$[NOC;kround'0 1 2;keval'CACHE];+/G}/0;
+ ok:(&amp;/G)&amp;e=c 2;(i+1;R;e;c 2;ok;_(`t[]-t0)%1000)}</code></pre></div>
+</details>
+
+<p>Put <code>U_2822.conf</code> from the Python repository in the same folder as <code>dh.k</code>, start
+Amber in that folder (or point <code>DIR</code> on line 11 at it), load the file with <code>\l dh.k</code>, and
+run, for example,
+<code>{run1 x}'!30</code> to check the first thirty configurations. Download the file as
+<a href="../assets/dh/dh-native.k" download="dh.k">dh.k</a>; the version the playground below loads is
+<a href="../assets/dh/dh.k">assets/dh/dh.k</a>, the same code with five configurations written inline
+instead of read from disk.</p>
+
 <h2>Try it</h2>
 
-<p>This is the real checker, compiled to WebAssembly and running in your browser. The presets check a
-ring-12 configuration in a couple of seconds, show the graph that fails, and let you edit a
-configuration and re-check it. <code>check</code> returns the ring size, how many colourings extend
-directly, how many are good at the end, and whether the configuration is D-reducible.</p>
+<p>This is the real checker: the Amber interpreter compiled to WebAssembly, running in your browser with
+the file above loaded. Pick a preset, press <b>Run</b> (or Ctrl+Enter), and edit anything you like. Each line
+is one statement; lines starting with <code>/</code> are comments.</p>
+
+<ul>
+  <li><b>Ring colourings</b> builds every essential colouring of an 8-ring (274 of them) and prints the first
+    five, one per row.</li>
+  <li><b>Check a configuration</b> runs the whole algorithm on configuration 27, a 12-ring around 8 interior
+    vertices. It takes a couple of seconds in the browser.</li>
+  <li><b>A graph that fails</b> checks the degree-6 wheel. Its neighbour lists are written out so you can
+    change them and check your own graph.</li>
+  <li><b>Kempe swap = XOR</b> is the swap from the section above.</li>
+  <li><b>Block decompositions</b> counts the block decompositions for 2 to 12 sectors.</li>
+</ul>
+
+<p><code>check</code> prints one line per field:</p>
+
+<div class="tbl">
+<table>
+  <thead><tr><th>field</th><th>meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>ring</code></td><td>the ring size <i>R</i>: how many outer vertices there are</td></tr>
+    <tr><td><code>extendable</code></td><td>how many essential ring colourings extend straight into the interior
+      (the report's Φ<sub>0</sub>), found by the vectorised join</td></tr>
+    <tr><td><code>expected</code></td><td>the same count as stored in <code>U_2822.conf</code>, to compare
+      against; <code>0N</code> (null) for a graph you made up</td></tr>
+    <tr><td><code>good</code></td><td>how many ring colourings are good once the Kempe game stops. For
+      D-reducibility this has to be all of them: 31 for a 6-ring, 22,144 for a 12-ring</td></tr>
+    <tr><td><code>reducible</code></td><td><code>1</code> if every ring colouring ended up good (the
+      configuration is D-reducible), <code>0</code> if the game got stuck</td></tr>
+    <tr><td><code>ms</code></td><td>how long the check took in your browser, in milliseconds</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>A configuration is written <code>(V;R;E;neighbours)</code>: <i>V</i> vertices numbered from 0, the first
+<i>R</i> of them forming the ring in order, <i>E</i> the expected extendable count (or <code>0N</code>),
+and then one neighbour list per vertex. The wheel is <code>(7;6;0N;(1 5 6;2 0 6;…;0 1 2 3 4 5))</code>:
+ring vertex 0 touches its ring neighbours 1 and 5 and the centre 6, and the centre touches every ring vertex.
+If you edit it, keep the graph a plausible configuration: list every edge from both ends, keep the ring a cycle
+of at least 6 vertices, and keep every inner face a triangle. The checker will run on anything, but its
+verdict only means D-reducibility for a real configuration.</p>
 
 <div class="play" id="play">
   <div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber (WebAssembly)</span><span class="st" id="playStatus">loading the engine…</span></div>
@@ -538,18 +773,26 @@ directly, how many are good at the end, and whether the configuration is D-reduc
   <pre id="playOut" aria-live="polite"></pre>
 </div>
 
-<p>The names available in the playground are <code>c1</code>, <code>c11</code>, <code>c18</code> and
-<code>c27</code> (configurations 1, 11, 18 and 27 of the 2822), <code>wheel</code>, and the pieces
-used above: <code>ess</code>, <code>X</code>, <code>DEC</code>. One statement per line.</p>
+<p>Names you can use: <code>c1</code>, <code>c11</code>, <code>c18</code> and <code>c27</code>
+(configurations 1, 11, 18 and 27 of the 2822, rings 6, 10, 11 and 12), <code>wheel</code>,
+<code>check</code>, and the pieces used above: <code>ess n</code> (all essential colourings of an
+<i>n</i>-ring, one digit vector per ring vertex), <code>X</code> (the XOR table) and <code>DEC</code> (the
+interchange masks for each sector count). Try <code>check c11</code>, <code>#*ess 12</code>, or turn the wheel
+into Birkhoff's diamond by pasting <code>check c1</code>.</p>
 
 <div class="endnote">The Python original is
 <a href="https://github.com/BonucciAndrea/DurreHeesch" target="_blank" rel="noopener">github.com/BonucciAndrea/DurreHeesch</a>,
-with the full list of configurations in <code>U_2822.conf</code>. The browser checker on this page is
-<a href="../assets/dh/dh.k">assets/dh/dh.k</a>. Its tests in the site repository check the colouring
-counts against the closed form, the block decompositions against the Catalan numbers, the
-extendability join against a JavaScript backtracking search, and that the wheel is rejected. The
-reducibility test is Steinberger's; see J. P. Steinberger, <i>An unavoidable set of D-reducible
-configurations</i>, Trans. AMS 362 (2010).</div>
+with the full list of configurations in <code>U_2822.conf</code>. The mathematics, including the proofs
+sketched here, is in <a href="../assets/dh/4_Color_Theorem.pdf">our report</a> (Andrea, Abel, Tomas, Lex and
+Jordy, 2023). The browser checker on this page is <a href="../assets/dh/dh.k">assets/dh/dh.k</a>. Its tests in
+the site repository check the colouring counts against the closed form, the block decompositions against
+Theorem 6.6.4, the extendability join against a JavaScript backtracking search, and every verdict against a
+separate JavaScript implementation written from the report's definitions. They also reproduce the report's
+worked example on Birkhoff's diamond: the five block decompositions of (0,1,0,1,0,1), the 21st essential
+colouring, and Φ = Φ<sub>5</sub>. The unavoidable set is J. Steinberger, <i>An unavoidable set of D-reducible
+configurations</i>, <a href="https://arxiv.org/abs/0905.0043" target="_blank" rel="noopener">arXiv:0905.0043</a>
+(2009); the block-decomposition theorem is 6.6.4 in R. Fritsch and G. Fritsch, <i>The Four-Color Theorem</i>,
+Springer 1998.</div>
 
 </div></article>
 </main>
@@ -739,6 +982,29 @@ W.onmessage=function(e){
   if(m.type==="eval"&&pending[m.id]){var f=pending[m.id];delete pending[m.id];f(m)}
 };
 W.postMessage({type:"boot",runtime:["../notepad/amber.wasm.js?v=2.2.0","../notepad/amber.js?v=5"],src:"../dh/dh.k?v=1"});
+})();
+</script>
+<script>
+(function(){
+"use strict";
+var svg=document.getElementById("dumbbell"),tip=document.getElementById("dbTip");
+if(!svg||!tip)return;
+function row(t,cls,label,val){var d=document.createElement("div");var k=document.createElement("i");k.style.background="var(--"+cls+")";
+  var b=document.createElement("b");b.textContent=val;var s=document.createElement("span");s.textContent=" "+label;d.appendChild(k);d.appendChild(b);d.appendChild(s);t.appendChild(d)}
+function show(r){
+  tip.textContent="";var h=document.createElement("div");var hb=document.createElement("span");
+  hb.textContent="ring "+r.dataset.ring+" · "+(r.dataset.n==="1"?"1 configuration":r.dataset.n+" configurations, mean");h.appendChild(hb);tip.appendChild(h);
+  if(r.dataset.py)row(tip,"py","Python",r.dataset.py);row(tip,"am","Amber",r.dataset.am);
+  if(r.dataset.py){var x=document.createElement("div");var xb=document.createElement("b");xb.textContent=r.dataset.x+"×";x.appendChild(xb);
+    var xs=document.createElement("span");xs.textContent=" faster";x.appendChild(xs);tip.appendChild(x)}
+  var fb=svg.parentNode.getBoundingClientRect(),rb=r.getBoundingClientRect();
+  tip.hidden=false;tip.style.left=Math.max(8,Math.min(fb.width-tip.offsetWidth-8,rb.left-fb.left+rb.width*0.55))+"px";
+  tip.style.top=(rb.top-fb.top-tip.offsetHeight-6)+"px";
+}
+[].forEach.call(svg.querySelectorAll(".hit"),function(r){
+  r.addEventListener("pointerenter",function(){show(r)});r.addEventListener("focus",function(){show(r)});
+  r.addEventListener("pointerleave",function(){tip.hidden=true});r.addEventListener("blur",function(){tip.hidden=true});
+});
 })();
 </script>
 </body>
