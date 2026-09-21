@@ -1,6 +1,6 @@
 # Tests
 
-Tests for the pages under `projects/`, plus the Notepad's statement splitter.
+Tests for the pages under `projects/`, the four-colour post's checker, plus the Notepad's statement splitter.
 
 ```sh
 node _tests/run.js            # everything
@@ -34,6 +34,7 @@ broken, not that a copy drifted out of date.
 | `sweep` | bounded neighbours don't wrap; 200 boards of first-click safety; flood fill never reveals a mine; flags, losing, winning |
 | `golf` | **every puzzle's own reference answer passes all its tests**, every puzzle rejects a constant, no two puzzles share an answer, the judge never throws on half-typed input |
 | `semantics` | every puzzle is **re-implemented in JavaScript from its prompt** and must agree with the stored expected values — the guard against a puzzle that tests something other than what it asks |
+| `dh` | the four-colour checker (`assets/dh/dh.k`, loaded by `blog/08-four-colours.html`): colouring counts match the closed form, block decompositions are Catalan, the extendability join agrees with JavaScript backtracking and with `U_2822.conf`, the degree-6 wheel is rejected, every playground preset runs |
 
 ## The two that matter most
 

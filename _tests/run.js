@@ -14,7 +14,8 @@ const SUITES = [
   ["tape", "./tape.test.js"],
   ["sweep", "./sweep.test.js"],
   ["golf", "./golf.test.js"],
-  ["semantics", "./golf.semantics.test.js"]
+  ["semantics", "./golf.semantics.test.js"],
+  ["dh", "./dh.test.js"]
 ];
 
 (async () => {
