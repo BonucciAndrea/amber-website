@@ -305,14 +305,14 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
     <span class="sep">·</span><span>Andrea Bonucci</span>
   </div>
 </div></div></header><article><div class="col"><p>Every project that gets built on something has a moment where you have to explain the something.
-Amber's is <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a> — a compact,
+Amber's is <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>, a compact,
 AGPLv3 implementation of the K array language, written by ngn, in a dialect of C that I can only
 describe as <em>compressed</em>. I did not write it. Everything in the four posts after this one is
 built on it, and none of that would make sense without first saying what it is and what it already
 does.</p>
 
 <p>This post is that. What K is, why an array language ends up looking like line noise, how ngn's
-interpreter actually represents a value, and — the part that matters for everything downstream —
+interpreter represents a value, and, the part that matters for everything downstream,
 which properties of that design made it the right thing to build a market-data engine on.</p>
 
 <h2>What K is</h2>
@@ -328,7 +328,7 @@ to every element.</p>
 
 <p>What distinguishes K from APL is the ASCII and the size. APL wants a special keyboard; K uses the
 characters that were already on yours. And where a modern APL implementation is a large system, K has
-a tradition of being small enough for one person to hold in their head — Arthur Whitney's original K
+a tradition of being small enough for one person to hold in their head. Arthur Whitney's original K
 implementations were famously terse, and ngn/k continues that lineage.</p>
 
 <p>The primitives are single characters, and most of them are overloaded on arity. <code>#</code> is
@@ -339,10 +339,10 @@ related and because in practice you are reading a phrase, not a character.</p>
 
 <blockquote>
 <p>The reason a K expression looks dense is that it <em>is</em> dense. It is not shorthand for a longer
-program — there is no longer program. The phrase is the whole thing.</p>
+program, because there is no longer program. The phrase is the whole thing.</p>
 </blockquote>
 
-<p>The other half of the language is the adverbs — <code>/</code> <code>\</code> <code>'</code> — which
+<p>The other half of the language is the adverbs, <code>/</code> <code>\</code> <code>'</code>, which
 modify a verb rather than a value. <code>+/</code> is "plus, folded". <code>+\</code> is "plus,
 scanned", which gives you running sums. <code>'</code> is each. Combining a small set of verbs with a
 smaller set of adverbs is where the expressive density comes from, and it is the thing that takes a
@@ -425,7 +425,7 @@ K value is a single 64-bit word, and for a large family of types the value <em>i
 <text class="a" x="218" y="312">the attribute byte at −13 is the whole of Amber&#39;s `s `u `p `g</text>
 </svg>
 </div>
-  <figcaption>A packed value carries its type in the top byte and its payload in the low bits — nothing
+  <figcaption>A packed value carries its type in the top byte and its payload in the low bits, so nothing
   is allocated. A list is a pointer, and every field of its header is one negative offset behind the
   payload.</figcaption>
 </figure>
@@ -448,17 +448,17 @@ K value is a single 64-bit word, and for a large family of types the value <em>i
 <h3>1. A pointer to a K list points at the data</h3>
 
 <p>Not at a struct that contains a pointer to the data. The header sits <em>before</em> the payload and
-you reach it by subtracting. So <code>_V(x)</code> — the address of the first element — is
+you reach it by subtracting. So <code>_V(x)</code>, the address of the first element, is
 <code>x</code> itself, and handing that address to something outside the interpreter is free.</p>
 
-<p>That is the entire reason Amber's Arrow and NumPy bridges can be genuinely zero-copy. A column's
+<p>That is why Amber's Arrow and NumPy bridges can be zero-copy at all. A column's
 payload is already a plain contiguous typed array with nothing interleaved and no descriptor in front
 of it. There is nothing to convert. (It is also the reason the <em>inbound</em> direction always
 copies: a foreign allocation has no header behind it, and you cannot retroactively put one there.)</p>
 
 <h3>2. Small values never touch the heap</h3>
 
-<p>An integer, a char, a symbol id — these live entirely in the tagged word. No allocation, no
+<p>An integer, a char, a symbol id: these live entirely in the tagged word. No allocation, no
 refcount traffic, no cache miss to find out what type something is. In a language where a scalar
 appears in every expression, that is not a micro-optimisation; it is the difference between an
 interpreter and a toy.</p>
@@ -496,21 +496,21 @@ being an obstacle and becomes the point: a whole primitive is visible at once, w
 the tree Amber builds:</p>
 
 <div class="stats">
-  <div><div class="v">82</div><div class="l">lines in <code>b.c</code> — the compiler and the stack VM</div></div>
+  <div><div class="v">82</div><div class="l">lines in <code>b.c</code>, the compiler and the stack VM</div></div>
   <div><div class="v">10 KB</div><div class="l">…in those 82 lines. ~123 characters each.</div></div>
   <div><div class="v">108</div><div class="l">lines in <code>p.c</code>, the parser</div></div>
   <div><div class="v">24</div><div class="l">core files, ~264 KB, the whole interpreter</div></div>
 </div>
 
-<p>The 82-line file is not a stub. <code>b.c</code> contains the real compiler — it walks a parse tree
-and emits a flat opcode array plus a constant pool — and the real VM that runs it (<code>cr()</code>,
+<p>The 82-line file is not a stub. <code>b.c</code> contains the real compiler, which walks a parse tree
+and emits a flat opcode array plus a constant pool, and the real VM that runs it (<code>cr()</code>,
 <code>cpl()</code>, <code>run()</code>). The AST is never walked at evaluation time. I only learned
 that with certainty when I wrote <a href="05-platform.html">the disassembler</a>, which decodes the
-bytecode the compiler actually emits and confirms, among other things, that it constant-folds.</p>
+bytecode the compiler emits, and confirms, among other things, that it constant-folds.</p>
 
 <div class="note info">
   <b>A detail I love</b>
-  <p><code>src/g.h</code> — a file of accessor macros — carries the comment
+  <p><code>src/g.h</code>, a file of accessor macros, carries the comment
   <code>// generated by g.k</code>. Part of the C is generated by a K program. In a language whose whole
   argument is that array notation is a better way to express transformations, using it to write your own
   boilerplate is not a stunt; it is the thesis applied to itself.</p>
@@ -531,13 +531,13 @@ index from the byte size, pulls a chunk, stamps the header and hands back a poin
   A x=mb(i);xb=i;xr=REFB;xT=t;xn=n;_at(x)=0;x)</code></pre></div>
 
 <p>Freeing is refcount-driven, and the refcount is one 32-bit field at <code>-8</code>. Amber added
-exactly one line to that function — <code>_at(x)=0</code>, clearing the attribute byte on a fresh
-allocation — which is a fair summary of how invasive most of my changes to the core needed to be.</p>
+exactly one line to that function, <code>_at(x)=0</code>, clearing the attribute byte on a fresh
+allocation, which is a fair summary of how invasive most of my changes to the core needed to be.</p>
 
 <div class="note">
   <b>Where the alignment went wrong, later</b>
   <p><code>HD</code>, the header size, was 32 bytes. Which meant every payload pointer landed exactly 32
-  bytes past a 64-byte boundary — I measured <code>ptr % 64 == 32</code> for every allocation size —
+  bytes past a 64-byte boundary. I measured <code>ptr % 64 == 32</code> for every allocation size,
   splitting a cache line on the first wide access of every array. Moving <code>HD</code> to 64 fixed it.
   That is the kind of thing you only find by probing, and it only mattered once I had SIMD kernels
   reading those payloads. It is in <a href="05-platform.html">post five</a>.</p>
@@ -551,13 +551,13 @@ allocation — which is a fair summary of how invasive most of my changes to the
 <table>
   <thead><tr><th style="width:22%">Component</th><th>What it does</th></tr></thead>
   <tbody>
-    <tr><td><code>p.c</code></td><td>the parser — tokens to parse tree, including the context-sensitive rules that make <code>/</code> either an adverb or a comment</td></tr>
+    <tr><td><code>p.c</code></td><td>the parser: tokens to parse tree, including the context-sensitive rules that make <code>/</code> either an adverb or a comment</td></tr>
     <tr><td><code>b.c</code></td><td>the compiler and the stack VM. Every expression becomes bytecode; nothing walks a tree at run time</td></tr>
     <tr><td><code>m.c</code></td><td>the buddy allocator and the refcounting</td></tr>
     <tr><td><code>2.c</code>, <code>3.c</code></td><td>the element-wise and reduction kernels, one per type combination</td></tr>
-    <tr><td><code>f.c</code></td><td>search and find — <code>?</code>, <code>in</code>, the group and distinct machinery</td></tr>
+    <tr><td><code>f.c</code></td><td>search and find: <code>?</code>, <code>in</code>, the group and distinct machinery</td></tr>
     <tr><td><code>v.c</code></td><td>the verb table and rank/rank-adjustment logic</td></tr>
-    <tr><td><code>s.c</code></td><td>the formatter — how a value prints</td></tr>
+    <tr><td><code>s.c</code></td><td>the formatter: how a value prints</td></tr>
     <tr><td><code>e.c</code></td><td>the error path, and the caret that points at the failing token</td></tr>
     <tr><td><code>0.c</code></td><td>the platform layer: file I/O, <code>mmap</code>, the socket <code>connect()</code>, and a freestanding <code>wasm</code> mode</td></tr>
   </tbody>
@@ -567,24 +567,24 @@ allocation — which is a fair summary of how invasive most of my changes to the
 <p>That last one deserves a note. <code>0.c</code> already had a <code>-Dwasm</code> path with its own
 tiny virtual filesystem and syscall shims, designed so the interpreter could be compiled for
 <code>wasm32</code>. Years later that is why <a href="../notepad.html">the Notepad</a>
-— the real engine, in a browser tab, offline — was a weekend rather than a rewrite.
+(the real engine, in a browser tab, offline) was a weekend rather than a rewrite.
 Someone else's foresight.</p>
 
 <h2>What K does not have</h2>
 
 <p>Everything a tick shop needs, roughly. K gives you dictionaries and a transpose, and a table in the
-q sense is a transposed dictionary of columns — but that is an observation, not an implementation.
+q sense is a transposed dictionary of columns, but that is an observation rather than an implementation.
 There is no <code>([]…)</code> literal, no keyed table, no <code>select</code>, no join family, no
 <code>meta</code>, no attributes, no temporal types, no as-of join.</p>
 
 <p>There is also no q vocabulary at all: no <code>wavg</code>, no <code>xbar</code>, no
 <code>aj</code>, no <code>bars</code>. Those names carry meaning to anyone who has worked on a trading
-desk, and reproducing them exactly — including the argument orders people already have in their
-fingers — is most of what makes an engine adoptable rather than merely correct.</p>
+desk, and reproducing them exactly, including the argument orders people already have in their
+fingers, is most of what makes an engine adoptable rather than just correct.</p>
 
 <p>And there are ergonomics. Errors print a single terse word. Tables do not render as grids. The REPL
 has no line editing (this was true when I started; I ended up writing my own editor, which is
-<a href="05-platform.html">post five</a>). None of that is a criticism — K is a language, not a
+<a href="05-platform.html">post five</a>). None of that is a criticism: K is a language, not a
 product, and it is a very good language.</p>
 
 <h2>The licence, said plainly</h2>
@@ -599,7 +599,7 @@ is recorded. Amber is an independent language and is not affiliated with, nor a
 distribution of, that project.</code></pre></div>
 
 <p>Both halves of that matter. The attribution is real work by someone else and it stays. And Amber is
-its own language with its own name, its own vocabulary and its own semantics — the interpreter is named
+its own language with its own name, its own vocabulary and its own semantics. The interpreter is named
 <code>amber</code>, never <code>k</code> or <code>q</code>; it reads no <code>QHOME</code>, no config,
 no dotfiles; and it lives entirely inside one folder so that deleting the folder uninstalls it. Your
 existing k, q or kona installs are untouched, because Amber never goes anywhere near them.</p>
@@ -609,14 +609,14 @@ existing k, q or kona installs are untouched, because Amber never goes anywhere 
 <p>In the order I built them:</p>
 
 <ul>
-  <li><strong>The q layer</strong> — <code>([]…)</code> table literals in the C parser, keyed tables, the
+  <li><strong>The q layer</strong>: <code>([]…)</code> table literals in the C parser, keyed tables, the
   eight-member join family, and a line rewriter that lets you type <code>select … by … from …</code> at
   the prompt with no wrapper.</li>
-  <li><strong>Attributes</strong> — the byte at <code>-13</code>, the four promises it can hold, and
+  <li><strong>Attributes</strong>: the byte at <code>-13</code>, the four promises it can hold, and
   which kernels are allowed to believe it.</li>
-  <li><strong>Native kernels</strong> — first-class temporal types, a SIMD kernel library, a
+  <li><strong>Native kernels</strong>: first-class temporal types, a SIMD kernel library, a
   multithreaded vector engine, a 16 MB bump arena, and a branch-free as-of join.</li>
-  <li><strong>The platform</strong> — a binary wire format, diagnostics that print once, a line editor
+  <li><strong>The platform</strong>: a binary wire format, diagnostics that print once, a line editor
   that replaced <code>rlwrap</code>, an extension seam, and a shared library so that everything else can
   live outside the repository.</li>
 </ul>

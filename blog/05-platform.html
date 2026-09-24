@@ -298,7 +298,7 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
   <div class="series"><span class="bar"></span>Building Amber on ngn/k &nbsp;·&nbsp; Part 05 of 06</div>
   <div class="postno">05</div>
   <h1>From language to platform: -8!, one-report diagnostics, owning the terminal, and libamber.so</h1>
-  <p class="dek">Six point releases that added no vocabulary at all. What they added instead was a wire format, an error report you can act on, a line editor, an extension seam, and a shared library — everything an ecosystem needs to exist outside the repository.</p>
+  <p class="dek">Six point releases that added no vocabulary at all. What they added instead was a wire format, an error report you can act on, a line editor, an extension seam, and a shared library: everything an ecosystem needs to exist outside the repository.</p>
   <div class="meta">
     <span class="tag">v1.9.1 – v1.9.6</span>
     <span>2026-07-24</span><span class="sep">·</span><span>21 min read</span>
@@ -307,12 +307,12 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
 </div></div></header><article><div class="col"><p>Six point releases, and between them they added almost no vocabulary. No new verbs worth mentioning,
 no new joins, nothing you would put on a feature list. What they added instead was everything that lets
 other software exist next to Amber without being inside it: a wire format, an error report you can act
-on, a terminal the REPL actually owns, a place to plug things in, and a shared library.</p>
+on, a terminal the REPL owns outright, a place to plug things in, and a shared library.</p>
 
 <p>This is the stretch where Amber stopped being a language I was writing and became something other
 projects could be written against.</p>
 
-<h2>1.9.1 — the query layer was allocating ten million objects</h2>
+<h2>1.9.1: the query layer was allocating ten million objects</h2>
 
 <p>The vector kernels from <a href="04-native-kernels.html">post four</a> made one thing very visible: the
 query layer was now, by a wide margin, the slowest part of the system. A
@@ -320,7 +320,7 @@ query layer was now, by a wide margin, the slowest part of the system. A
 group-by over the very same data took <strong>87 milliseconds</strong>.</p>
 
 <p>The cause was one function. <code>qby</code>, <code>xgroup</code> and <code>ij</code> all grouped and
-probed through <code>rows:{+. x}</code> — flip the column dictionary into <em>one boxed K value per
+probed through <code>rows:{+. x}</code>, which flips the column dictionary into <em>one boxed K value per
 row</em>, so the rows can be hashed. Ten million rows meant ten million transient heap objects, allocated
 and refcounted and freed, purely so they could be compared and thrown away. <strong>7.9 of the 8.4
 seconds.</strong></p>
@@ -332,32 +332,32 @@ the first place. Three pieces:</p>
 <ul>
   <li><strong><code>qgrp[t;b]</code></strong> returns <em>(key-value columns; group row-index vectors)</em>.
   A single-column <code>by</code> groups the column itself. A multi-column <code>by</code> is rank-encoded
-  per column and mixed radix-style into one dense integer key — with a <code>2^53</code> cardinality guard
+  per column and mixed radix-style into one dense integer key, with a <code>2^53</code> cardinality guard
   that falls back to the old path rather than risk a collision. Key <em>values</em> are recovered by
   indexing the raw columns with each group's first row: one gather per by-column, instead of a flip over
   every row.</li>
   <li><strong><code>ij</code></strong> rank-encodes both sides over one shared code space, so the probe is
   a native vector <code>?</code> on a flat integer vector. Single-key joins skip the encoding entirely.</li>
   <li><strong><code>qproj</code> / <code>qrefs</code></strong> narrow the table to the columns an aggregate
-  can actually reach, before <code>qby</code> materialises per-group sub-tables. The cost now scales with
+  can reach, before <code>qby</code> materialises per-group sub-tables. The cost now scales with
   columns <em>used</em>, not columns <em>present</em>.</li>
 </ul>
 
 <div class="tbl">
 <table>
-  <thead><tr><th>Workload — 10M rows, median kernel ms</th><th class="n">1.9</th><th class="n">1.9.1</th><th class="n">speed-up</th><th class="n">vs. hand-written array code</th></tr></thead>
+  <thead><tr><th>Workload, 10M rows, median kernel ms</th><th class="n">1.9</th><th class="n">1.9.1</th><th class="n">speed-up</th><th class="n">vs. hand-written array code</th></tr></thead>
   <tbody>
     <tr><td>group-by, 100 groups</td><td class="n">8,171.7</td><td class="n">330.8</td><td class="n hi">24.7×</td><td class="n">1.48×</td></tr>
     <tr><td>inner join, 1M × 1,000 sparse keys</td><td class="n">3,858.9</td><td class="n">199.7</td><td class="n hi">19.3×</td><td class="n">1.09×</td></tr>
     <tr><td>vector arithmetic + mask</td><td class="n">107.6</td><td class="n">102.2</td><td class="n">—</td><td class="n">1.19×</td></tr>
-    <tr><td>reductions — sum · max · dot</td><td class="n">105.7</td><td class="n">109.6</td><td class="n">—</td><td class="n">2.06×</td></tr>
+    <tr><td>reductions: sum · max · dot</td><td class="n">105.7</td><td class="n">109.6</td><td class="n">—</td><td class="n">2.06×</td></tr>
   </tbody>
 </table>
 </div>
 
 <p>The last column is the one I care about: after the change, <code>select … by …</code> sits within
 1.1–1.5&times; of what you would get writing the array code by hand. The bottom two rows never touched
-<code>qby</code>, so their gap is qSQL's fixed per-call parse-and-compile cost — a per-<em>query</em> cost,
+<code>qby</code>, so their gap is qSQL's fixed per-call parse-and-compile cost: a per-<em>query</em> cost,
 not a per-<em>row</em> cost, and therefore not worth optimising.</p>
 
 <div class="note ok">
@@ -368,14 +368,14 @@ not a per-<em>row</em> cost, and therefore not worth optimising.</p>
   A 24&times; speedup that changes one answer is not a speedup.</p>
 </div>
 
-<h2>1.9.2 — reductions, and an honest note about floats</h2>
+<h2>1.9.2: reductions, and an honest note about floats</h2>
 
 <p>The integer-find rewrite from this release is in <a href="03-attributes.html">post three</a>, and the
 cache-line alignment fix is in <a href="04-native-kernels.html">post four</a>. The third change is worth
 its own paragraph because of what it costs.</p>
 
 <p><code>+/</code> over floats was a serialised <code>v += p[i]</code> chain running at about 3.5
-cycles per element — the latency of a single <code>addsd</code>. The compiler is not allowed to
+cycles per element, the latency of a single <code>addsd</code>. The compiler is not allowed to
 reassociate it, because IEEE addition is not associative. So <code>sumF</code> now keeps <strong>four
 independent partial sums</strong>, which breaks the dependency chain and lets the vectoriser issue one
 wide add per group. Measured on 10M elements: <code>+/</code> 8.9 &rarr; 6.3 ms, <code>+/x*y</code>
@@ -393,11 +393,11 @@ true:    10000.0</code></pre></div>
 the changelog as one, and anyone who needs strict left-fold semantics deserves to find that out from a
 release note rather than from a reconciliation break.</p>
 
-<h2>1.9.3 — <code>-8!</code> and <code>-9!</code>: a wire format</h2>
+<h2>1.9.3: <code>-8!</code> and <code>-9!</code>, a wire format</h2>
 
 <p>Until this release Amber's only wire format was <strong>text</strong>. <code>`k</code> rendered a value
 and <code>.</code> reparsed it. <code>peach</code> shipped every worker's result that way, which meant a
-multi-core map paid a full format-then-parse round trip per chunk — and, worse, any value whose printed
+multi-core map paid a full format-then-parse round trip per chunk, and worse, any value whose printed
 form does not reparse to itself could not survive the trip at all. Attributes were lost. Some
 <code>0n</code> / <code>0w</code> edge cases were lost. Nested empties were lost.</p>
 
@@ -410,7 +410,7 @@ byte-exact.</p>
 <p>The format is four bytes of magic and version, then one recursive node. Packed atoms carry their value
 inline with no header at all. Heap types carry an attribute byte, a 64-bit count, and the raw payload.
 Because the payload is copied verbatim and the width is implied by the type tag, bit vectors (one bit per
-element) and every temporal width come out exact with no special cases — and nulls and infinities are
+element) and every temporal width come out exact with no special cases. Nulls and infinities are
 preserved because they <em>are</em> just their bit patterns. Nothing is routed through a decimal formatter
 that could round.</p>
 
@@ -419,15 +419,15 @@ that could round.</p>
 <h3>Symbols are written as names, not ids</h3>
 
 <p>Symbol ids are process-local. A forked <code>peach</code> worker can intern a symbol the parent has
-never seen, so shipping raw 32-bit ids would decode to the wrong name — or to garbage — in the parent.
+never seen, so shipping raw 32-bit ids would decode to the wrong name, or to garbage, in the parent.
 Every symbol goes over the wire as its <em>name</em> and is re-interned on the way in. Correct across
 processes and across separate runs, at the cost of the bytes.</p>
 
 <h3><code>-9!</code> is a parser for untrusted input</h3>
 
 <p>So every read is bounds-checked against the input length, the recursion is depth-limited to 256, and a
-malformed or truncated buffer yields a clean <code>'domain</code> error — never a read past the end and
-never a partially built object left un-freed. Lambdas and projections are deliberately <em>not</em>
+malformed or truncated buffer yields a clean <code>'domain</code> error, never a read past the end and
+never a partially built object left un-freed. Lambdas and projections are <em>not</em>
 supported: serialising a closure means serialising its captured environment and its bytecode, which is a
 much larger feature than a data wire format, and nothing needs it. They raise a clean <code>'type</code>
 rather than emitting bytes that would not decode.</p>
@@ -437,14 +437,14 @@ loop that the text path had been hiding: a per-chunk leak, an ignored worker exi
 unvalidated decode. All three fixed in the same release. Replacing a subsystem is the most reliable way I
 know to find out what was wrong with it.</p>
 
-<h2>1.9.4 — one error, one report</h2>
+<h2>1.9.4: one error, one report</h2>
 
-<p>Amber had two error printers. The core's terse caret line, and — since 1.9 — a Rust-style visual
+<p>Amber had two error printers: the core's terse caret line, and, since 1.9, a Rust-style visual
 diagnostic. Both fired. You got the report, then you got the legacy block underneath it, for every single
 error.</p>
 
-<p>1.9.4 deleted the duplicate and made the good one universal. Every category — parse, type, domain,
-rank, length, undefined name — now has a code, a title, a token-spanning underline, an inline label and
+<p>1.9.4 deleted the duplicate and made the good one universal. Every category (parse, type, domain,
+rank, length, undefined name) now has a code, a title, a token-spanning underline, an inline label and
 actionable help:</p>
 
 <div class="code"><pre><code class="l-out">error[E0101]: Undefined variable `prices`
@@ -467,11 +467,11 @@ provokes errors on purpose, that is noise. So it is switchable at run time:</p>
 .[{1+`a};,0;{&quot;caught&quot;}]         / no output at all
 `diag prev                      / restore</code></pre></div>
 
-<p>The compact <code>'type</code> caret line is not suppressed — it is buffered and still handed to the
+<p>The compact <code>'type</code> caret line is not suppressed. It is buffered and still handed to the
 trap handler and to <code>`err</code>, so a caught error can always be inspected. Quiet is not the same as
 gone.</p>
 
-<h2>1.9.5 — owning the terminal</h2>
+<h2>1.9.5: owning the terminal</h2>
 
 <p>For years the answer to "Amber has no line editing" was <code>rlwrap</code>. It worked, in the sense
 that arrow keys moved the cursor. It also did this, mid-session, usually right after an error:</p>
@@ -484,7 +484,7 @@ and possibly --no-children? (cf. the rlwrap manpage)</code></pre></div>
 cursor. The diagnosis is exact and it is rlwrap's, not mine: rlwrap runs the wrapped program on a pty and
 speaks readline on its behalf, which only works for a program that reads whole lines in
 <em>canonical</em> mode. Amber puts the terminal into raw mode and reads single keypresses. rlwrap
-genuinely is doing nothing, and it says so.</p>
+is doing nothing useful, and it says so.</p>
 
 <p>The fix was to stop wrapping and own the terminal. <code>src/ln.c</code> is a single-file line editor in
 the <a href="https://github.com/antirez/linenoise" target="_blank" rel="noopener">linenoise</a> tradition:
@@ -525,11 +525,11 @@ that the editing keys really edit, and that piped behaviour is unchanged. You ca
 without a terminal.</p>
 
 <p><code>./a</code> now execs the interpreter directly. The only path that still touches rlwrap is the
-deliberate <code>AMBER_NO_EDIT=1</code> fallback for a dumb terminal or a screen reader — and there it is
+<code>AMBER_NO_EDIT=1</code> fallback for a dumb terminal or a screen reader, and there it is
 passed <code>-n -a</code> unconditionally, so no rlwrap diagnostic can reach your session on any path
 whatsoever.</p>
 
-<h2>1.9.5 — the extension seam</h2>
+<h2>1.9.5: the extension seam</h2>
 
 <p>The same release added the first of Amber's two seams. <code>ext/</code> is an empty directory in a
 stock checkout. An out-of-tree package installs itself by dropping <code>.c</code> files there and
@@ -540,9 +540,9 @@ register themselves from a constructor through the hooks in <code>src/ext.h</cod
 <table>
   <thead><tr><th style="width:30%">Hook</th><th>What it lets an extension do</th></tr></thead>
   <tbody>
-    <tr><td><code>am_ext_verb("xyz", fn)</code></td><td>register a backtick verb — <code>`xyz x</code> — at run time</td></tr>
+    <tr><td><code>am_ext_verb("xyz", fn)</code></td><td>register a backtick verb (<code>`xyz x</code>) at run time</td></tr>
     <tr><td><code>am_ext_bs</code></td><td>claim a <code>\</code>-command before the "unknown command is a shell command" fallback</td></tr>
-    <tr><td><code>am_ext_hint</code></td><td>offer inline ghost text in the editor — never inserted until accepted</td></tr>
+    <tr><td><code>am_ext_hint</code></td><td>offer inline ghost text in the editor, never inserted until accepted</td></tr>
     <tr><td><code>am_ext_complete</code></td><td>add Tab candidates ahead of the built-in lexical sources</td></tr>
     <tr><td><code>am_ext_startup</code></td><td>run once, lazily, when the REPL first reads a line</td></tr>
     <tr><td><code>am_ext_usage</code> / <code>am_ext_banner</code></td><td>append to <code>--help</code> and to the banner</td></tr>
@@ -556,10 +556,10 @@ predictable branch. <code>tests/ext_probe.c</code> is a complete worked example 
 <code>tests/test_ext_seam.sh</code> installs it, checks every hook fires, uninstalls it, and checks the
 engine is back to stock.</p>
 
-<p>Two of the hooks — <code>am_ext_hint</code> and <code>am_ext_complete</code> — only make sense because
+<p>Two of the hooks, <code>am_ext_hint</code> and <code>am_ext_complete</code>, only make sense because
 the editor is now mine. That is the shape of most of this post: each piece unlocks the next.</p>
 
-<h2>1.9.6 — <code>libamber.so</code></h2>
+<h2>1.9.6: <code>libamber.so</code></h2>
 
 <p>The <code>ext/</code> seam is in-process and compile-time. The last release added the out-of-process
 one: the same engine, built as a shared library, with a documented C API on the front of it.</p>
@@ -596,21 +596,21 @@ C is written in K-derived shorthand: its globals are called <code>mr</code>, <co
 <code>us</code>, <code>err</code>, <code>run</code>, <code>add</code>, <code>sub</code>, <code>pk</code>,
 <code>cpl</code>. Perfect inside one static binary. Actively dangerous inside a library loaded next to
 NumPy, libarrow and libpython. An export map (<code>src/libamber.map</code>) makes everything else
-genuinely <strong>absent</strong> from the dynamic symbol table — not private by convention, absent — so
+<strong>absent</strong> from the dynamic symbol table, not private by convention but absent, so
 it cannot be bound to by accident and cannot interpose on a host's symbol of the same name.</p>
 
 <p><strong>The library records a <code>SONAME</code>.</strong> A satellite that <code>dlopen</code>s a
 <em>second</em> copy of <code>libamber.so</code> gets a second <strong>engine</strong>: two heaps, two
-symbol tables, two global namespaces, and values from one that are meaningless to the other — with no
+symbol tables, two global namespaces, and values from one that are meaningless to the other, with no
 error at any point, because nothing is technically wrong. The SONAME is what lets the loader recognise an
 already-loaded copy and reuse it.</p>
 
 <div class="note warn">
   <b>The failure mode that cost the most time</b>
-  <p>Two engines in one process does not crash where the mistake is. It crashes somewhere unrelated, or —
-  worse — returns plausible garbage. There is now a diagnostic for it: the Python bridge exposes
+  <p>Two engines in one process does not crash where the mistake is. It crashes somewhere unrelated, or,
+  worse, returns plausible garbage. There is now a diagnostic for it: the Python bridge exposes
   <code>library_path()</code>, so the first question when anything is strange is "which
-  <code>libamber.so</code> did you actually get".</p>
+  <code>libamber.so</code> did you get".</p>
 </div>
 
 <h3>The test that defines the API</h3>
@@ -625,7 +625,7 @@ the shared library rather than the objects.</p>
 </blockquote>
 
 <p>Seventy-eight assertions, run once at <code>-O2</code> and once under AddressSanitizer and
-UndefinedBehaviorSanitizer with leak detection on — because a C API whose ownership rules are only
+UndefinedBehaviorSanitizer with leak detection on, because a C API whose ownership rules are only
 documented is a C API whose ownership rules are wrong, and LeakSanitizer is what checks the prose.</p>
 
 <h2>What the seams made possible</h2>
@@ -696,7 +696,7 @@ documented is a C API whose ownership rules are wrong, and LeakSanitizer is what
     <tr><td><a href="https://github.com/BonucciAndrea/python-amber" target="_blank" rel="noopener">python-amber</a></td><td><code>libamber.so</code></td><td>the engine in your Python process. NumPy arrays whose <code>ctypes.data</code> equals the engine's own buffer address</td></tr>
     <tr><td><a href="https://github.com/BonucciAndrea/amber-arrow" target="_blank" rel="noopener">amber-arrow</a></td><td><code>libamber.so</code></td><td>an <code>ArrowArrayStream</code> whose batches are <em>windows</em> onto one export, not slices of it. Plus <code>amberd</code>, the TCP query server, and an Arrow Flight daemon</td></tr>
     <tr><td><a href="https://github.com/BonucciAndrea/amber-jupyter" target="_blank" rel="noopener">amber-jupyter</a></td><td>python-amber</td><td>Amber cells and <code>%%python</code> cells in one process, so a column crosses as a pointer</td></tr>
-    <tr><td><a href="https://github.com/BonucciAndrea/amber-ai" target="_blank" rel="noopener">amber-ai</a></td><td><code>ext/</code></td><td>a schema-aware local co-pilot. Uses <code>am_ext_hint</code> for ghost text and <code>am_ext_complete</code> for Tab — both of which exist because of 1.9.5</td></tr>
+    <tr><td><a href="https://github.com/BonucciAndrea/amber-ai" target="_blank" rel="noopener">amber-ai</a></td><td><code>ext/</code></td><td>a schema-aware local co-pilot. Uses <code>am_ext_hint</code> for ghost text and <code>am_ext_complete</code> for Tab, both of which exist because of 1.9.5</td></tr>
     <tr><td><a href="https://github.com/BonucciAndrea/grafana-amber-datasource" target="_blank" rel="noopener">grafana-amber</a></td><td><code>amberd</code></td><td>live dashboards over bare qSQL, column-oriented on the wire</td></tr>
     <tr><td><a href="https://github.com/BonucciAndrea/vscode-amber" target="_blank" rel="noopener">vscode-amber</a></td><td><code>amberd</code></td><td>an LSP daemon with qSQL-aware completion and diagnostics that never evaluate your code</td></tr>
     <tr><td><a href="https://github.com/BonucciAndrea/amber-tick" target="_blank" rel="noopener">amber-tick</a></td><td>all three</td><td>a market simulator, a partitioned store in the <code>-8!</code> format, and a tickerplant / RDB / HDB pipeline</td></tr>
@@ -705,7 +705,7 @@ documented is a C API whose ownership rules are wrong, and LeakSanitizer is what
 </div>
 
 <p>The engine gained <strong>one build flag, one export map and one section of a header</strong> for all
-of it. There is no AI code and no network code anywhere in <code>src/</code> —
+of it. There is no AI code and no network code anywhere in <code>src/</code>:
 <code>grep -r socket src/</code> finds only the client-side <code>connect()</code> that
 <code>hopen</code> has always used. A listener is a policy decision (which port, which framing, which
 authentication, which concurrency model) and the engine's job is to be a runtime, so
@@ -716,8 +716,8 @@ authentication, which concurrency model) and the engine's job is to be a runtime
 <p>Three things, and none of them are about performance.</p>
 
 <p><strong>The seam is the feature.</strong> Every satellite in that table exists because there was a
-documented place to attach it. None of them required a change to <code>src/</code>. That was not luck —
-it is the direct result of spending 1.9.5 and 1.9.6 building nothing users could see.</p>
+documented place to attach it. None of them required a change to <code>src/</code>. That was not luck.
+It is the direct result of spending 1.9.5 and 1.9.6 building nothing users could see.</p>
 
 <p><strong>Replace a subsystem to find out what was wrong with it.</strong> Switching <code>peach</code>
 to the binary wire found three bugs that had been latent for four releases. Writing the disassembler is
@@ -726,7 +726,7 @@ that everyone had learned to scroll past.</p>
 
 <p><strong>Say what you did not do.</strong> The <code>\hl</code> command I deleted, the NEON path I have
 not run on real hardware, the fusion that 1.9.2 did not implement, the two shortcuts I found in my own
-benchmark suite and removed — every one of those is in the changelog with the reason. A project that only
+benchmark suite and removed: every one of those is in the changelog with the reason. A project that only
 publishes its wins is a project whose numbers you cannot use.</p>
 
 <hr>

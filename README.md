@@ -1,9 +1,9 @@
-# Amber — showcase website
+# Amber: showcase website
 
 A static marketing + documentation site for **[Amber](https://github.com/BonucciAndrea/amber)**,
 the C99 columnar in-memory array engine with a q vocabulary, and its ecosystem.
 
-**Zero build dependencies.** Every file in this folder is already the deployable artifact — plain
+**Zero build dependencies.** Every file in this folder is already the deployable artifact: plain
 HTML, one CSS file, one JS file, a handful of SVGs. There is no bundler, no framework, no
 `node_modules`, and no build step. Drop the folder on any static host and it works.
 
@@ -102,7 +102,7 @@ fallback stacks. If the font request fails the site degrades to `-apple-system` 
 and still looks deliberate.
 
 **Syntax highlighting** is a small hand-written tokenizer in `assets/js/amber.js` that understands
-K/q's two context-sensitive rules — `/` is the *over* adverb after a value and a comment at the
+K/q's two context-sensitive rules. `/` is the *over* adverb after a value and a comment at the
 start of a line or when surrounded by whitespace; `\` is the *scan* adverb mid-expression and a
 REPL command at line start. Shell, Python, JSON/YAML and plain terminal output have their own
 lighter passes. Mark a block with `class="lang-q"`, `lang-sh`, `lang-py`, `lang-json`,
@@ -113,7 +113,7 @@ animations are gated behind an `html.has-js` class and have a 2.4-second safety 
 JS failure can never leave content invisible. `prefers-reduced-motion` disables the typing
 animation and the live chart.
 
-**Responsive.** Wide content — tables, diagrams, code blocks, the terminal — scrolls inside its
+**Responsive.** Wide content (tables, diagrams, code blocks, the terminal) scrolls inside its
 own container; the page body never scrolls horizontally at any width down to 320 px.
 
 ---
@@ -124,7 +124,7 @@ Pages are plain HTML. Open the file, edit it, reload.
 
 Shared chrome (the navigation bar and the footer) is duplicated into every page so that each file
 is standalone and no JavaScript is needed to render it. If you change a navigation link, change it
-everywhere — `grep -rl 'ecosystem/index.html' .` finds them.
+everywhere; `grep -rl 'ecosystem/index.html' .` finds them.
 
 Two conventions worth keeping:
 

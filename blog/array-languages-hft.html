@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Why high-frequency trading systems demand array languages</title>
-<meta name="description" content="Moving beyond row-oriented overhead: what an object-per-row runtime actually costs on a trading day's data, and why the array model is the one that matches the question.">
+<meta name="description" content="Moving beyond row-oriented overhead: what an object-per-row runtime costs on a trading day's data, and why the array model is the one that matches the question.">
 <meta name="author" content="Andrea Bonucci">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0F'/%3E%3Cpath d='M16 5 26.6 23.4a1.1 1.1 0 0 1-1 1.7h-3.9L16 14.9l-5.7 10.2H6.4a1.1 1.1 0 0 1-1-1.7L16 5Z' fill='%23FFB020'/%3E%3C/svg%3E">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Why high-frequency trading systems demand array languages">
-<meta property="og:description" content="Moving beyond row-oriented overhead: what an object-per-row runtime actually costs on a trading day's data, and why the array model is the one that matches the question.">
+<meta property="og:description" content="Moving beyond row-oriented overhead: what an object-per-row runtime costs on a trading day's data, and why the array model is the one that matches the question.">
 <meta property="article:published_time" content="2026-08-14">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -297,7 +297,7 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
 <header class="hero"><div class="wrap"><div class="col">
   <div class="series"><span class="bar"></span>On array languages</div>
   <h1>Why high-frequency trading systems demand array languages</h1>
-  <p class="dek">A trade is not a row — it is one value in each of nine columns, and every question you ask of a trading day is a question about columns. What that costs in an object-per-row runtime, measured rather than asserted.</p>
+  <p class="dek">A trade is not a row. It is one value in each of nine columns, and every question you ask of a trading day is a question about columns. What that costs in an object-per-row runtime, measured rather than asserted.</p>
   <div class="meta">
     <span class="tag">architecture</span>
     <span>2026-08-14</span><span class="sep">·</span><span>18 min read</span>
@@ -332,15 +332,15 @@ condition, the sequence number, or either of the two timestamps you did not filt
 row-oriented layout, reading the four you want means reading the five you do not, because they are
 interleaved in the same cache lines.</p>
 
-<p>On a day with 38 million prints — a modest US-equity session in the simulator that ships with
-<a href="../ecosystem/amber-tick.html">amber-tick</a> — that is not a rounding error. A trade
-record is roughly 64 bytes packed. The four columns you actually want are about 24. You have just read
+<p>On a day with 38 million prints, a modest US-equity session in the simulator that ships with
+<a href="../ecosystem/amber-tick.html">amber-tick</a>, that is not a rounding error. A trade
+record is roughly 64 bytes packed. The four columns you want are about 24. You have just read
 2.7&times; the bytes you needed, and every one of those bytes moved through the same memory bus and
 evicted something from the same L2.</p>
 
 <p>Columnar storage fixes that by inverting the layout: nine arrays, each holding one field for every
 row. A query for <code>px</code> and <code>sz</code> reads two arrays and never touches the other seven.
-In <code>amber-tick</code>'s splayed store this is literal — each column is its own file:</p>
+In <code>amber-tick</code>'s splayed store this is literal, and each column is its own file:</p>
 
 <div class="code"><pre><code class="l-out">store/2026.08.21/trades/
   .d  sym  time  px  sz  side  venue  cond  seq  extime</code></pre></div>
@@ -359,20 +359,20 @@ You have moved the bottleneck, not removed it.</p>
 <ul>
   <li><strong>An allocation, or at minimum a boxed header, per value.</strong> Amber's own query layer
   had exactly this problem before 1.9.1: <code>select … by … from</code> boxed one K object per row on
-  the group-and-probe path. Fixing it — grouping and probing on <strong>raw column vectors</strong>
-  instead — made group-by <strong>24.7&times;</strong> faster and inner join
+  the group-and-probe path. Grouping and probing on <strong>raw column vectors</strong>
+  instead made group-by <strong>24.7&times;</strong> faster and inner join
   <strong>19.3&times;</strong> faster, on unchanged data, with unchanged answers. That factor of twenty
   was not algorithmic. It was allocation and pointer chasing.</li>
 
   <li><strong>A dispatch per element.</strong> If the runtime does not know until it looks at the value
-  whether it is adding two int64s or two float64s, it cannot emit an add instruction — it has to branch.
+  whether it is adding two int64s or two float64s, it cannot emit an add instruction. It has to branch.
   Branching per element in a ten-million-element loop is a branch predictor's worst day.</li>
 
   <li><strong>No vectorisation, ever.</strong> AVX2 processes four doubles per instruction; NEON
   processes two. Neither is reachable from a loop whose body is a virtual call. Amber's
   <code>src/simd.c</code> supplies <code>simd_add_i64/f64</code>, <code>simd_mul_i64/f64</code> and
-  <code>simd_sum_i64/f64</code> over plain <code>int64_t*</code> / <code>double*</code> arrays precisely
-  because that is the only shape a SIMD kernel can consume.</li>
+  <code>simd_sum_i64/f64</code> over plain <code>int64_t*</code> / <code>double*</code> arrays, because
+  that is the only shape a SIMD kernel can consume.</li>
 
   <li><strong>No parallelism without a per-row locking story.</strong> Splitting a contiguous array of
   ten million doubles across eight threads is one line of arithmetic. Splitting a linked structure of
@@ -385,14 +385,14 @@ You have moved the bottleneck, not removed it.</p>
 <p>None of these are exotic. They are the standard consequences of a runtime whose unit of work is a
 scalar and whose unit of data is an object.</p>
 
-<h2>What the array model is, precisely</h2>
+<h2>What the array model is</h2>
 
 <p>An array language makes the vector the unit of both. <code>a+b</code> where <code>a</code> and
 <code>b</code> are ten-million-element float vectors is one operation, dispatched once, over two
 contiguous payloads, into a kernel that knows both types statically.</p>
 
 <p>The syntax is downstream of that. Terse notation is what you get when the primitive operations are
-whole-array and there are enough of them to need short names — not the other way round.</p>
+whole-array and there are enough of them to need short names. It does not run the other way round.</p>
 
 <p>Here is a complete intraday VWAP in Amber:</p>
 
@@ -404,8 +404,8 @@ bucket, and within each group compute the size-weighted average of price. Every 
 operation. On five million trades it takes <strong>151 milliseconds</strong>.</p>
 
 <p>The equivalent in a row-oriented system is a <code>GROUP BY date_trunc('minute', ts)</code> with a
-<code>SUM(px*sz)/SUM(sz)</code>, and a competent columnar SQL engine will do it in a comparable time —
-DuckDB is genuinely good at this. The difference shows up when the operation is not one SQL has a name
+<code>SUM(px*sz)/SUM(sz)</code>, and a competent columnar SQL engine will do it in a comparable time.
+DuckDB is good at this. The difference shows up when the operation is not one SQL has a name
 for.</p>
 
 <h2>The operation SQL does not have a name for</h2>
@@ -431,7 +431,7 @@ five million times half a mispredict is the whole runtime.</p>
 
 <h3>1. The data is sorted and the sort is <em>recorded</em></h3>
 <p><code>xasc[`sym`time; trades]</code> sorts and stamps <code>`p</code> on <code>sym</code> and
-  <code>`s</code> on <code>time</code>. The attribute is not a hint, it is a promise the kernel is
+  <code>`s</code> on <code>time</code>. The attribute is a promise the kernel is
   entitled to rely on, and it is what turns a scan into a search.</p>
 <h3>2. Symbols are integers</h3>
 <p>A symbol column is interned <code>int32</code> ids into one domain, not a hundred million copies
@@ -441,7 +441,7 @@ five million times half a mispredict is the whole runtime.</p>
   once per eval cycle. Per-tick work does not thrash the system allocator, and the latency jitter that
   causes stays out of the hot path.</p>
 
-<h2>What attributes actually buy</h2>
+<h2>What attributes buy</h2>
 
 <p>The <code>`s</code> attribute is worth dwelling on, because it is the clearest case of "the same
 answer, four orders of magnitude apart". <code>bench.k</code> measures <code>?</code> (find) on identical
@@ -479,15 +479,15 @@ answer bit-exactly against a C reference:</p>
   <thead><tr><th>Workload</th><th class="n">C -O3</th><th class="n">Amber</th><th class="n">Amber qSQL</th><th class="n">CBQN</th><th class="n">NumPy</th><th class="n">DuckDB</th></tr></thead>
   <tbody>
     <tr><td>Vector arithmetic + mask, 10M</td><td class="n">8.22</td><td class="n">54.56</td><td class="n">65.73</td><td class="n">30.91</td><td class="n">27.47</td><td class="n">22.00</td></tr>
-    <tr><td>Reductions — sum + max + dot, 10M</td><td class="n">21.92</td><td class="n hi">15.40</td><td class="n">52.46</td><td class="n">4.09</td><td class="n">8.62</td><td class="n">29.00</td></tr>
-    <tr><td>Group-by — 100 groups over 10M</td><td class="n">6.41</td><td class="n">61.45</td><td class="n">119.63</td><td class="n">28.83</td><td class="n">11.54</td><td class="n">14.00</td></tr>
-    <tr><td>Inner join — 1M &times; 1,000 sparse keys</td><td class="n">0.83</td><td class="n hi">3.42</td><td class="n">9.85</td><td class="n">1.80</td><td class="n">11.34</td><td class="n">9.00</td></tr>
+    <tr><td>Reductions: sum + max + dot, 10M</td><td class="n">21.92</td><td class="n hi">15.40</td><td class="n">52.46</td><td class="n">4.09</td><td class="n">8.62</td><td class="n">29.00</td></tr>
+    <tr><td>Group-by, 100 groups over 10M</td><td class="n">6.41</td><td class="n">61.45</td><td class="n">119.63</td><td class="n">28.83</td><td class="n">11.54</td><td class="n">14.00</td></tr>
+    <tr><td>Inner join, 1M &times; 1,000 sparse keys</td><td class="n">0.83</td><td class="n hi">3.42</td><td class="n">9.85</td><td class="n">1.80</td><td class="n">11.34</td><td class="n">9.00</td></tr>
   </tbody>
 </table>
 </div>
 
-<p>CBQN beats Amber on three of four. NumPy beats it on two. DuckDB — a mature, vectorised, JIT-free
-columnar SQL engine with a real planner — is competitive everywhere and better on group-by. Amber's
+<p>CBQN beats Amber on three of four. NumPy beats it on two. DuckDB, a mature, vectorised, JIT-free
+columnar SQL engine with a real planner, is competitive everywhere and better on group-by. Amber's
 reduction row is <strong>0.70&times; of plain C</strong>, which is the four-accumulator float sum
 vectorising, and its join row is where the index build pays off.</p>
 
@@ -499,7 +499,7 @@ twenty years on element-wise arithmetic, and that is a fair trade.</p>
 <div class="note info">
   <b>Two shortcuts we had to remove</b>
   <p>The previous version of that suite contained two, both now documented in <code>bench/SPEC.md</code>.
-  <code>+/!10000000</code> is <code>O(1)</code> in Amber — the engine constant-folds a sum over a
+  <code>+/!10000000</code> is <code>O(1)</code> in Amber, because the engine constant-folds a sum over a
   <em>range</em> into <code>n(n-1)/2</code>, so the old <code>vecsum</code> benchmark "won" by never
   touching ten million elements. And a dense-key "join" with right keys <code>0..K-1</code> is just an
   array index, which every array language answers with a single gather while DuckDB still builds a hash
@@ -509,7 +509,7 @@ twenty years on element-wise arithmetic, and that is a fair trade.</p>
 
 <h2>The part nobody benchmarks: the distance from question to query</h2>
 
-<p>Here is a complete execution-quality analysis. Not pseudocode — this runs:</p>
+<p>Here is a complete execution-quality analysis. It is not pseudocode; it runs:</p>
 
 <div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">gentq 5000000                                   / a session
 trades:xasc[`sym`time; trades]                  / sort + stamp attributes
@@ -538,13 +538,13 @@ across the boundary is already a contiguous typed buffer. There is nothing to co
 
 <h2>When not to reach for this</h2>
 
-<p>An array language is the wrong tool when your access pattern is genuinely a single row by primary key,
+<p>An array language is the wrong tool when your access pattern is a single row by primary key,
 when your workload is transactional, when your data does not fit the rectangular model, or when the
 operation you need is a graph traversal. It is also, bluntly, the wrong tool if nobody on the team wants
-to learn it — a terse notation is a real cost and pretending otherwise is how these projects die.</p>
+to learn it. A terse notation is a real cost, and pretending otherwise is how these projects die.</p>
 
 <p>But if the question you keep asking is some variation of <em>"across all of today's prints, grouped by
-something, aligned in time against something else"</em> — then the array model is not an optimisation you
+something, aligned in time against something else"</em>, then the array model is not an optimisation you
 are applying to the problem. It is the shape the problem already had.</p>
 
 <div class="endnote">Everything in this post is runnable. The engine is at

@@ -298,14 +298,14 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
   <div class="series"><span class="bar"></span>Building Amber on ngn/k &nbsp;·&nbsp; Part 02 of 06</div>
   <div class="postno">02</div>
   <h1>Teaching K to speak q: tables, the join family, and bare qSQL</h1>
-  <p class="dek">K has dictionaries and a transpose. Everything else a tick shop needs — table literals, keyed tables, eight joins and select … by … from — had to be built. Here is how, and where I put each piece.</p>
+  <p class="dek">K has dictionaries and a transpose. Everything else a tick shop needs, from table literals and keyed tables to eight joins and select … by … from, had to be built. Here is how, and where I put each piece.</p>
   <div class="meta">
     <span class="tag">v1.0 – v1.5</span>
     <span>2026-02-03</span><span class="sep">·</span><span>17 min read</span>
     <span class="sep">·</span><span>Andrea Bonucci</span>
   </div>
 </div></div></header><article><div class="col"><p>K gives you a dictionary and a transpose. A q table is, formally, a transposed dictionary of
-columns — <code>+`a`b!(1 2;3 4)</code> — and once you notice that, it is tempting to declare the job
+columns, <code>+`a`b!(1 2;3 4)</code>, and once you notice that, it is tempting to declare the job
 done and go home. It is not done. "You can express a table" and "you can work with tables" are separated
 by table literals, keyed tables, <code>meta</code>, eight joins, a query language, and about four
 hundred small decisions about argument order that determine whether anyone who already knows q can sit
@@ -321,7 +321,7 @@ t:+d                                     / flip it: now it&#x27;s a table
 t`px                                     / 187.3 411.2 — a column IS a vector</code></pre></div>
 
 <p>That last line is the whole reason this works. A column is not a wrapper, not a Series object, not a
-chunked thing — it is exactly the vector you would have written by hand, with the same header and the
+chunked thing. It is exactly the vector you would have written by hand, with the same header and the
 same payload. Every optimisation in the four posts after this one depends on that staying true.</p>
 
 <p>But <code>+`sym`px!(`AAPL`MSFT; 187.3 411.2)</code> is not something you want to type forty times a
@@ -368,7 +368,7 @@ is nine characters:</p>
 <div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber.k</span></div><pre><code class="l-q">meta:{d:+unkey x;xkey[`c;+`c`t`a!(!d;{@*x}&#x27;value d;{`at x}&#x27;value d)]}</code></pre></div>
 
 <p>Read it right to left: flip the (un-keyed) table into a dictionary of columns; build a new dictionary
-with three fields — the names, the type of each column's first element, and each column's attribute; flip
+with three fields (the names, the type of each column's first element, and each column's attribute); flip
 that into a table; key it by <code>c</code>.</p>
 
 <p>The <code>a</code> column is <code>`at</code>, the attribute reader. It is there from the first
@@ -387,9 +387,9 @@ sz    | i</code></pre></div>
 
 <p>q has eight joins and a tick shop uses most of them in a week. All eight are in
 <code>amber.k</code>, and at the time of this post all eight took brackets rather than infix, because
-Amber did not yet allow a user-defined function to be applied infix — <code>x f y</code> parsed as two
+Amber did not yet allow a user-defined function to be applied infix, so <code>x f y</code> parsed as two
 nouns. That was a property of the host grammar, and rather than fight it I documented it and moved on.
-<em>(2.0.0 lifted this — any two-argument named function now works infix; see
+<em>(2.0.0 lifted this. Any two-argument named function now works infix; see
 <a href="06-two-point-oh.html">post six</a>.)</em></p>
 
 <div class="tbl">
@@ -397,19 +397,19 @@ nouns. That was a property of the host grammar, and rather than fight it I docum
   <thead><tr><th style="width:20%">Verb</th><th>What it does</th></tr></thead>
   <tbody>
     <tr><td><code>lj[t;kt]</code></td><td>left join against a keyed table</td></tr>
-    <tr><td><code>ij[t;kt]</code></td><td>inner join — rows present in both</td></tr>
-    <tr><td><code>uj[x;y]</code></td><td>union — the union of columns and of rows</td></tr>
+    <tr><td><code>ij[t;kt]</code></td><td>inner join: rows present in both</td></tr>
+    <tr><td><code>uj[x;y]</code></td><td>union: the union of columns and of rows</td></tr>
     <tr><td><code>pj[t;kt]</code></td><td>plus join: numeric columns are <em>added</em>, not replaced</td></tr>
     <tr><td><code>ej[c;x;y]</code></td><td>equi join on named columns</td></tr>
-    <tr><td><code>aj[c;x;y]</code> · <code>aj0</code></td><td><strong>as-of</strong> — the most recent right row at or before each left row</td></tr>
-    <tr><td><code>wj[w;c;t;q;a]</code></td><td><strong>window</strong> — aggregate right rows inside a window around each left row</td></tr>
+    <tr><td><code>aj[c;x;y]</code> · <code>aj0</code></td><td><strong>as-of</strong>: the most recent right row at or before each left row</td></tr>
+    <tr><td><code>wj[w;c;t;q;a]</code></td><td><strong>window</strong>: aggregate right rows inside a window around each left row</td></tr>
     <tr><td><code>asof[t;d]</code></td><td>the scalar as-of lookup</td></tr>
   </tbody>
 </table>
 </div>
 
 <p>Seven of those are ordinary relational operations expressed in array primitives. <code>ej</code>, for
-instance, is one line — an equi join is an inner join against a table you keyed on the fly:</p>
+instance, is one line, because an equi join is an inner join against a table you keyed on the fly:</p>
 
 <div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber.k</span></div><pre><code class="l-q">ej:{[c;x;y]ij[x;xkey[c;y]]}</code></pre></div>
 
@@ -422,13 +422,13 @@ instance, is one line — an equi join is an inner join against a table you keye
 the quote standing at the moment it printed?</p>
 </blockquote>
 
-<p>That is not an equality join. There is no matching key — you want the <em>last</em> right row whose
+<p>That is not an equality join. There is no matching key. You want the <em>last</em> right row whose
 timestamp does not exceed the left row's, per symbol. Expressed in SQL it becomes a correlated subquery
 or a window function over a union, and the planner has to rediscover from the shape of the query that
 what you meant was "walk both sequences in order". It usually does not.</p>
 
 <p>In 1.0 <code>aj</code> was pure K: for every trade, a binary search into that symbol's quote slice.
-Correct, and slow, because it was a scalar operation performed in a loop — the exact thing an array
+Correct, and slow, because it was a scalar operation performed in a loop, the exact thing an array
 language exists to avoid. In <strong>1.5</strong> I rewrote the matcher to issue <strong>one vectorised
 <code>bin</code> per group</strong> instead of one scalar search per row: roughly 700 ms down to 115 ms
 at 50,000 rows, ~6&times;, identical results.</p>
@@ -446,7 +446,7 @@ more than the space it takes.</p>
   <p>The rule that came out of it, and that <code>fin.k</code> has enforced ever since: <strong>store
   times as numbers and format only for display.</strong> <code>tsym[t;c]</code> renders the columns you
   name as <code>HH:MM:SS.mmm</code> at print time and never touches storage. It is also why Amber later
-  got real temporal <em>types</em> rather than a convention — see <a href="04-native-kernels.html">post
+  got real temporal <em>types</em> rather than a convention. See <a href="04-native-kernels.html">post
   four</a>.</p>
 </div>
 
@@ -467,7 +467,7 @@ qfn:{[cols;e]. &quot;{[x]&quot;,qidsub[cols;e],&quot;}&quot;}                  /
 
 <p><code>wavg[sz;px]</code> becomes <code>{[x]wavg[(x`sz);(x`px)]}</code>. Names that are <em>not</em>
 columns are left alone, so a global, a user function or a literal still means what it meant. And because
-the rewritten text is compiled by <code>.</code> — the real evaluator — the expression language inside a
+the rewritten text is compiled by <code>.</code>, the real evaluator, the expression language inside a
 query is the whole language, with no separate grammar to maintain.</p>
 
 <figure class="wide">
@@ -536,7 +536,7 @@ qselect[t; (,`v)!,{x[`px]*x`sz}]                    / project: name -&gt; functi
 qby[t; `sym; (,`vwap)!,{wavg[x`sz;x`px]}]           / group + aggregate</code></pre></div>
 
 <p><code>qby</code> takes a table, one or more grouping columns, and a dictionary from output name to
-function. Each function receives the sub-table for one group — which is why
+function. Each function receives the sub-table for one group, which is why
 <code>{wavg[x`sz;x`px]}</code> reads two columns and returns one number. It is a small interface and it
 has never needed to change.</p>
 
@@ -558,9 +558,9 @@ exec px from trades where sym=`AAPL
 update px:px*1.01 from trades where sym=`AAPL
 delete from trades where sz&lt;100</code></pre></div>
 
-<p>It handles the cases you actually hit: assignment (<code>r:select …</code>), and a prefix applied to
-the whole query (<code>5#select …</code>, <code>count select …</code>). It deliberately does <em>not</em>
-run inside a <code>.k</code> script — there the string form or the functional form is what you use,
+<p>It handles the cases you hit in practice: assignment (<code>r:select …</code>), and a prefix applied to
+the whole query (<code>5#select …</code>, <code>count select …</code>). It does <em>not</em>
+run inside a <code>.k</code> script, where the string form or the functional form is what you use,
 because a source file being silently rewritten line by line is a debugging experience nobody wants.</p>
 
 <div class="note info">
@@ -572,10 +572,10 @@ because a source file being silently rewritten line by line is a debugging exper
   longer than the joins.</p>
 </div>
 
-<p>1.5 also fixed <code>select from t</code> — a column-less select with a leading <code>from</code>,
-which the clause splitter had been mis-splitting — and, less visibly, made <code>repl.k</code> actually
+<p>1.5 also fixed <code>select from t</code>, a column-less select with a leading <code>from</code>
+that the clause splitter had been mis-splitting, and, less visibly, made <code>repl.k</code> really
 load all six library modules. Before that, <code>std</code>, <code>qsql</code>, <code>temporal</code>,
-<code>sys</code>, <code>hdb</code> and <code>ipc</code> were on disk and simply never loaded, so
+<code>sys</code>, <code>hdb</code> and <code>ipc</code> were on disk and never loaded, so
 <code>sel</code> and the moving aggregates were silently unavailable at the prompt. Everything worked in
 the test suite, which loads them explicitly. That is a good lesson about what a test suite is not.</p>
 
@@ -589,7 +589,7 @@ group that no aggregate ever reads.</p>
 <p><code>qrefs</code> tokenises an aggregate expression with the same tokeniser <code>qidsub</code> uses
 to rewrite it, so the set of names it returns is exactly the set of columns the compiled function can
 reach. <code>qproj</code> then narrows the table to those columns before grouping. It can only ever
-narrow, so it cannot change a result — and the cost of a group-by starts scaling with columns
+narrow, so it cannot change a result, and the cost of a group-by starts scaling with columns
 <strong>used</strong> instead of columns <strong>present</strong>.</p>
 
 <h2><code>fin.k</code>: giving the vocabulary a domain (1.4)</h2>
@@ -606,14 +606,14 @@ lives:</p>
     <tr><td>trades</td><td><code>vwap</code> <code>twap</code> <code>tsign</code> <code>signedvol</code> <code>effspread</code> <code>notional</code></td></tr>
     <tr><td>returns / vol</td><td><code>ret</code> <code>logret</code> <code>rvol</code> <code>movavg</code> <code>movsum</code> <code>movmax</code> <code>movmin</code> <code>ema</code> <code>rollstd</code></td></tr>
     <tr><td>aggregation</td><td><code>bars</code> (OHLCV) <code>symstats</code></td></tr>
-    <tr><td>index</td><td><code>bysym</code> <code>symrows</code> <code>gidx</code> — O(1) per-symbol slicing</td></tr>
+    <tr><td>index</td><td><code>bysym</code> <code>symrows</code> <code>gidx</code>: O(1) per-symbol slicing</td></tr>
     <tr><td>generators</td><td><code>gentq</code> <code>genopt</code></td></tr>
   </tbody>
 </table>
 </div>
 
-<p><code>gentq n</code> matters more than it looks. It generates a session — <code>trades</code> and
-<code>quotes</code> globals with plausible microstructure — which means every example, every benchmark
+<p><code>gentq n</code> matters more than it looks. It generates a session, the <code>trades</code> and
+<code>quotes</code> globals with plausible microstructure, which means every example, every benchmark
 and every bug report can start from one line and be reproducible on someone else's machine. It also
 stamps the attributes on the key columns (<code>`s</code> on <code>time</code>, <code>`p</code> on
 <code>sym</code>), so the default state of a freshly generated session is the fast one rather than a
@@ -628,21 +628,21 @@ bars[1; trades]                    / 1-minute OHLCV</code></pre></div>
 <h2>The rest of 1.1 – 1.5, briefly</h2>
 
 <ul>
-  <li><strong>Temporal helpers (1.1)</strong> — <code>hms hh mm sec milli minute second stime ptime</code>,
+  <li><strong>Temporal helpers (1.1)</strong>: <code>hms hh mm sec milli minute second stime ptime</code>,
   and <code>minbar</code> / <code>bar</code> / <code>xbar</code> for OHLC bucketing. Times as milliseconds
   since midnight, mirroring q's convention. These were library functions over integers; they became real
   <em>types</em> in 1.7.</li>
-  <li><strong>Grid rendering (1.1, fixed properly in 1.3)</strong> — tables, keyed tables and
+  <li><strong>Grid rendering (1.1, fixed properly in 1.3)</strong>: tables, keyed tables and
   dictionaries print as q-style grids. 1.3 fixed list-valued dictionaries (what <code>group</code>
   returns), nested columns (what <code>xgroup</code> returns), and a crash where <code>iskeyed</code> ran
   an odometer over a plain vector.</li>
-  <li><strong><code>./a</code> rebuilds when the C sources are newer than the binary (1.3)</strong> — the
+  <li><strong><code>./a</code> rebuilds when the C sources are newer than the binary (1.3)</strong>. The
   reason table literals mysteriously did not render for some people was that they were running a stale
   build. Making the launcher check is two lines and removed an entire category of bug report.</li>
-  <li><strong>Help pages</strong> — <code>\q</code> scalars and sets, <code>\j</code> tables and joins,
+  <li><strong>Help pages</strong>: <code>\q</code> scalars and sets, <code>\j</code> tables and joins,
   <code>\z</code> temporal and attributes, <code>\m</code> the finance module. Built in, because the
   first thing you want in an unfamiliar array language is a list of what exists.</li>
-  <li><strong>CI from 1.1</strong> — the suite grew 97 &rarr; 104 &rarr; 148 &rarr; 153 assertions across
+  <li><strong>CI from 1.1</strong>. The suite grew 97 &rarr; 104 &rarr; 148 &rarr; 153 assertions across
   these releases, run on every push.</li>
 </ul>
 
@@ -650,11 +650,11 @@ bars[1; trades]                    / 1-minute OHLCV</code></pre></div>
 
 <p>By 1.5 you could sit down at the prompt, type <code>gentq 1000000</code>, type a
 <code>select … by … from … where …</code> without quoting it, join trades to quotes as-of, bucket into
-one-minute bars and see a grid — all in a language whose vocabulary a q programmer already knows.</p>
+one-minute bars and see a grid, all in a language whose vocabulary a q programmer already knows.</p>
 
 <p>What you could not do was any of it particularly fast on ten million rows. The query layer was K
 calling K; the joins were K; the temporal functions were integer arithmetic wearing a costume. That is
-what the next two posts are about — starting with the one piece of C-level machinery that was there from
+what the next two posts are about, starting with the one piece of C-level machinery that was there from
 the very first release, because I knew from the start that everything else would depend on it.</p>
 <div class="endnote">Part of <a href="index.html">Building Amber on ngn/k</a>, a five-part series on what I added to a K interpreter to turn it into a columnar engine for market data.</div><div class="pager"><a href="01-ngn-k.html"><span class="d">&larr; Previous</span><span class="t">01. The interpreter underneath</span></a><a class="nx" href="03-attributes.html"><span class="d">Next &rarr;</span><span class="t">03. One byte at offset −13</span></a></div></div></article>
 </main>

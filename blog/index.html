@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Blog — Amber</title>
+<title>Blog: Amber</title>
 <meta name="description" content="Technical writing on array programming, columnar engines and market-data systems: why HFT demands array languages, zero-copy Arrow interop, and Amber's 2000-01-01 temporal epoch.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Blog — Amber">
+<meta property="og:title" content="Blog: Amber">
 <meta property="og:description" content="Technical writing on array programming, columnar engines and market-data systems: why HFT demands array languages, zero-copy Arrow interop, and Amber's 2000-01-01 temporal epoch.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
@@ -54,8 +54,8 @@
       <div class="post-meta"><span>2026-09-14</span><span>·</span><span>11 min read</span><span>·</span><span class="pill">v2.1.0</span></div>
       <h3>Two point one: the engine gets fused</h3>
       <p>A performance release with no new syntax: the compiler fuses the common idioms, group-by, membership
-      and distinct become one pass, price-shaped sorts become counting sorts, the portable build runs AVX2 —
-      results bit-identical, and 11 of 19 shared operations now faster than CBQN.</p>
+      and distinct become one pass, price-shaped sorts become counting sorts, the portable build runs AVX2.
+      Results bit-identical, and 11 of 19 shared operations now faster than CBQN.</p>
     </a>
 
     <a class="post-item" href="../blog/06-two-point-oh.html">
@@ -69,7 +69,7 @@
     <a class="post-item" href="../blog/array-languages-hft.html">
       <div class="post-meta"><span>2026-08-14</span><span>·</span><span>18 min read</span><span>·</span><span class="pill">architecture</span></div>
       <h3>Why high-frequency trading systems demand array languages</h3>
-      <p>Moving beyond row-oriented overhead. A trade is not a row — it is one value in each of nine
+      <p>Moving beyond row-oriented overhead. A trade is not a row. It is one value in each of nine
       columns, and every question you ask of a trading day is a question about columns. What that
       costs you in an object-per-row runtime, measured rather than asserted.</p>
     </a>
@@ -77,7 +77,7 @@
     <a class="post-item" href="../blog/zero-copy-arrow.html">
       <div class="post-meta"><span>2026-08-07</span><span>·</span><span>16 min read</span><span>·</span><span class="pill">interop</span></div>
       <h3>Zero-copy interop: bridging Amber memory buffers directly into Apache Arrow &amp; Python</h3>
-      <p>What "zero copy" actually has to mean if the claim is going to survive contact with a
+      <p>What "zero copy" has to mean if the claim is going to survive contact with a
       refcount, a batch that outlives its stream, and a 32-byte object header sitting immediately
       before every payload.</p>
     </a>
@@ -94,7 +94,7 @@
      <div class="post-meta"><span>2026-07-24</span><span>·</span><span>21 min read</span><span>·</span><span class="pill">v1.9.1 - v1.9.6</span></div>
         <h3>From language to platform: -8!, one-report diagnostics, owning the terminal, and libamber.so</h3>
         <p>Six point releases that added no vocabulary at all. What they added instead was a wire format, 
-          an error report you can act on, a line editor, an extension seam, and a shared library — everything 
+          an error report you can act on, a line editor, an extension seam, and a shared library: everything 
           an ecosystem needs to exist outside the repository.</p>
     </a>
 
@@ -115,8 +115,8 @@
     <a class="post-item" href="../blog/02-the-q-layer.html">
      <div class="post-meta"><span>2026-02-03</span><span>·</span><span>17 min read</span><span>·</span><span class="pill">v1.0 - v1.5</span></div>
         <h3>Teaching K to speak q: tables, the join family, and bare qSQL</h3>
-        <p>K has dictionaries and a transpose. Everything else a tick shop needs — table literals, keyed tables, 
-          eight joins and select … by … from — had to be built. Here is how, and where I put each piece.</p>
+        <p>K has dictionaries and a transpose. Everything else a tick shop needs, from table literals and keyed tables 
+          to eight joins and select … by … from, had to be built. Here is how, and where I put each piece.</p>
     </a>
 
     <a class="post-item" href="../blog/01-ngn-k.html">

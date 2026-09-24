@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Two point one: the engine gets fused</title>
-<meta name="description" content="Amber 2.1.0: the compiler fuses the common idioms, group-by becomes one pass, membership and distinct become one pass, sorts of price-shaped floats become counting sorts, and the portable build runs AVX2 — results bit-identical, and 11 of 19 shared operations now faster than CBQN.">
+<meta name="description" content="Amber 2.1.0: the compiler fuses the common idioms, group-by becomes one pass, membership and distinct become one pass, sorts of price-shaped floats become counting sorts, and the portable build runs AVX2. Results bit-identical, and 11 of 19 shared operations now faster than CBQN.">
 <meta name="author" content="Andrea Bonucci">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0F'/%3E%3Cpath d='M16 5 26.6 23.4a1.1 1.1 0 0 1-1 1.7h-3.9L16 14.9l-5.7 10.2H6.4a1.1 1.1 0 0 1-1-1.7L16 5Z' fill='%23FFB020'/%3E%3C/svg%3E">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Two point one: the engine gets fused">
-<meta property="og:description" content="Amber 2.1.0: the compiler fuses the common idioms, group-by becomes one pass, membership and distinct become one pass, sorts of price-shaped floats become counting sorts, and the portable build runs AVX2 — results bit-identical, and 11 of 19 shared operations now faster than CBQN.">
+<meta property="og:description" content="Amber 2.1.0: the compiler fuses the common idioms, group-by becomes one pass, membership and distinct become one pass, sorts of price-shaped floats become counting sorts, and the portable build runs AVX2. Results bit-identical, and 11 of 19 shared operations now faster than CBQN.">
 <meta property="article:published_time" content="2026-09-14">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -307,19 +307,19 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
 </div></div></header><article><div class="col"><p>Two point one adds no syntax. What it removes is work: intermediate vectors the engine wrote to memory
 and read straight back, index lists it built only to gather through, a thread team it spun up to sum eighty
 megabytes, and a whole class of kernels that ran on two doubles at a time because the portable build could not
-assume the CPU had AVX2. Every result is bit-identical to 2.0.1 — two differential scripts in <code>tests/</code>
-compare 1.1 million lines of output between the binaries — and on the 23-operation scout matrix Amber went
+assume the CPU had AVX2. Every result is bit-identical to 2.0.1 (two differential scripts in <code>tests/</code>
+compare 1.1 million lines of output between the binaries), and on the 23-operation scout matrix Amber went
 from beating CBQN on 4 of the 19 operations both implement to beating it on 11.</p>
 
-<h2>Where the time actually went</h2>
+<h2>Where the time went</h2>
 
 <p>Before changing anything I traced every benchmark operation from its K expression through the bytecode to
 the kernel and counted bytes. The picture was consistent: the kernels were mostly fine, the <em>traffic</em>
-between them was not. <code>+/x*y</code> over ten million doubles wrote an 80&nbsp;MB product and read it back
-— 240&nbsp;MB moved for a dot product that needs 160. <code>+/(y+2.5*x)@&amp;x&gt;50</code> moved about 850&nbsp;MB
+between them was not. <code>+/x*y</code> over ten million doubles wrote an 80&nbsp;MB product and read it back,
+moving 240&nbsp;MB for a dot product that needs 160. <code>+/(y+2.5*x)@&amp;x&gt;50</code> moved about 850&nbsp;MB
 where the hand-written C reference moves 160. A group-by built one index vector per group, gathered the
 values through it, and called an interpreted lambda per group. Membership was <code>~^y?x</code>: a find
-producing eight bytes per element, a null test, a not — three passes for a boolean. The as-of join spent 32
+producing eight bytes per element, a null test, a not, which is three passes for a boolean. The as-of join spent 32
 of its 39 milliseconds not joining anything but building the per-trade quote slice through a generic hash.</p>
 
 <p>None of that is a kernel problem. It is what a straightforward array evaluator does: evaluate each primitive
@@ -327,7 +327,7 @@ completely before the next one starts. The fix is to let the compiler see the sh
 
 <h2>Idiom fusion</h2>
 
-<p>Amber's compiler already recognised one idiom — <code>*|x</code> as <em>last</em>. 2.1 adds a small
+<p>Amber's compiler already recognised one idiom, <code>*|x</code> as <em>last</em>. 2.1 adds a small
 recogniser for a handful of shapes and compiles each to one fused primitive:</p>
 
 <div class="code"><pre><code class="lang-q">+/x*y  +/x=y  +/x&lt;y  +/x&gt;y     / sum of products, count of matches -- no product or mask vector
@@ -338,7 +338,7 @@ x@&lt;x  x@&gt;x                    / sort by value -- no grade, no gather</code
 
 <p>The rule that keeps this honest: every fused primitive falls back to the very primitives it replaces for
 any operand shape it does not handle. A generic list, a mask with a 2 in it, a NaN, a negative zero, a mask
-longer than the vector — all of them take the old path and produce the old answer. The fused dot product even
+longer than the vector: all of them take the old path and produce the old answer. The fused dot product even
 keeps the unfused summation tree (and forbids FMA contraction), so <code>+/x*y</code> is the same bits it was,
 just twice as fast. <code>\\disasm +/x*y</code> shows the call.</p>
 
@@ -346,27 +346,27 @@ just twice as fast. <code>\\disasm +/x*y</code> shows the call.</p>
 
 <p>The old <code>select sum px by sym</code> grouped with <code>=</code>, which returns a dictionary of index
 vectors, then gathered each column through each vector into a sub-table and applied the aggregate lambda per
-group. Correct, general, and — at a hundred thousand groups — a hundred thousand lambda calls over eighty
+group. Correct, general, and at a hundred thousand groups also a hundred thousand lambda calls over eighty
 megabytes of scattered gathers. The C reference does <code>acc[key] += v</code> in one pass.</p>
 
 <p>2.1 adds that kernel: <code>`gagg</code> takes an aggregate name, a key column, a value column and an optional
 row mask, and returns the keys in first-appearance order (exactly the order <code>=</code> produces), the
 aggregates, and the first row of each group. A direct table serves small key ranges; a hash that grows with the
-distinct count serves the rest. Seven library verbs wrap it —</p>
+distinct count serves the rest. Seven library verbs wrap it:</p>
 
 <div class="code"><pre><code class="lang-q">gsum[sym;px]   gavg   gmin   gmax   gcount[sym]   gfirst   glast     / -> keys!values
 
 select sum px, avg sz by sym from t where sz&gt;250   / the same path: the where-clause becomes the mask</code></pre></div>
 
-<p>— and the qSQL rewriter routes every <code>select agg col … by</code> whose items are simple aggregates over
+<p>The qSQL rewriter routes every <code>select agg col … by</code> whose items are simple aggregates over
 real columns through it, with the where-clause handed in as a mask so the filtered table is never built.
 Anything else keeps the generic path. Group-by at 10, 100, 10k and 100k groups went from 48, 110, 168 and
-222&nbsp;ms to 20, 21, 22 and 30 — ahead of CBQN, DuckDB and Polars at every cardinality.</p>
+222&nbsp;ms to 20, 21, 22 and 30, ahead of CBQN, DuckDB and Polars at every cardinality.</p>
 
 <h2>One pass for the rest</h2>
 
 <p><code>in</code> now runs on <code>`memb</code>: the set is indexed once (a bitmap over its range when that fits
-eight megabytes, else a hash sized to the set) and each element costs one probe writing one byte — 51&nbsp;ms to
+eight megabytes, else a hash sized to the set) and each element costs one probe writing one byte: 51&nbsp;ms to
 9.6 on ten million values against a thousand keys. <code>?</code> at high cardinality had been sizing its hash
 table to the <em>input</em> length; a 10M-element input got a 256&nbsp;MB table, random-access bound even with
 a few thousand distinct values. It now uses a bitmap up to 2<sup>26</sup> keys and a table that grows with the
@@ -377,7 +377,7 @@ takes for one binary search per row.</p>
 <h2>Sorting a price column</h2>
 
 <p>A tick table's prices, sizes and ids are integral values wearing a float coat. Sorting one by
-<code>x@&lt;x</code> used to grade (a key-plus-index radix), then gather through the permutation — an 80&nbsp;MB
+<code>x@&lt;x</code> used to grade (a key-plus-index radix), then gather through the permutation, an 80&nbsp;MB
 random read. 2.1 scans the column once, at vector width, for "finite, integral, small range, no negative
 zero"; when that holds it counting-sorts the values directly, and when the column is already sorted it returns
 it. 197&nbsp;ms became 58. Multi-column <code>xasc</code> packs the columns' significant key bytes into one
@@ -385,22 +385,22 @@ it. 197&nbsp;ms became 58. Multi-column <code>xasc</code> packs the columns' sig
 
 <p>That scan found a bug on the way: the counting grade's <code>signbit</code> test for <code>-0.0</code> had been
 folded away by the build's <code>-fno-signed-zeros</code>, so a vector containing a negative zero was graded with
-it equal to <code>0.0</code>. The code's own comment says it must sort strictly before. It now does — one of the
+it equal to <code>0.0</code>. The code's own comment says it must sort strictly before. It now does, which is one of the
 two deliberate behaviour changes in this release. The other: every ascending value sort returns its result
 flagged <code>`s</code>, so the next <code>?</code>, <code>in</code> or <code>aj</code> on it takes the O(log n) path
 without anyone typing <code>`sa</code>.</p>
 
 <h2>The portable build runs AVX2</h2>
 
-<p><code>./build.sh</code> deliberately passes no <code>-march</code>, so the binary runs on any x86-64. That pinned
-every kernel in <code>src/simd.c</code> to SSE2 — two doubles per register — and the native build was 10–25%
+<p><code>./build.sh</code> passes no <code>-march</code> on purpose, so the binary runs on any x86-64. That pinned
+every kernel in <code>src/simd.c</code> to SSE2, two doubles per register, and the native build was 10–25%
 faster on several operations. 2.1 compiles that file with
 <code>__attribute__((target_clones("avx2","default")))</code>: GCC emits both bodies and an ifunc resolver
 picks the AVX2 one at load time on a CPU that has it. The portable binary now matches the native one on every
 kernel in that file, and <code>`simd[]</code> tells you which body it chose.</p>
 
 <p>The reductions also stop opening an OpenMP thread team above a million elements. With
-<code>OMP_NUM_THREADS</code> unset — every ordinary user — that was fourteen threads summing 80&nbsp;MB slower
+<code>OMP_NUM_THREADS</code> unset, which is every ordinary user, that was fourteen threads summing 80&nbsp;MB slower
 than one core could. Multi-core work is <code>peach</code>; it always was.</p>
 
 <h2>The numbers</h2>
@@ -431,7 +431,7 @@ The full 23 &times; 12 matrix is on the <a href="../docs/benchmarks.html#scout">
 <code>distinct</code>. All five are the same fact. BQN has no user-visible float/int distinction, so CBQN stores
 this dataset's 0..999 "float" values as 16-bit integers and streams a quarter of the bytes; its sort is a
 counting sort over i16 storage. At equal width Amber's <code>+/</code> is at the memory roofline and CBQN's
-<code>+´</code> on real doubles is a scalar loop. K types are visible — <code>@x</code> must say <code>`F</code> —
+<code>+´</code> on real doubles is a scalar loop. K types are visible, since <code>@x</code> must say <code>`F</code>,
 so matching those cells means a float vector whose <em>payload</em> is narrow, widened on demand. That is the
 next architectural item, and it is the only one left that fusion cannot reach.</p>
 

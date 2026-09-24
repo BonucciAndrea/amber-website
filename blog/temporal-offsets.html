@@ -311,7 +311,7 @@ visibly wrong, and it will pass every review it is ever shown in. The only probl
 it is thirty years and a few days from where it belongs, and nobody will notice until someone tries to
 join it against a table that got the offset right.</p>
 
-<p>This is the failure mode that epoch mismatches actually have. They do not crash. They do not throw. They
+<p>This is the failure mode epoch mismatches have. They do not crash. They do not throw. They
 produce plausible output, which is the worst thing a bug can do.</p>
 
 <figure class="wide"><div class="frame">
@@ -357,7 +357,7 @@ produce plausible output, which is the worst thing a bug can do.</p>
   <text class="ac" x="640" y="84" text-anchor="middle">1707 … 2292   (Unix ns: 1677 … 2262)</text>
 </svg></div></figure>
 
-<h2>What Amber actually stores</h2>
+<h2>What Amber stores</h2>
 
 <p>Three temporal types, three integers.</p>
 
@@ -365,14 +365,14 @@ produce plausible output, which is the worst thing a bug can do.</p>
 <table>
   <thead><tr><th style="width:12%">Type</th><th style="width:26%">Literal</th><th style="width:24%">Stored as</th><th>Zero point</th></tr></thead>
   <tbody>
-    <tr><td><code>d</code> date</td><td><code>2026.07.30</code></td><td>int — <strong>days</strong></td><td>2000-01-01</td></tr>
-    <tr><td><code>t</code> time</td><td><code>10:00:00.000</code></td><td>int — <strong>milliseconds</strong></td><td>midnight, same day</td></tr>
-    <tr><td><code>p</code> timestamp</td><td><code>2026.07.30D09:30:00.000000000</code></td><td>int64 — <strong>nanoseconds</strong></td><td>2000-01-01T00:00:00</td></tr>
+    <tr><td><code>d</code> date</td><td><code>2026.07.30</code></td><td>int, <strong>days</strong></td><td>2000-01-01</td></tr>
+    <tr><td><code>t</code> time</td><td><code>10:00:00.000</code></td><td>int, <strong>milliseconds</strong></td><td>midnight, same day</td></tr>
+    <tr><td><code>p</code> timestamp</td><td><code>2026.07.30D09:30:00.000000000</code></td><td>int64, <strong>nanoseconds</strong></td><td>2000-01-01T00:00:00</td></tr>
   </tbody>
 </table>
 </div>
 
-<p>They are first-class types with literal syntax and type-aware arithmetic — <code>date - date</code> gives
+<p>They are first-class types with literal syntax and type-aware arithmetic. <code>date - date</code> gives
 you days, <code>time + time</code> gives you a time, <code>year</code> and <code>dow</code> and
 <code>hh</code> work on them directly. But the storage is numeric, exactly as q does internally, which is
 what lets <code>xasc</code> and the <code>`s</code> attribute work on a time column unchanged and lets the
@@ -392,7 +392,7 @@ as-of kernel binary-search it.</p>
 </div>
 
 <p>Every conversion in this post is one of those three, applied in one of two directions. There is nothing
-else to it, and that is precisely why it is dangerous — a mistake this simple does not feel like it needs
+else to it, and that is what makes it dangerous: a mistake this simple does not feel like it needs
 checking.</p>
 
 <h2>Why not just use Unix time?</h2>
@@ -425,7 +425,7 @@ it is a real operational nuisance in fixed income.</p>
 
 <p>Amber stores an integer vector in the narrowest type that holds every element. A date column for a
 contemporary trading session holds values in the nine-thousands from a 2000 epoch, and in the
-twenty-thousands from a 1970 one. Both fit <code>int16</code>, so for dates this is a small win — but the
+twenty-thousands from a 1970 one. Both fit <code>int16</code>, so for dates this is a small win, but the
 same principle runs through the whole design, and combined with symbol enumeration (four bytes a row rather
 than a string) it is a large part of why a tick table is as compact as it is.</p>
 
@@ -440,9 +440,9 @@ memory, matching that convention is worth more than matching POSIX.</p>
 
 <p>Here is the part that turns an offset into a bug rather than a conversion.</p>
 
-<p>A column of <strong>milliseconds of day</strong> holds values from 0 to 86,399,999 — eight digits. A
+<p>A column of <strong>milliseconds of day</strong> holds values from 0 to 86,399,999, eight digits. A
 column of <strong>nanoseconds since 2000</strong> for a market open holds values around 838,000,000,000,000
-— fifteen digits. Those are far apart, so you might think you could just look.</p>
+or fifteen digits. Those are far apart, so you might think you could just look.</p>
 
 <p>But a column of <strong>seconds since 2000</strong> is nine digits, a column of <strong>milliseconds
 since 2000</strong> is thirteen, and a column of <strong>microseconds of day</strong> is eleven. Once you
@@ -486,7 +486,7 @@ rather than an omission:</p>
 </div>
 
 <p>The temporal conversion has its own boundary tests in <code>pkg/amberd</code>, which uses nothing but
-Go's standard library — so an off-by-an-epoch reproduces in <code>go test</code> with no Grafana anywhere
+Go's standard library, so an off-by-an-epoch reproduces in <code>go test</code> with no Grafana anywhere
 near it.</p>
 
 <h3>pandas and NumPy</h3>
@@ -537,7 +537,7 @@ tbl = tbl.set_column(0, pa.field("time", pa.timestamp("ns", tz="UTC")),
 
 <p><code>amber-tick</code> writes <code>time</code> columns as int64 nanoseconds since 2000-01-01, and the
 partition directory name <em>is</em> the date. The Arrow IPC copy of the store is written in the same pass
-from the same arrays, so the two views cannot drift apart — a class of bug that "we'll regenerate the Arrow
+from the same arrays, so the two views cannot drift apart. That is a class of bug that "we'll regenerate the Arrow
 files nightly" would have introduced.</p>
 
 <div class="code"><pre><code class="l-out">store/
@@ -575,13 +575,13 @@ dow  2026.07.30                     / day of week
   <tbody>
     <tr><td><code>t.hh</code></td><td><code>hh t</code></td><td>hour of day</td></tr>
     <tr><td><code>t.mm</code></td><td><code>mm t</code></td><td>minute of hour</td></tr>
-    <tr><td><code>t.ss</code></td><td><code>sec t</code></td><td>second — <code>ss</code> is string-search in Amber</td></tr>
+    <tr><td><code>t.ss</code></td><td><code>sec t</code></td><td>second (<code>ss</code> is string-search in Amber)</td></tr>
     <tr><td><code>t.minute</code></td><td><code>minute t</code></td><td>minutes since midnight</td></tr>
   </tbody>
 </table>
 </div>
 
-<h2>Bucketing, which is where most temporal code actually lives</h2>
+<h2>Bucketing, which is where most temporal code lives</h2>
 
 <p>Almost every question about a trading day is a question about buckets. Amber has three functions and
 they compose:</p>
@@ -604,7 +604,7 @@ qby[tb; `sym`time;
 <div class="note info">
   <b>Bucketing does not care about the epoch</b>
   <p><code>xbar</code> is integer arithmetic on whatever the column holds. That is why it works identically
-  on milliseconds-of-day and on nanoseconds-since-2000 — and also why it will happily bucket a column whose
+  on milliseconds-of-day and on nanoseconds-since-2000, and also why it will happily bucket a column whose
   epoch you got wrong, into perfectly regular buckets, in the wrong place.</p>
 </div>
 

@@ -297,7 +297,7 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
 <header class="hero"><div class="wrap"><div class="col">
   <div class="series"><span class="bar"></span>On zero-copy interop</div>
   <h1>Zero-copy interop: bridging Amber memory buffers directly into Apache Arrow &amp; Python</h1>
-  <p class="dek">What &ldquo;zero copy&rdquo; actually has to mean if the claim is going to survive contact with a refcount, a batch that outlives its stream, and a 32-byte object header sitting immediately before every payload.</p>
+  <p class="dek">What &ldquo;zero copy&rdquo; has to mean if the claim is going to survive contact with a refcount, a batch that outlives its stream, and a 32-byte object header sitting immediately before every payload.</p>
   <div class="meta">
     <span class="tag">interop</span>
     <span>2026-08-07</span><span class="sep">·</span><span>16 min read</span>
@@ -305,7 +305,7 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
   </div>
 </div></div></header><article><div class="col">
 <p>"Zero copy" is the cheapest claim in data infrastructure. Almost every system says it, and almost every
-system means something slightly different by it — usually "we avoid one copy that a naive implementation
+system means something slightly different by it, usually "we avoid one copy that a naive implementation
 would make", which is fine but is not what the phrase says.</p>
 
 <p>So here is a falsifiable version. If a query result crosses from Amber into NumPy without a copy, then
@@ -366,7 +366,7 @@ either knowing about the other's type. NumPy consumes it; so does <code>memoryvi
 
 <div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">C</span></div><pre><code class="l-py">const void *px = amber_get_vector_ptr(column, &amp;type, &amp;n, &amp;bits);</code></pre></div>
 
-<p>That returns the payload pointer — the actual bytes the engine wrote when it evaluated the query. The
+<p>That returns the payload pointer, the bytes the engine wrote when it evaluated the query. The
 extension module fills in a <code>Py_buffer</code> pointing at it and, critically, sets
 <code>view-&gt;obj</code> to the owning <code>Value</code> object with an INCREF.</p>
 
@@ -385,14 +385,14 @@ that points into it</em>. You cannot get a dangling array by dropping the handle
   <p>Amber stores an integer vector in the narrowest type that holds every element, so <code>1 2 3</code>
   is physically <code>int8</code> and <code>1 2 3000000000</code> is <code>int64</code>. Both are "long
   vectors" as far as the language is concerned. The arrays you get back carry the <em>true</em> dtype
-  rather than being widened behind your back — because widening would be a copy, and a zero-copy path that
+  rather than being widened behind your back, because widening would be a copy, and a zero-copy path that
   silently copies to make the types tidy is not a zero-copy path. <code>arr.astype("int64")</code> is one
   call away when you want uniformity, and it should be your call.</p>
 </div>
 
 <h2>Boundary two: the Arrow C Data Interface</h2>
 
-<p>Arrow's C Data Interface is a pair of structs — <code>ArrowSchema</code> and <code>ArrowArray</code> —
+<p>Arrow's C Data Interface is a pair of structs, <code>ArrowSchema</code> and <code>ArrowArray</code>,
 with a documented memory layout and a release callback. Two libraries that both understand those structs
 can hand data to each other without either linking the other.</p>
 
@@ -407,11 +407,11 @@ arrow.import p                      / and back</code></pre></div>
 callback drops the Amber refcount. Same discipline as the buffer protocol, different vocabulary.</p>
 
 <p>That is exactly the right amount of Arrow for a ten-thousand-line C runtime to own. It answers "hand me
-this table" completely, and it stops there deliberately.</p>
+this table" completely, and it stops there on purpose.</p>
 
 <h3>The one column type that cannot be zero-copy</h3>
 
-<p>Symbols. Amber stores a symbol column as interned <code>int32</code> ids into a global symbol table —
+<p>Symbols. Amber stores a symbol column as interned <code>int32</code> ids into a global symbol table:
 four bytes a row, integer comparisons, which is the reason grouping and joining on <code>sym</code> is
 fast. Arrow's utf8 layout wants an offsets buffer and a bytes buffer.</p>
 
@@ -424,7 +424,7 @@ in a tick table the symbol column is one of nine, and the numeric columns are wh
 <p>Amber stores a 32-byte object header immediately <em>before</em> every vector payload. Given a pointer
 to a column's data, the engine finds its type, count, refcount and attribute by walking backwards.</p>
 
-<p>That layout is why the outbound direction is free — the payload is already exactly what a consumer
+<p>That layout is why the outbound direction is free. The payload is already exactly what a consumer
 wants, contiguous and headerless from the consumer's point of view. And it is why the inbound direction
 cannot be: a NumPy array allocated by NumPy has no thirty-two bytes of Amber header in front of it, and
 there is no way to retrofit them without moving the data.</p>
@@ -433,12 +433,12 @@ there is no way to retrofit them without moving the data.</p>
 
 <p>This is not a limitation anyone is working around. It matches where the volume is: query results are
 large, query parameters are small. A design that made inbound free at the cost of making outbound
-expensive would be strictly worse for every workload anyone actually has.</p>
+expensive would be strictly worse for every workload anyone has.</p>
 
-<h2>Streaming: the problem the engine deliberately does not solve</h2>
+<h2>Streaming: the problem the engine leaves alone</h2>
 
 <p>One export gives you the whole table. That is the right answer until the table is 400 million rows, at
-which point the consumer needs batches — and a Flight server, a Polars scan and anything with a memory
+which point the consumer needs batches, and a Flight server, a Polars scan and anything with a memory
 budget all need exactly that.</p>
 
 <p>The obvious implementation is to cut the table into pieces. <strong>That copies every byte, once per
@@ -467,7 +467,7 @@ memory.</p>
 </blockquote>
 
 <p>That sentence is the whole design constraint. A consumer is entitled to keep a batch, put it in a list,
-return it from a function, or hand it to another thread — Arrow's contract says a <code>RecordBatch</code>
+return it from a function, or hand it to another thread. Arrow's contract says a <code>RecordBatch</code>
 is a value, and values do not stop being valid because you closed something else.</p>
 
 <p>So the parent export is <strong>not owned by the stream</strong>. It is owned by a reference count. The
@@ -494,7 +494,7 @@ package's extension module. If the dynamic loader satisfies those two dependenci
 copies</em> of the library, you get two <strong>engines</strong> in one process: two heaps, two symbol
 tables, two global namespaces.</p>
 
-<p>Nothing errors. Nothing can error, because nothing is technically wrong — both libraries loaded, both
+<p>Nothing errors. Nothing can error, because nothing is technically wrong: both libraries loaded, both
 initialised, both work. What happens instead is that a handle produced by one is meaningless to the other,
 and you get a segfault or, worse, plausible garbage, at a call site that has nothing to do with the actual
 problem.</p>
@@ -518,47 +518,47 @@ when anything is strange.</p>
 <code>mr</code>, <code>su</code>, <code>us</code>, <code>err</code>, <code>run</code>, <code>add</code>,
 <code>sub</code>, <code>pk</code>, <code>cpl</code>.</p>
 
-<p>Inside one static binary those names are perfect — short, consistent, and the compiler resolves them all
+<p>Inside one static binary those names are perfect, being short, consistent, and resolved by the compiler
 at link time. Inside a shared library loaded next to NumPy, libarrow and libpython, a global symbol called
 <code>add</code> is a loaded gun.</p>
 
 <p>So <code>src/libamber.map</code> is an export map that makes everything except <code>amber_*</code> and
-<code>am_ext_*</code> genuinely <strong>absent</strong> from the dynamic symbol table. Not private by
-convention — absent. It cannot be bound to by accident and it cannot interpose on a host's symbol of the
+<code>am_ext_*</code> <strong>absent</strong> from the dynamic symbol table. Not private by
+convention, but absent. It cannot be bound to by accident and it cannot interpose on a host's symbol of the
 same name.</p>
 
 <p>There is a second, subtler consequence of building a <code>dlopen</code>-able library. The engine's
 allocator uses initial-exec TLS on its hot path, which is the fastest model and requires the loader to size
-the static TLS block before <code>main()</code>. A <code>dlopen</code>'d library cannot use it — it would
+the static TLS block before <code>main()</code>. A <code>dlopen</code>'d library cannot use it. It would
 have to borrow from glibc's small surplus reserve, which fails <em>nondeterministically</em>, with
 <code>cannot allocate memory in static TLS block</code>, depending on what else the host imported first. So
 the shared build drops to global-dynamic TLS, and the executable keeps initial-exec, and the two are
 compiled as separate object sets so neither pessimises the other.</p>
 
-<h2>Where the copies actually are, for real</h2>
+<h2>Where the copies really are</h2>
 
-<p>An honest inventory of a full pipeline — engine to Grafana panel, engine to Polars, engine to a Flight
+<p>An honest inventory of a full pipeline, from engine to Grafana panel, engine to Polars, engine to a Flight
 client:</p>
 
 <div class="tbl">
 <table>
   <thead><tr><th style="width:34%">Path</th><th style="width:16%">Copies</th><th>Where</th></tr></thead>
   <tbody>
-    <tr><td>Amber &rarr; NumPy</td><td>0</td><td>—</td></tr>
-    <tr><td>Amber &rarr; Arrow (numeric)</td><td>0</td><td>—</td></tr>
+    <tr><td>Amber &rarr; NumPy</td><td>0</td><td>(none)</td></tr>
+    <tr><td>Amber &rarr; Arrow (numeric)</td><td>0</td><td>(none)</td></tr>
     <tr><td>Amber &rarr; Arrow (symbol)</td><td>1</td><td>int32 ids &rarr; utf8 offsets + bytes</td></tr>
     <tr><td>Amber &rarr; Polars / DuckDB</td><td>0</td><td>both consume the C Data Interface</td></tr>
     <tr><td>Amber &rarr; pandas</td><td>0 or 1</td><td>pandas decides whether to consolidate blocks; version-dependent, so it is documented rather than promised</td></tr>
     <tr><td>Amber &rarr; Flight (<code>embedded</code>)</td><td>0</td><td>the batch handed to gRPC points at the engine's buffers</td></tr>
     <tr><td>Amber &rarr; Flight (<code>remote</code>)</td><td>1 + parse</td><td>fronts an <code>amberd</code> elsewhere; a real copy and a real parse</td></tr>
-    <tr><td>Amber &rarr; Grafana</td><td>1 + serialise</td><td>columnar JSON over TCP — unavoidable across a process boundary, and the payloads are marts, not tapes</td></tr>
+    <tr><td>Amber &rarr; Grafana</td><td>1 + serialise</td><td>columnar JSON over TCP, unavoidable across a process boundary, and the payloads are marts rather than tapes</td></tr>
     <tr><td>Anything &rarr; Amber</td><td>1</td><td>the 32-byte header</td></tr>
   </tbody>
 </table>
 </div>
 
 <p>The <code>remote</code> Flight backend is in that table on purpose. It is slower and it says so:
-"sometimes the engine genuinely is somewhere else — a tickerplant, an HDB node — and a slower path beats no
+"sometimes the engine really is somewhere else, on a tickerplant or an HDB node, and a slower path beats no
 path. Do not reach for it when the engine could have been in-process."</p>
 
 <h2>The one conversion that is not free and should not be automatic</h2>

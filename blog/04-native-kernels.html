@@ -306,19 +306,19 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:38px 0 46px;
   </div>
 </div></div></header><article><div class="col"><p>By 1.5 Amber was a q vocabulary written in K, running on someone else's excellent interpreter. It was
 correct, it was pleasant to use, and on ten million rows it was not fast enough to be interesting. The
-next four releases are where that changed — where the parts of the system that a tick session actually
+next four releases are where that changed, and where the parts of the system that a tick session really
 spends its time in stopped being K and became C.</p>
 
 <p>Five pieces, roughly in the order they landed: real temporal types, a SIMD kernel library, a
 multithreaded vector engine, a bump arena, and a branch-free as-of join. Plus one thing I removed, which
 I think is the more useful story.</p>
 
-<h2>1.7 — temporal types that are actually types</h2>
+<h2>1.7: temporal types that are real types</h2>
 
 <p>Since 1.1 Amber had temporal <em>functions</em>: <code>hms</code>, <code>stime</code>,
 <code>minbar</code>, <code>xbar</code>, all operating on integers by convention. A time was "milliseconds
-since midnight, if everyone agrees". Nothing enforced it, nothing displayed it, and — as
-<a href="02-the-q-layer.html">post two</a> describes — storing a formatted time instead of a numeric one
+since midnight, if everyone agrees". Nothing enforced it, nothing displayed it, and, as
+<a href="02-the-q-layer.html">post two</a> describes, storing a formatted time instead of a numeric one
 silently broke every join.</p>
 
 <p>1.7 made <code>date</code>, <code>time</code> and <code>timestamp</code> first-class C-level types with
@@ -329,8 +329,8 @@ their own type tags. That meant touching five files:</p>
   <thead><tr><th style="width:16%">File</th><th>What changed</th></tr></thead>
   <tbody>
     <tr><td><code>a.h</code></td><td>the type enum, the type tables, and the <code>TU</code>/<code>TP</code> macros that classify a tag</td></tr>
-    <tr><td><code>p.c</code></td><td>the literal scanner — <code>2026.07.30</code>, <code>10:00:05.000</code>, <code>2026.07.30D09:30:00.000000000</code> parse directly</td></tr>
-    <tr><td><code>s.c</code></td><td>the formatter — a value auto-displays in its own format</td></tr>
+    <tr><td><code>p.c</code></td><td>the literal scanner: <code>2026.07.30</code>, <code>10:00:05.000</code>, <code>2026.07.30D09:30:00.000000000</code> parse directly</td></tr>
+    <tr><td><code>s.c</code></td><td>the formatter: a value auto-displays in its own format</td></tr>
     <tr><td><code>2.c</code></td><td>type-aware arithmetic: <code>date - date</code> is days, <code>date + n</code> is a date, <code>time + time</code> is a time</td></tr>
     <tr><td><code>c.c</code></td><td>the casts: <code>"D"$</code>, <code>"T"$</code>, <code>"P"$</code>, and <code>`i$</code> to get the raw number back</td></tr>
   </tbody>
@@ -357,20 +357,20 @@ and would have cost every single one of those.</p>
   <b>The epoch</b>
   <p>Dates count days from <strong>2000-01-01</strong>; timestamps count nanoseconds from the same
   instant; a time is milliseconds since midnight and carries no date at all. Same convention as q, and
-  it buys thirty years at the end of the <code>int64</code> range that matters — 1707–2292 instead of
+  it buys thirty years at the end of the <code>int64</code> range that matters: 1707–2292 instead of
   Unix nanoseconds' 1677–2262. It also means every integration has to convert explicitly, and none of them
   do it silently, because a quiet thirty-year shift is the worst class of bug there is: it does not crash,
   it produces a chart that looks fine.</p>
 </div>
 
-<h2>1.7 — the first C kernels</h2>
+<h2>1.7: the first C kernels</h2>
 
 <p>Three functions moved out of K in the same release, chosen because profiling said so, not because they
 looked slow.</p>
 
 <p><strong><code>wj</code>, the window join</strong> (<code>wjc</code> in <code>i.c</code>) was an
 interpreted per-row loop. It became a vectorised binary-search range probe per row plus a contiguous slice
-sweep for the standard reducers — <code>first last min max sum avg count</code>. About 2&times; in a
+sweep for the standard reducers, <code>first last min max sum avg count</code>. About 2&times; in a
 throttled sandbox, more on real cores, and bit-exact against the interpreted version for the non-floating
 reducers. Arbitrary aggregators still fall back to <code>wjK</code>, because supporting "any function"
 means calling back into the interpreter and there is no point pretending otherwise.</p>
@@ -378,15 +378,15 @@ means calling back into the interpreter and there is no point pretending otherwi
 <p><strong><code>ema</code></strong> was a per-element scan; it became a single <code>O(n)</code> C sweep,
 verified identical.</p>
 
-<p><strong>The Arrow C Data Interface</strong> arrived here too — <code>src/ar.c</code>,
+<p><strong>The Arrow C Data Interface</strong> arrived here too, as <code>src/ar.c</code>,
 <code>arrow.export</code> and <code>arrow.import</code>, about ninety lines with <strong>no
 <code>libarrow</code> linkage</strong>. Export is zero-copy: the child <code>buffers[1]</code> pointers
 alias Amber's column payloads directly, and the <code>release</code> callback drops the Amber refcount.
-Import copies, because Amber's inline object header precludes adopting a foreign buffer — the asymmetry I
+Import copies, because Amber's inline object header precludes adopting a foreign buffer. That is the asymmetry I
 described in <a href="01-ngn-k.html">post one</a>, showing up for the first time as a user-visible
 property.</p>
 
-<h2>1.6 — <code>peach</code>, and choosing processes over threads</h2>
+<h2>1.6: <code>peach</code>, and choosing processes over threads</h2>
 
 <p><code>peach[f;y]</code> applies <code>f</code> to the items of <code>y</code> in parallel. The
 implementation forks <code>AMBER_THREADS</code> worker processes, each applies <code>f</code> to a slice,
@@ -398,10 +398,10 @@ serialises its result down a pipe, and the parent deserialises and concatenates.
 <table>
   <thead><tr><th style="width:24%"></th><th>Fork (chosen)</th><th>Shared-memory threads</th></tr></thead>
   <tbody>
-    <tr><td>Data races</td><td>None possible — copy-on-write heap per worker</td><td>Every refcount becomes a contended atomic</td></tr>
+    <tr><td>Data races</td><td>None possible: copy-on-write heap per worker</td><td>Every refcount becomes a contended atomic</td></tr>
     <tr><td>Cost to serial code</td><td>Zero</td><td>An atomic increment on every single value, forever</td></tr>
     <tr><td>Cost to parallel code</td><td>A serialise + pipe + deserialise per chunk</td><td>Nothing</td></tr>
-    <tr><td>Precedent</td><td>How q gets multi-core</td><td>—</td></tr>
+    <tr><td>Precedent</td><td>How q gets multi-core</td><td>(none)</td></tr>
   </tbody>
 </table>
 </div>
@@ -411,16 +411,16 @@ pays nothing. That makes it excellent for coarse-grained, compute-heavy per-item
 cheap reduction, where the fork overhead dominates. <code>examples/peach.k</code> exists to let you find
 the crossover on your own hardware rather than take my word for it.</p>
 
-<p>Worker count defaults to the online CPU count, detected via <code>sysconf</code> — not a hardcoded 4,
+<p>Worker count defaults to the online CPU count, detected via <code>sysconf</code>, rather than a hardcoded 4,
 which is what it was originally and which either oversubscribed a small box or left a big one idle.
 <code>AMBER_THREADS=1</code> forces serial.</p>
 
-<h2>1.9 — SIMD, and the ladder above it</h2>
+<h2>1.9: SIMD, and the ladder above it</h2>
 
 <p>The vector kernels are <code>src/simd.{h,c}</code>: <code>simd_add_i64/f64</code>,
 <code>simd_mul_i64/f64</code>, <code>simd_sum_i64/f64</code>, operating on plain <code>int64_t*</code> and
-<code>double*</code> arrays. Three backends — AVX2 via <code>&lt;immintrin.h&gt;</code>, NEON via
-<code>&lt;arm_neon.h&gt;</code>, and a scalar C99 fallback — selected at compile time.</p>
+<code>double*</code> arrays. Three backends (AVX2 via <code>&lt;immintrin.h&gt;</code>, NEON via
+<code>&lt;arm_neon.h&gt;</code>, and a scalar C99 fallback) selected at compile time.</p>
 
 <p>Above them sits <code>src/parallel.{h,c}</code>, which splits arrays above
 <code>PAR_THRESHOLD</code> (100,000 elements) into one contiguous chunk per POSIX thread and hands each
@@ -503,13 +503,13 @@ simd: backend=avx2 n=400009 simd_add=1.51ms scalar_add=1.76ms ok=1</code></pre><
 
 <h3>The build flag that has to be probed</h3>
 
-<p><code>AMBER_NATIVE=1</code> asks for a machine-tuned build. The obvious implementation —
-<code>-march=native</code> — is x86 syntax that Apple's clang rejects outright on Apple Silicon, so the
+<p><code>AMBER_NATIVE=1</code> asks for a machine-tuned build. The obvious implementation,
+<code>-march=native</code>, is x86 syntax that Apple's clang rejects outright on Apple Silicon, so the
 obvious implementation breaks every arm64 CI runner. <code>build.sh</code> probes: it tries
 <code>-march=native</code>, falls back to <code>-mcpu=native</code> on aarch64, and falls back again to a
 portable build. So the flag succeeds everywhere rather than being a platform-specific landmine.</p>
 
-<h2>1.9 — the arena</h2>
+<h2>1.9: the arena</h2>
 
 <p>Evaluating an expression produces transient buffers: an index vector, a mask, a scratch array for a
 kernel. In a refcounted heap each of those is a <code>malloc</code> and a <code>free</code>, and the
@@ -518,7 +518,7 @@ allocator's tail latency lands directly in your tick path.</p>
 <p><code>src/arena.{h,c}</code> is a <strong>thread-local 16 MB bump allocator</strong>. Reserved at
 startup, rewound once per evaluation cycle. Allocation is a pointer increment; freeing is not a thing that
 happens. There is a leak-free overflow path for the rare allocation that exceeds the slab, and a self-test
-builtin (<code>`arn 0</code>) that exercises bump, reset and the overflow path — asserted by
+builtin (<code>`arn 0</code>) that exercises bump, reset and the overflow path, asserted by
 <code>test.k</code>, because an allocator nobody tests is an allocator.</p>
 
 <p>The point is not throughput. It is <em>jitter</em>. A general allocator is fast on average and
@@ -530,13 +530,13 @@ about.</p>
   <p>The arena originally used plain <code>malloc</code> and 16-byte alignment; SIMD wanted 32, so it
   moved to <code>posix_memalign</code>. Later I probed the <em>main</em> heap and found something worse:
   <code>HD</code>, the array header size, was 32 bytes, which put every payload pointer exactly 32 bytes
-  past a 64-byte boundary — <code>ptr % 64 == 32</code> for every allocation size — splitting a cache line
+  past a 64-byte boundary. <code>ptr % 64 == 32</code> for every allocation size, splitting a cache line
   on the first wide access of every array in the system. Moving <code>HD</code> to 64 fixed it, and
   because that touches the core buddy allocator it was re-validated under AddressSanitizer and
   UndefinedBehaviorSanitizer across every suite plus the fuzzer.</p>
 </div>
 
-<h2>1.9 — the as-of join, in C</h2>
+<h2>1.9: the as-of join, in C</h2>
 
 <p>This is the one the whole engine is for. <code>aj</code> matches each trade to the most recent quote at
 or before it, per symbol. In 1.0 it was a scalar search per row. In 1.5 it became one vectorised
@@ -604,8 +604,8 @@ or before it, per symbol. In 1.0 it was a scalar search per row. In 1.5 it becam
 
 <p>A textbook binary search branches on the comparison, and a binary search over random keys mispredicts
 roughly half the time. Five million probes &times; half a mispredict &times; ~15 cycles of pipeline flush
-is the entire runtime. The kernel instead writes <code>k[v &lt; xl] = i</code> — indexing a two-slot array
-rather than jumping — which the compiler lowers to a conditional move. Nothing to predict, nothing to
+is the entire runtime. The kernel instead writes <code>k[v &lt; xl] = i</code>, indexing a two-slot array
+rather than jumping, which the compiler lowers to a conditional move. Nothing to predict, nothing to
 flush.</p>
 
 <h3>It is allowed to assume the layout</h3>
@@ -641,15 +641,15 @@ F(ng, A c=gc[i];
   })</code></pre></div>
 
 <p>Note the default: an unrecognised column type does not get a guess, it gets the slow-but-correct path.
-That is the rule everywhere in this layer — a fast path that is occasionally wrong is worse than no fast
+That is the rule everywhere in this layer: a fast path that is occasionally wrong is worse than no fast
 path.</p>
 
 <p>Result: <strong>5,000,000 trades against 10,000,000 quotes in 704 ms</strong>. The scratch match vector
 comes from the arena, so the loop never touches <code>malloc</code>. The pure-K reference,
-<code>ajmK</code>, is still in the tree — a differential test against a slow implementation you trust is
+<code>ajmK</code>, is still in the tree, because a differential test against a slow implementation you trust is
 worth far more than the disk it uses.</p>
 
-<h2>1.9 — the disassembler, and the honest deviation</h2>
+<h2>1.9: the disassembler, and the honest deviation</h2>
 
 <p>The brief I set myself for this release included "add a compiler and a bytecode VM". I did not, and the
 reason is worth stating because it is the most useful thing in this post.</p>
@@ -662,7 +662,7 @@ about it.</p>
 
 <p>So <code>src/vm.{h,c}</code> is a <em>disassembler</em> instead. It mirrors <code>b.c</code>'s real
 opcode table byte for byte and decodes the actual bytecode Amber produces, with a self-consistency check
-— the decode loop must consume exactly the bytecode length.</p>
+in the form of a rule: the decode loop must consume exactly the bytecode length.</p>
 
 <div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;  \disasm (1+2)*3-4</span></div><pre><code class="l-out">locals (0):
 constants (2):
@@ -676,12 +676,12 @@ bytecode (6 bytes):
 
 <p>The constant pool holds <code>3</code> and <code>-1</code>, not <code>1</code>, <code>2</code>,
 <code>3</code>, <code>4</code>: the compiler constant-folded <code>1+2</code> and <code>3-4</code> before
-emitting. That is precisely the kind of fact a disassembler for the <em>real</em> VM surfaces and a
+emitting. That is the kind of fact a disassembler for the <em>real</em> VM surfaces and a
 from-scratch reimplementation would not, and I only know it because I built the honest version.</p>
 
 <h2>The thing I deleted</h2>
 
-<p>The same release added <code>\hl &lt;expr&gt;</code> — a command that echoed one line back with ANSI
+<p>The same release added <code>\hl &lt;expr&gt;</code>, a command that echoed one line back with ANSI
 syntax colour. It shipped, and then I removed it.</p>
 
 <p>It only ever colourised a line you had explicitly run. That is not what "live syntax highlighting"
@@ -690,22 +690,22 @@ meant rewriting the REPL's raw-input loop. The feature was a plausible-looking t
 words of the goal and none of its substance, and shipping it would have made the roadmap item look done.</p>
 
 <p>Deleting it is in the changelog with that explanation. Eighteen months later I did rewrite the input
-loop, for entirely different reasons, and got the capability properly —
+loop, for entirely different reasons, and got the capability properly. See
 <a href="05-platform.html">post five</a>.</p>
 
-<h2>1.9 — the audit</h2>
+<h2>1.9: the audit</h2>
 
 <p>1.9 was also a memory-safety and undefined-behaviour pass over the whole tree, and it is the least
 glamorous and most important thing in this post. Real bugs found and fixed, in both categories:</p>
 
 <ul>
-  <li>memory safety and UB in the core — the kind that ASan finds and code review does not</li>
-  <li>language semantics — cases where a primitive was subtly wrong at an edge and no test covered it</li>
+  <li>memory safety and UB in the core, the kind that ASan finds and code review does not</li>
+  <li>language semantics, where a primitive was subtly wrong at an edge and no test covered it</li>
 </ul>
 
 <p>What came out of it, besides the fixes, is <code>tests/test_matrix.k</code>: a <strong>309-case
-combinatorial matrix</strong> — every primitive &times; every element type &times; sizes 0, 1, 10 and
-100,000+ — crossing the SIMD and <code>PAR_THRESHOLD</code> boundaries deliberately, and asserted as
+combinatorial matrix</strong> of every primitive &times; every element type &times; sizes 0, 1, 10 and
+100,000+, crossing the SIMD and <code>PAR_THRESHOLD</code> boundaries on purpose, and asserted as
 <em>invariants</em> (shape, algebraic identity, vector-kernel-versus-scalar-reference) rather than frozen
 literals.</p>
 
@@ -724,7 +724,7 @@ asserts <code>simd_add(a,b) == scalar_add(a,b)</code> at sizes either side of th
 
 <p>By the end of 1.9 the parts of Amber a tick session spends its time in were C: the join, the vector
 arithmetic, the reductions, the window join, the EMA, the temporal arithmetic. The parts that were still K
-— the query layer, the group-by, the probe — were about to become the next bottleneck, and finding that
+(the query layer, the group-by, the probe) were about to become the next bottleneck, and finding that
 out is where <a href="05-platform.html">the last post</a> starts.</p>
 <div class="endnote">Part of <a href="index.html">Building Amber on ngn/k</a>, a five-part series on what I added to a K interpreter to turn it into a columnar engine for market data.</div><div class="pager"><a href="03-attributes.html"><span class="d">&larr; Previous</span><span class="t">03. One byte at offset −13</span></a><a class="nx" href="05-platform.html"><span class="d">Next &rarr;</span><span class="t">05. From language to platform</span></a></div></div></article>
 </main>
