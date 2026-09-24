@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Engine internals — how Amber evaluates, allocates and dispatches</title>
+<title>Engine internals: how Amber evaluates, allocates and dispatches</title>
 <meta name="description" content="A tour of the C core: the value representation, how a primitive is dispatched and specialised by type, the scratch arena, the SIMD kernel layer, and where the reduce and scan families live.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Engine internals — how Amber evaluates, allocates and dispatches">
+<meta property="og:title" content="Engine internals: how Amber evaluates, allocates and dispatches">
 <meta property="og:description" content="A tour of the C core: the value representation, how a primitive is dispatched and specialised by type, the scratch arena, the SIMD kernel layer, and where the reduce and scan families live.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
@@ -67,7 +67,7 @@ finds its implementation, and which layer to change when something is slow.</p>
 
 <h2>The source map</h2>
 
-<p>The core is deliberately terse — single-letter translation units, a macro vocabulary that makes a
+<p>The core is terse on purpose: single-letter translation units, a macro vocabulary that makes a
 kernel fit on one line. That is inherited style, and it is load-bearing: the whole evaluator fits in
 cache. Here is what lives where.</p>
 
@@ -80,7 +80,7 @@ cache. Here is what lives where.</p>
     <tr><td><code>b.c</code>, <code>e.c</code></td><td>Bytecode and the evaluator.</td></tr>
     <tr><td><code>1.c</code>, <code>2.c</code></td><td>Monadic and dyadic element-wise primitives.</td></tr>
     <tr><td><code>3.c</code></td><td><strong>Reductions and scans.</strong> The <code>/</code> and <code>\</code> adverb families and their per-type specialisations.</td></tr>
-    <tr><td><code>w.c</code></td><td>Adverb dispatch — decides whether a reduce or scan takes a fast kernel or the generic boxed loop.</td></tr>
+    <tr><td><code>w.c</code></td><td>Adverb dispatch. Decides whether a reduce or scan takes a fast kernel or the generic boxed loop.</td></tr>
     <tr><td><code>f.c</code></td><td>Find, group and the attribute-aware search paths.</td></tr>
     <tr><td><code>v.c</code></td><td>Vectorisation helpers and argmin/argmax.</td></tr>
     <tr><td><code>a.c</code></td><td>Joins, including the branch-free <code>aj</code>/<code>wj</code> lower-bound kernel.</td></tr>
@@ -88,7 +88,7 @@ cache. Here is what lives where.</p>
     <tr><td><code>arena.c</code></td><td>The thread-local bump arena for kernel scratch.</td></tr>
     <tr><td><code>parallel.c</code>, <code>peachpool.c</code></td><td>OpenMP thresholds and the fork pool behind <code>peach</code>.</td></tr>
     <tr><td><code>ser.c</code></td><td><code>-8!</code> / <code>-9!</code> binary serialisation.</td></tr>
-    <tr><td><code>ar.c</code></td><td>Arrow C Data Interface — zero-dependency interop.</td></tr>
+    <tr><td><code>ar.c</code></td><td>Arrow C Data Interface, zero-dependency interop.</td></tr>
     <tr><td><code>ext.c</code>, <code>ext.h</code></td><td>The extension seam for out-of-tree kernels.</td></tr>
   </tbody>
 </table>
@@ -97,7 +97,7 @@ cache. Here is what lives where.</p>
 <h2>How a primitive gets specialised</h2>
 
 <p>This is the part worth understanding, because it explains most performance surprises. A primitive
-does not have one implementation — it has a dispatcher that picks one based on the argument types,
+does not have one implementation. It has a dispatcher that picks one based on the argument types,
 and a generic fallback for everything the dispatcher does not recognise.</p>
 
 <p>Take reduction. The dispatcher accepts integer, float and char data, then routes by verb:</p>
@@ -107,12 +107,12 @@ and a generic fallback for everything the dispatcher does not recognise.</p>
  G(&amp;dexf,admf,subf,admf,___f,___f,mmmf,mmmf,___f,___f,___f)[xv](x,y,z))</code></pre></div>
 
 <p>Each entry is a specialised kernel: <code>admf</code> is float add/multiply, <code>mmmf</code> is
-float min/max with a SIMD fast path. <code>___f</code> is the generic one — a loop that allocates an
+float min/max with a SIMD fast path. <code>___f</code> is the generic one: a loop that allocates an
 atom per element and goes through the generic dyadic apply. Falling into <code>___f</code> costs
 roughly 50–100× a specialised kernel, and nothing warns you.</p>
 
 <p>The scan dispatcher, <code>ars</code>, has the same shape. Until recently its type guard read
-<code>Q(ztZC)</code> — integer and char, no float — which meant every <code>maxs</code> over doubles
+<code>Q(ztZC)</code>, integer and char with no float, which meant every <code>maxs</code> over doubles
 fell into the generic path. Widening that guard and adding the two missing kernels was a twelve-line
 change worth
 <a href="../docs/benchmarks.html">15–36×</a>. The lesson generalises: <strong>when a primitive is
@@ -122,7 +122,7 @@ inexplicably slow on one type, check the dispatcher's guard before you look anyw
   <span class="note-title">Order-preserving float fold</span>
   <p>Float min/max does not compare IEEE doubles directly in the general path. It folds them into an
   order-preserving integer domain (<code>of1</code>), runs the integer kernel, and folds back
-  (<code>of0</code>). Two extra linear passes buy exact, consistent NaN and signed-zero behaviour —
+  (<code>of0</code>). Two extra linear passes buy exact, consistent NaN and signed-zero behaviour,
   and mean a new float kernel can reuse the integer one instead of re-deriving the semantics.</p>
 </div>
 
@@ -133,7 +133,7 @@ inexplicably slow on one type, check the dispatcher's guard before you look anyw
 operation. <code>arena_init(0)</code> selects the default 16&nbsp;MB slab.</p>
 
 <p>That number is worth knowing because it is a cliff rather than a slope. A 17.3&nbsp;MB intermediate
-does not cost 8% more than a 16&nbsp;MB one — it falls off the arena onto the general allocator, and
+does not cost 8% more than a 16&nbsp;MB one. It falls off the arena onto the general allocator, and
 the measured tensor-build time in the
 <a href="../docs/benchmarks.html">benchmark table</a> jumps roughly tenfold between
 U&nbsp;=&nbsp;100 and U&nbsp;=&nbsp;200 for exactly that reason. The capacity is a compile-time
@@ -141,8 +141,8 @@ constant with no environment override today.</p>
 
 <h2>SIMD and parallelism</h2>
 
-<p><code>simd.c</code> presents one interface — <code>simd_sum_f64</code>, <code>simd_max_f64</code>,
-<code>simd_min_i64</code> and friends — over AVX2, NEON and a portable scalar implementation, selected
+<p><code>simd.c</code> presents one interface (<code>simd_sum_f64</code>, <code>simd_max_f64</code>,
+<code>simd_min_i64</code> and friends) over AVX2, NEON and a portable scalar implementation, selected
 at build time. Kernels call the interface; nothing above <code>simd.h</code> knows which backend it
 got. <code>./amber</code> reports the active one in its self-test.</p>
 
@@ -153,7 +153,7 @@ crossover, and on a small core count with large intermediates
 <a href="../docs/benchmarks.html">it can sit above your workload entirely</a>.</p>
 
 <p>The arena, the SIMD layer and the branch-free as-of join were built together, and
-<a href="../blog/04-native-kernels.html">down to the metal</a> is the account of that —
+<a href="../blog/04-native-kernels.html">down to the metal</a> is the account of that,
 including the measurements that decided each threshold.</p>
 
 <h3>Multiversioned kernels and idiom fusion (2.1)</h3>
@@ -161,8 +161,8 @@ including the measurements that decided each threshold.</p>
 x86-64 ELF builds without <code>-march</code>: GCC emits an AVX2 body and a baseline body for every kernel and an
 ifunc resolver picks one at load time, so the portable <code>./build.sh</code> binary runs AVX2 wherever the CPU has
 it and still starts on any x86-64. <code>`simd[]</code> reports <code>vec256-mv</code> when the AVX2 body was
-selected. The compiler (<code>src/b.c</code>, <code>fus()</code>) recognises a handful of expression shapes —
-<code>+/x*y</code>, <code>+/x@&amp;m</code>, <code>x@&amp;m</code>, <code>a+s*b</code>, <code>x@&lt;x</code> — and emits
+selected. The compiler (<code>src/b.c</code>, <code>fus()</code>) recognises a handful of expression shapes,
+<code>+/x*y</code>, <code>+/x@&amp;m</code>, <code>x@&amp;m</code>, <code>a+s*b</code>, <code>x@&lt;x</code>, and emits
 one fused primitive through verb slots 27–28 of the <code>v1/v2/v8</code> tables, which have no source character
 and are reachable only from that bytecode; each fused entry point falls back to the primitives it replaces for
 any operand shape it does not handle. The one-pass group aggregate (<code>`gagg</code>, <code>src/o.c</code>) and
@@ -173,7 +173,7 @@ membership (<code>`memb</code>, <code>src/f.c</code>) are ordinary backtick buil
 
 <p>One byte at offset <code>−13</code> of every array carries the column attribute: <code>`s</code>
 sorted, <code>`u</code> unique, <code>`p</code> parted, <code>`g</code> grouped. It is a promise, not
-a description — the kernel believes it without checking, because checking costs exactly what believing
+a description. The kernel believes it without checking, because checking costs what believing
 saves. Setting it is one store; reading it is one load from a cache line the kernel was fetching
 anyway. Everything after that is kernel selection.</p>
 
@@ -186,11 +186,11 @@ anyway. Everything after that is kernel selection.</p>
 <table>
   <thead><tr><th>Symptom</th><th>Look here first</th></tr></thead>
   <tbody>
-    <tr><td>A primitive is slow on one type only</td><td>The dispatcher guard in <code>3.c</code> / <code>w.c</code> — you are probably in a generic fallback.</td></tr>
-    <tr><td>Slow regardless of type, cost flat as data grows</td><td>Not the engine. Your call count — see <a href="../docs/performance.html">Writing fast Amber</a>.</td></tr>
+    <tr><td>A primitive is slow on one type only</td><td>The dispatcher guard in <code>3.c</code> / <code>w.c</code>. You are probably in a generic fallback.</td></tr>
+    <tr><td>Slow regardless of type, cost flat as data grows</td><td>Not the engine. Your call count. See <a href="../docs/performance.html">Writing fast Amber</a>.</td></tr>
     <tr><td>A cliff at a particular size</td><td>The 16 MB arena in <code>arena.c</code>, or <code>PAR_THRESHOLD</code>.</td></tr>
     <tr><td>Wrong answers on edge values</td><td>The <code>of1</code>/<code>of0</code> fold, or a fast path that skipped a NaN check.</td></tr>
-    <tr><td>You want a new domain kernel</td><td>The <code>ext/</code> seam — no core changes, no fork.</td></tr>
+    <tr><td>You want a new domain kernel</td><td>The <code>ext/</code> seam. No core changes, no fork.</td></tr>
   </tbody>
 </table>
 </div>
@@ -206,7 +206,7 @@ anyway. Everything after that is kernel selection.</p>
     <div class="foot-grid">
       <div>
         <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
-        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language: columnar, vectorised, in-memory. C99, portable, self-contained.</p>
       </div>
       <div>
         <h5>Documentation</h5>

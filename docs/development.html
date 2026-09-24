@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Development &amp; testing — building Amber and changing the core</title>
+<title>Development &amp; testing: building Amber and changing the core</title>
 <meta name="description" content="How to build the interpreter from source, what the test suites cover, how to add a kernel or an out-of-tree extension, and the CI that gates every push.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Development &amp; testing — building Amber and changing the core">
+<meta property="og:title" content="Development &amp; testing: building Amber and changing the core">
 <meta property="og:description" content="How to build the interpreter from source, what the test suites cover, how to add a kernel or an out-of-tree extension, and the CI that gates every push.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
@@ -54,7 +54,7 @@
 <h1>Development &amp; testing</h1>
 <p class="lead">Amber has no build system beyond a shell script and no dependencies beyond a C
 compiler. A full rebuild is about eleven seconds. That is a deliberate property, not an accident of
-size — it is what makes "change a kernel, rebuild, re-measure" a loop you will actually run.</p>
+size. It is what makes "change a kernel, rebuild, re-measure" a loop you will run.</p>
 
 <h2>Build</h2>
 
@@ -63,7 +63,7 @@ size — it is what makes "change a kernel, rebuild, re-measure" a loop you will
 ./amber             # REPL</code></pre></div>
 
 <p><code>build.sh</code> finds <code>cc</code>, <code>gcc</code> or <code>clang</code> in that order and
-builds with portable flags — no <code>-march=native</code> — so the binary runs on any x86-64 or arm64
+builds with portable flags, no <code>-march=native</code>, so the binary runs on any x86-64 or arm64
 host. Set <code>CC</code> to override. Nothing is installed system-wide.</p>
 
 <h2>Test suites</h2>
@@ -78,7 +78,7 @@ and scalar paths agree.</p>
 
 <div class="note note-ok">
   <span class="note-title">The bar for a core change</span>
-  <p>Both suites green, and — for anything touching a kernel — evidence that output is unchanged.
+  <p>Both suites green, and for anything touching a kernel, evidence that output is unchanged.
   Fold your change behind the existing dispatcher rather than around it, and diff the results of a
   representative script against the previous binary before and after. A kernel that is faster and
   subtly different is a regression.</p>
@@ -108,17 +108,17 @@ See <a href="../docs/benchmarks.html">Benchmarks</a> for what it produces and ho
 The pattern for a new type specialisation is:</p>
 
 <ol>
-<li>Write the kernel next to its siblings in the relevant translation unit — <code>3.c</code> for a
-reduce or scan, <code>2.c</code> for element-wise — following the local macro style.</li>
+<li>Write the kernel next to its siblings in the relevant translation unit, <code>3.c</code> for a
+reduce or scan, <code>2.c</code> for element-wise, following the local macro style.</li>
 <li>Widen the dispatcher's type guard to admit the new type, and add the routing line.</li>
 <li>Where semantics are subtle (NaN, signed zero, overflow), reuse an existing correct path rather
-than re-deriving it — the <code>of1</code>/<code>of0</code> integer fold exists for exactly this.</li>
+than re-deriving it. The <code>of1</code>/<code>of0</code> integer fold exists for this.</li>
 <li>Rebuild, run both suites, and diff output against the old binary on a script that exercises the
 edge values.</li>
 </ol>
 
 <p>If your kernel is domain-specific rather than a general primitive, it belongs in
-<code>ext/</code> instead — the extension seam lets you add <code>amber_*</code> entry points without
+<code>ext/</code> instead. The extension seam lets you add <code>amber_*</code> entry points without
 touching the core or carrying a fork.</p>
 
 <h2>Continuous integration</h2>
@@ -127,7 +127,7 @@ touching the core or carrying a fork.</p>
 <table>
   <thead><tr><th>Workflow</th><th>Triggers</th><th>What it does</th></tr></thead>
   <tbody>
-    <tr><td><code>ci</code></td><td>every push, every PR</td><td>Compiler matrix including a strict <code>-std=c99</code> build, then both test suites. Fastest signal — a toolchain break is reported against a named compiler version in minutes.</td></tr>
+    <tr><td><code>ci</code></td><td>every push, every PR</td><td>Compiler matrix including a strict <code>-std=c99</code> build, then both test suites. The fastest signal: a toolchain break is reported against a named compiler version in minutes.</td></tr>
     <tr><td><code>comparative benchmarks</code></td><td>PRs, and pushes to <code>main</code></td><td>Builds every comparison engine, runs the suite, posts results as a sticky PR comment. On <code>main</code> it commits a refreshed <code>docs/BENCHMARKS.md</code>.</td></tr>
   </tbody>
 </table>
@@ -137,7 +137,7 @@ touching the core or carrying a fork.</p>
   <span class="note-title">A branch push does not run the benchmarks</span>
   <p>Because <code>comparative benchmarks</code> triggers on <code>pull_request</code> and on pushes to
   <code>main</code> only, pushing a branch gets you <code>ci</code> alone. For a performance change
-  that is precisely the signal you want, so open a PR rather than merging locally — the benchmark
+  that is the signal you want, so open a PR rather than merging locally. The benchmark
   comment is the review.</p>
 </div>
 
@@ -145,7 +145,7 @@ touching the core or carrying a fork.</p>
 
 <p>Amber is GNU AGPLv3, because its evaluator, parser and heap derive from
 <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>. That obligation travels
-with the interpreter core and with anything linked into it. It is not a footnote — if you are planning
+with the interpreter core and with anything linked into it. This is not a footnote. If you are planning
 to build a product on Amber, read
 <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">the licence</a> and the
 <a href="https://github.com/BonucciAndrea/amber/blob/main/NOTICE" target="_blank" rel="noopener">NOTICE</a> before you design
@@ -163,7 +163,7 @@ the architecture, not after. Talking to <code>amberd</code> over a socket and li
     <div class="foot-grid">
       <div>
         <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
-        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language: columnar, vectorised, in-memory. C99, portable, self-contained.</p>
       </div>
       <div>
         <h5>Documentation</h5>

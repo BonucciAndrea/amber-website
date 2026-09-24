@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>C API & extensions — libamber.so and the ext/ seam</title>
+<title>C API & extensions: libamber.so and the ext/ seam</title>
 <meta name="description" content="The two seams for extending Amber: the in-process ext/ registry with its constructor hooks, and libamber.so with ~60 amber_* entry points including the zero-copy vector seam.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="C API & extensions — libamber.so and the ext/ seam">
+<meta property="og:title" content="C API & extensions: libamber.so and the ext/ seam">
 <meta property="og:description" content="The two seams for extending Amber: the in-process ext/ registry with its constructor hooks, and libamber.so with ~60 amber_* entry points including the zero-copy vector seam.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
@@ -57,7 +57,7 @@ sections 1–5 are the <strong>in-process</strong> registry: drop a <code>.c</co
 <code>ext/</code>, rebuild, and it plugs itself in without a line of <code>src/</code> being patched.
 Section 6 is the <strong>out-of-process</strong> API on the front of <code>libamber.so</code>.</p>
 
-<h2>The in-process seam — <code>ext/</code></h2>
+<h2>The in-process seam: <code>ext/</code></h2>
 <p><code>ext/</code> is empty in a stock checkout. An out-of-tree package installs itself by dropping
 <code>.c</code> files there and re-running <code>./build.sh</code>; they are compiled with the same
 flags, linked into the same binary, and register themselves from a constructor.</p>
@@ -66,9 +66,9 @@ flags, linked into the same binary, and register themselves from a constructor.<
 <table>
   <thead><tr><th style="width:28%">Hook</th><th>What it lets an extension do</th></tr></thead>
   <tbody>
-    <tr><td><code>am_ext_verb("xyz", fn)</code></td><td>register a backtick verb — <code>`xyz x</code> — at runtime</td></tr>
+    <tr><td><code>am_ext_verb("xyz", fn)</code></td><td>register a backtick verb (<code>`xyz x</code>) at runtime</td></tr>
     <tr><td><code>am_ext_bs</code></td><td>claim a <code>\</code>-command before the "unknown <code>\cmd</code> is a shell command" fallback</td></tr>
-    <tr><td><code>am_ext_hint</code></td><td>offer inline ghost text in the editor — never inserted until accepted</td></tr>
+    <tr><td><code>am_ext_hint</code></td><td>offer inline ghost text in the editor, never inserted until accepted</td></tr>
     <tr><td><code>am_ext_complete</code></td><td>add Tab candidates ahead of the built-in lexical sources</td></tr>
     <tr><td><code>am_ext_startup</code></td><td>run once, lazily, when the REPL first reads a line</td></tr>
     <tr><td><code>am_ext_usage</code> / <code>am_ext_banner</code></td><td>append to <code>--help</code> and to the banner</td></tr>
@@ -84,7 +84,7 @@ whole-file at startup if it exists, fully trapped, and an extension may define t
 <div class="note">
   <span class="note-title">Why this exists</span>
   <p>Pulling a new Amber release must never conflict with a package you installed, and a user who
-  installs nothing must pay nothing — every hook is a null pointer and every call site is a
+  installs nothing must pay nothing, so every hook is a null pointer and every call site is a
   predictable branch. <code>tests/ext_probe.c</code> is a complete worked example;
   <code>tests/test_ext_seam.sh</code> installs it, checks every hook, and uninstalls it again.</p>
 </div>
@@ -93,7 +93,7 @@ whole-file at startup if it exists, fully trapped, and an extension may define t
 <div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/amber-ai.git
 cd amber-ai &amp;&amp; ./install.sh /path/to/amber</code></pre></div>
 
-<h2>The out-of-process seam — <code>libamber.so</code></h2>
+<h2>The out-of-process seam: <code>libamber.so</code></h2>
 <div class="code"><pre><code class="lang-sh">./build.sh                 # ./amber          (unchanged; identical binary, zero new cost)
 ./build.sh --shared        # ./amber  +  libamber.so
 ./build.sh --shared-only   # libamber.so only
@@ -115,7 +115,7 @@ the zero-copy vector seam (<code>amber_get_vector_ptr</code>), tables and dictio
 for pushing data back in, the Arrow C Data Interface, rendering, and <code>amber_plugin_load</code>
 for dlopening a native plugin into a running engine.</p>
 
-<h2>What the shared build changes — and what it deliberately does not</h2>
+<h2>What the shared build changes, and what it does not</h2>
 
 <h3>The executable is untouched</h3>
 <p><code>./build.sh</code> with no flags produces byte-for-byte what it produced before, from the same
@@ -125,11 +125,11 @@ objects, with the same flags. The shared library is a <em>separate</em> object s
 would silently pessimise <code>./amber</code>.</p>
 
 <h3>Only <code>amber_*</code> and <code>am_ext_*</code> are exported</h3>
-<p>Amber's internal C is written in a terse K-derived idiom — the engine's own globals are called
+<p>Amber's internal C is written in a terse K-derived idiom. The engine's own globals are called
 <code>mr</code>, <code>su</code>, <code>us</code>, <code>err</code>, <code>run</code>, <code>add</code>,
 <code>sub</code>, <code>pk</code>, <code>cpl</code>. Those are perfect inside one static binary and
 actively dangerous inside a library loaded next to NumPy, libarrow and libpython. An export map
-(<code>src/libamber.map</code>) makes everything else genuinely <strong>absent</strong> from the
+(<code>src/libamber.map</code>) makes everything else <strong>absent</strong> from the
 dynamic symbol table, so it cannot be bound to by accident and cannot interpose on a host's symbol of
 the same name.</p>
 
@@ -138,7 +138,7 @@ the same name.</p>
   <span class="note-title">Two copies of the library means two engines</span>
   <p>A satellite that <code>dlopen</code>s a <em>second</em> copy of <code>libamber.so</code> gets a
   second <strong>engine</strong>: two heaps, two symbol tables, two global namespaces, and values from
-  one that are meaningless to the other — with no error, because nothing is technically wrong. The
+  one that are meaningless to the other, with no error, because nothing is technically wrong. The
   SONAME is what lets the loader recognise an already-loaded copy and reuse it, so
   <code>python-amber</code>, <code>libamber_arrow.so</code> and any plugin in one process share one
   engine.</p>
@@ -149,7 +149,7 @@ the same name.</p>
 <p><code>./amber</code> keeps the initial-exec model on the allocator's hot path. A
 <code>dlopen</code>'d library cannot: it is resolved out of the static TLS block the loader sizes
 before <code>main()</code>, and borrowing from glibc's small surplus reserve fails
-<em>nondeterministically</em> — with <code>cannot allocate memory in static TLS block</code> —
+<em>nondeterministically</em>, with <code>cannot allocate memory in static TLS block</code>,
 depending on what else the host imported first.</p>
 
 <h2>Apache Arrow C Data Interface</h2>
@@ -162,7 +162,7 @@ arrow.import p                      / (schemaAddr; arrayAddr) -&gt; Amber table<
 
 <p>That is exactly the right amount of Arrow for a 10,000-line C runtime to own: it covers "hand me
 this table" completely. What it does not cover is <em>"hand me this 400-million-row table in batches,
-and stop when I stop asking"</em> — the <code>ArrowArrayStream</code> — and that lives out in
+and stop when I stop asking"</em>, the <code>ArrowArrayStream</code>, and that lives out in
 <a href="../ecosystem/amber-arrow.html">amber-arrow</a>, where it can grow.</p>
 
 <h2>Verification</h2>
@@ -192,7 +192,7 @@ wrong.</strong></p>
     <div class="foot-grid">
       <div>
         <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
-        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language — columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language: columnar, vectorised, in-memory. C99, portable, self-contained.</p>
       </div>
       <div>
         <h5>Documentation</h5>
