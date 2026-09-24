@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>amber-ai — a local, offline co-pilot and vector extensions</title>
+<title>amber-ai: a local, offline co-pilot and vector extensions</title>
 <meta name="description" content="A schema-aware assistant that reads your live Amber tables before it answers, talks only to 127.0.0.1, installs through the ext/ seam, and cannot hang or break the REPL.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="amber-ai — a local, offline co-pilot and vector extensions">
+<meta property="og:title" content="amber-ai: a local, offline co-pilot and vector extensions">
 <meta property="og:description" content="A schema-aware assistant that reads your live Amber tables before it answers, talks only to 127.0.0.1, installs through the ext/ seam, and cannot hang or break the REPL.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
@@ -49,7 +49,7 @@
 </aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../ecosystem/index.html">Ecosystem</a> / amber-ai</div>
 <h1>amber-ai</h1>
 <p class="lead">A local, offline AI co-pilot for Amber. It reads <strong>your live tables</strong>
-before it answers — their names, column types, attributes and row counts — so its suggestions are
+before it answers, reading their names, column types, attributes and row counts, so its suggestions are
 about your session, not about a generic K tutorial.</p>
 
 <div class="badge-row" style="margin-bottom:26px">
@@ -78,7 +78,7 @@ grouped select will use the index.</code></pre></div>
 <div class="grid grid-2" style="margin:20px 0">
   <div class="card">
     <h4 style="margin-top:0;color:var(--text)">Local only</h4>
-    <p class="small mb-0">The one endpoint it ever contacts is <code>http://127.0.0.1:11434</code> — a
+    <p class="small mb-0">The one endpoint it ever contacts is <code>http://127.0.0.1:11434</code>, a
     model server on your machine. No account, no API key, no telemetry, no TLS stack, no hosted
     fallback. Your schema and your queries do not leave the box.</p>
   </div>
@@ -92,7 +92,7 @@ grouped select will use the index.</code></pre></div>
   <div class="card">
     <h4 style="margin-top:0;color:var(--text)">It cannot break your REPL</h4>
     <p class="small mb-0">Every entry point is trapped. No backend, no model pulled, a malformed reply,
-    a half-open socket — each is one friendly sentence, never an exception and never a stack trace.</p>
+    a half-open socket: each is one friendly sentence, never an exception and never a stack trace.</p>
   </div>
   <div class="card">
     <h4 style="margin-top:0;color:var(--text)">It does not patch Amber</h4>
@@ -107,13 +107,13 @@ grouped select will use the index.</code></pre></div>
 cd amber-ai
 ./install.sh /path/to/amber</code></pre></div>
 
-<p>The path is optional — <code>./install.sh</code> finds a sibling <code>../amber</code>,
+<p>The path is optional. <code>./install.sh</code> finds a sibling <code>../amber</code>,
 <code>$AMBER_HOME</code>, <code>~/amber</code>, or an <code>amber</code> on your <code>PATH</code>. It
 then checks your toolchain, checks the target's version and extension ABI (and refuses politely if they
 do not match), copies <code>src/net.c</code>, <code>src/net.h</code> and <code>src/ai_ext.c</code> into
 <code>ext/</code> plus <code>lib/ai.k</code> into <code>lib/</code>, runs the engine's own
 <code>build.sh</code>, verifies the <code>`ai</code> / <code>`aio</code> verbs and <code>\ai</code>
-against Amber's own suite, and probes <code>127.0.0.1:11434</code> — distinguishing <em>nothing
+against Amber's own suite, and probes <code>127.0.0.1:11434</code>, distinguishing <em>nothing
 listening</em>, <em>a live Ollama</em>, <em>a live Ollama with no models pulled</em>, and <em>something
 else squatting on the port</em>, each with its own fix.</p>
 
@@ -138,7 +138,7 @@ alias amber-noai='AMBER_AI=0 "$AMBER_HOME/a"'    # agent off for one session</co
   <span class="note-title">Do not pass <code>lib/ai.k</code> as an argument</span>
   <p><code>amber $AMBER_HOME/lib/ai.k</code> runs the agent library as a <em>script</em> and exits.
   <code>repl.k</code> already loads it through <code>lib/ext.k</code> at startup; the alias only has to
-  start the REPL. And alias the launcher <code>a</code>, not the bare <code>amber</code> binary — the
+  start the REPL. Alias the launcher <code>a</code> rather than the bare <code>amber</code> binary, because the
   binary has no stdlib and no <code>repl.k</code>, so <code>\ai</code> does not exist there.</p>
 </div>
 
@@ -165,16 +165,16 @@ alias amber-noai='AMBER_AI=0 "$AMBER_HOME/a"'    # agent off for one session</co
 </table>
 </div>
 <p class="small muted"><code>\ai profile</code> and <code>\ai why</code> read your <strong>actual</strong>
-workspace first — the row counts, types and attributes in their output are measured, not generated.</p>
+workspace first, so the row counts, types and attributes in their output are measured, not generated.</p>
 
 <h2>Vector execution: Tab is layered so the network is last</h2>
 <p>And usually never reached at all.</p>
 <div class="step"><span class="n">1</span><h3>Lexical</h3>
 <p class="small">Globals in your workspace, table column names, <code>\</code> commands,
-<code>\ai</code> sub-commands, the Amber/K vocabulary. Instant, offline. <em>(Amber's own — present
+<code>\ai</code> sub-commands, the Amber/K vocabulary. Instant, offline. <em>(Amber's own, present
 without this package.)</em></p></div>
 <div class="step"><span class="n">2</span><h3>Memory</h3>
-<p class="small">Whole lines you have actually run before, mined from
+<p class="small">Whole lines you have run before, mined from
 <code>~/.amber_ai_memory.k</code>. Instant, offline, and what makes the REPL feel like it has learned
 your habits.</p></div>
 <div class="step"><span class="n">3</span><h3>Model</h3>
@@ -196,14 +196,14 @@ expression per line:</p>
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">~/.amber_ai_memory.k</span></div><pre><code class="lang-q">ai.rec["q";1755512345;3;"select sym,px from trades";"trades quotes"]
 /       kind  epoch-s  hits  text                    context</code></pre></div>
 
-<p>Loading it is simply evaluating it, so it stays human-readable and hand-editable.
+<p>Loading it is just evaluating it, so it stays human-readable and hand-editable.
 <code>\ai memory</code> shows it, <code>\ai forget</code> erases it,
 <code>AMBER_AI_MEMORY=/path</code> moves it (per-project memories work), and deleting the file is
 always safe.</p>
 
 <h2>Tuning the budget</h2>
 <p>A 7B on CPU generates a few tokens a second, so a 128-token answer can take 30&nbsp;s while a 0.5B
-does it in 4 — and Ollama unloads an idle model after five minutes, so the load is paid again and again
+does it in 4. Ollama unloads an idle model after five minutes, so the load is paid again and again
 inside the same deadline.</p>
 
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-out">amber&gt; \ai warm            # load the model now, on its own budget, and measure</code></pre></div>
@@ -220,7 +220,7 @@ measures your machine rather than guessing from the model's name. Every request 
   <tbody>
     <tr><td><code>AMBER_AI_URL</code></td><td><code>127.0.0.1:11434</code></td><td>the model endpoint</td></tr>
     <tr><td><code>AMBER_AI_TIMEOUT_MS</code></td><td><code>10000</code></td><td>answer budget</td></tr>
-    <tr><td><code>AMBER_AI_TAB_MS</code></td><td><code>100</code></td><td>Tab budget — leave it small, it runs on the keystroke path</td></tr>
+    <tr><td><code>AMBER_AI_TAB_MS</code></td><td><code>100</code></td><td>Tab budget. Leave it small, because it runs on the keystroke path</td></tr>
     <tr><td><code>AMBER_AI_NUM_PREDICT</code></td><td><code>128</code></td><td>generation length; the biggest single lever after the load</td></tr>
     <tr><td><code>AMBER_AI_KEEP_ALIVE</code></td><td><code>30m</code></td><td><code>"0"</code> unloads at once, <code>"-1"</code> keeps forever</td></tr>
     <tr><td><code>AMBER_AI_MEMORY</code></td><td><code>~/.amber_ai_memory.k</code></td><td>where the persistent memory lives</td></tr>
@@ -234,9 +234,9 @@ one-line answer and a table profile do not need the same room:</p>
 <table>
   <thead><tr><th style="width:36%">Command</th><th>Tokens at the 128 default</th></tr></thead>
   <tbody>
-    <tr><td><code>\ai</code>, <code>\ai explain</code></td><td>1.5&times; — 192</td></tr>
-    <tr><td><code>\ai why</code></td><td>2&times; — 256</td></tr>
-    <tr><td><code>\ai profile</code>, <code>\ai optimize</code></td><td>3.5&times; — 448</td></tr>
+    <tr><td><code>\ai</code>, <code>\ai explain</code></td><td>1.5&times; &rarr; 192</td></tr>
+    <tr><td><code>\ai why</code></td><td>2&times; &rarr; 256</td></tr>
+    <tr><td><code>\ai profile</code>, <code>\ai optimize</code></td><td>3.5&times; &rarr; 448</td></tr>
   </tbody>
 </table>
 </div>

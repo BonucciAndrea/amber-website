@@ -54,7 +54,7 @@ AMBER_NATIVE=1 ./a           # build machine-tuned, then open the REPL</code></p
 <div class="step"><span class="n">1</span>
 <h3>Generate the session</h3>
 <p><code>gentq</code> is in <code>fin.k</code>, auto-loaded at startup. It sets two globals:
-<code>trades</code> and <code>quotes</code>, with realistic microstructure — an efficient price, a
+<code>trades</code> and <code>quotes</code>, with realistic microstructure: an efficient price, a
 spread state, and prints that sit inside the standing quote.</p>
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">\ts gentq 5000000</code></pre></div>
 <div class="code"><pre><code class="lang-out">2381                   / milliseconds</code></pre></div>
@@ -85,7 +85,7 @@ arrived from anywhere else.</p>
 <h3>Sort and stamp the attributes</h3>
 <p>The as-of kernel binary-searches each symbol group's <code>time</code> slice. For that to be legal
 the rows must be sorted by <code>(sym, time)</code>, <code>sym</code> must carry <code>`p</code>
-(parted — equal values are contiguous) and <code>time</code> must carry <code>`s</code> (sorted
+(parted, so equal values are contiguous) and <code>time</code> must carry <code>`s</code> (sorted
 within each group). That is three steps, not one: <code>xasc</code> orders the rows and stamps only
 the leading column, so <code>partcol</code> and <code>sortcol</code> put the attributes on. This is
 exactly what <code>gentq</code> itself does.</p>
@@ -101,7 +101,7 @@ meta trades</code></pre></div>
 │ sz   │ i │   │
 ╰──────┴───┴───╯</code></pre></div>
 <p>Together those are what make the join <code>O(log n)</code> per row instead of <code>O(n)</code>.
-<code>xasc</code> on its own is not enough — it leaves <code>sym</code> marked <code>`s</code> and
+<code>xasc</code> on its own is not enough. It leaves <code>sym</code> marked <code>`s</code> and
 <code>time</code> with no attribute at all, and the kernel then falls back to the scan.</p>
 <div class="note note-info">
   <span class="note-title">Want <code>O(1)</code> symbol slicing too?</span>
@@ -192,7 +192,7 @@ candle b                                   / Unicode candlesticks, in colour</co
 +-------------+---------------+----------------+---------+</code></pre></div>
 <p><code>\v</code> walks nested structures recursively, so a table's number is real rather than a
 shallow guess. It also lists the REPL library's own internals (<code>repl.*</code>, <code>PAL</code>,
-<code>GB</code>) — scan for the names you defined, or <code>\d yourns</code> first to narrow the
+<code>GB</code>). Scan for the names you defined, or <code>\d yourns</code> first to narrow the
 namespace.</p>
 </div>
 
@@ -244,8 +244,8 @@ and never opens the other seven.</p>
 
 <h2>Scale it up</h2>
 <p>Nothing above changes at ten times the size except the numbers. For a store that outlives the
-session — 38 million prints, 89 million quotes, ten-level book snapshots, LULD halts, and twenty-one
-stylized facts checked on every generated store — use
+session, 38 million prints, 89 million quotes, ten-level book snapshots, LULD halts, and twenty-one
+stylized facts checked on every generated store, use
 <a href="../ecosystem/amber-tick.html">amber-tick</a>:</p>
 <div class="code"><pre><code class="lang-sh">python -m amber_tick.generate --out store --symbols 500 --sessions 5 --rows 100M
 python tests/validate.py --store store       # 21 stylized facts</code></pre></div>

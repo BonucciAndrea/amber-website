@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>vscode-amber — LSP, qSQL completion and idiom hovers</title>
+<title>vscode-amber: LSP, qSQL completion and idiom hovers</title>
 <meta name="description" content="Language support for Amber: syntax highlighting, a standalone LSP daemon with clause-aware qSQL completion, hovers that explain K idioms, and diagnostics that never evaluate your code.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="vscode-amber — LSP, qSQL completion and idiom hovers">
+<meta property="og:title" content="vscode-amber: LSP, qSQL completion and idiom hovers">
 <meta property="og:description" content="Language support for Amber: syntax highlighting, a standalone LSP daemon with clause-aware qSQL completion, hovers that explain K idioms, and diagnostics that never evaluate your code.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
@@ -64,11 +64,11 @@ completion, hover documentation for the idioms, and diagnostics that never evalu
                                                     sz  · column of trades</code></pre></div>
 <p>Inside a query, <strong>the clause decides the vocabulary</strong>. After <code>from</code> you get
 table names and nothing else. Everywhere else in the query you get the real columns of whichever table
-the <code>from</code> clause named — asked for, live, from the connected engine. That is the difference
+the <code>from</code> clause named, asked for live from the connected engine. That is the difference
 between a list of four column names and a list of every global in the process.</p>
 
 <h2>Hover that explains the idioms</h2>
-<p>The hard part of a K-family language is not the concepts, it is that the notation is
+<p>The hard part of a K-family language is the notation rather than the concepts. It is
 <strong>dense and unsearchable</strong>. You cannot paste <code>x@&lt;x</code> into a search engine,
 and reading it aloud does not help.</p>
 
@@ -76,10 +76,10 @@ and reading it aloud does not help.</p>
 <table>
   <thead><tr><th style="width:16%">Hover</th><th>What you get</th></tr></thead>
   <tbody>
-    <tr><td><code>x@&lt;x</code></td><td><strong>Sort x ascending.</strong> <code>&lt;x</code> is the ascending <em>grade</em> — the indices that would put x in order — and <code>x@</code> applies them. <code>y@&lt;x</code> sorts y by x.</td></tr>
+    <tr><td><code>x@&lt;x</code></td><td><strong>Sort x ascending.</strong> <code>&lt;x</code> is the ascending <em>grade</em>, the indices that would put x in order, and <code>x@</code> applies them. <code>y@&lt;x</code> sorts y by x.</td></tr>
     <tr><td><code>-':x</code></td><td><strong>First difference.</strong> Each-prior applied to subtract.</td></tr>
     <tr><td><code>_n%2</code></td><td><strong>Integer halving.</strong> <code>%</code> divides (always float), <code>_</code> floors. Neither means what it means in C.</td></tr>
-    <tr><td><code>wavg</code></td><td>Weighted average — <strong>weights first</strong>. Getting the order backwards produces a plausible wrong number.</td></tr>
+    <tr><td><code>wavg</code></td><td>Weighted average, <strong>weights first</strong>. Getting the order backwards produces a plausible wrong number.</td></tr>
     <tr><td><code>aj</code></td><td>The <strong>as-of join</strong>: for each trade, the quote standing when it printed.</td></tr>
   </tbody>
 </table>
@@ -95,7 +95,7 @@ operator is exactly the unhelpful kind that sends you back to a search engine.</
          or camel case.</code></pre></div>
 <p>An editor that evaluated the line you were halfway through typing would be unusable and
 occasionally destructive. So syntax problems come from a local lexer that understands K's two
-context-sensitive rules, and the engine is consulted only through <code>\parse</code> — which runs the
+context-sensitive rules, and the engine is consulted only through <code>\parse</code>, which runs the
 real parser via <code>\ast</code> and never touches the compiler or the evaluator.</p>
 <p>With an engine connected you also get undefined-name diagnostics, scoped to names that are neither
 assigned anywhere in the file nor defined in the engine.</p>
@@ -114,7 +114,7 @@ rather than executing the rest of a script against state the failed line was mea
 <div class="step"><span class="n">3</span><h3>Open a <code>.k</code> file</h3>
 <p class="small">Without an engine you still get highlighting, syntax diagnostics, document symbols,
 vocabulary completion and every hover. You lose table names, column completion and live values.
-<strong>Nothing degrades into an error dialog</strong> — the normal state of an editor window is
+<strong>Nothing degrades into an error dialog</strong>. The normal state of an editor window is
 "opened to read a file", with nothing running, and that has to work.</p></div>
 
 <h2>Settings</h2>
@@ -168,7 +168,7 @@ language-servers = ["amber"]</code></pre></div>
              '(amber-mode . ("amber-language-server" "--stdio")))</code></pre></div>
 
 <p class="small muted">Features implemented in the extension client would be features only VS Code
-users get, so the client is deliberately thin: it starts the server, registers four commands, and gets
+users get, so the client stays thin: it starts the server, registers four commands, and gets
 out of the way.</p>
 
 <h2>The grammar</h2>
@@ -181,9 +181,9 @@ that matter by <strong>anchoring</strong> rather than guessing:</p>
   <li><code>\</code> is the <strong>scan</strong> adverb mid-expression and a <strong>REPL
   command</strong> at the start of a line.</li>
 </ul>
-<p>Where a case is genuinely ambiguous it stays an operator: colouring code as a comment is a far worse
+<p>Where a case is ambiguous it stays an operator: colouring code as a comment is a far worse
 failure than the reverse. <code>x</code>, <code>y</code> and <code>z</code> get their own scope, because
-assigning to <code>y</code> inside a lambda silently makes it dyadic — one of the two mistakes everyone
+assigning to <code>y</code> inside a lambda silently makes it dyadic, one of the two mistakes everyone
 makes exactly once. (The other is <code>_</code> in a name, which the linter catches.)</p>
 
 <h2>Build and test</h2>
@@ -195,7 +195,7 @@ npx vsce package                 # -&gt; vscode-amber-1.9.6.vsix</code></pre></d
 
 <p>22 tests, driven over <strong>real LSP framing on stdio</strong> against a <strong>real
 <code>amberd</code> on a real socket</strong>. Nothing is mocked: everything interesting here lives in
-the seams — the LSP header framing, the amberd reply framing, the configuration round-trip, and the
+the seams: the LSP header framing, the amberd reply framing, the configuration round-trip, and the
 requirement that it all keep working when the engine is gone. The suite runs twice, with and without
 an engine, because "degrades gracefully" is a claim that has to be tested, not asserted.</p>
 

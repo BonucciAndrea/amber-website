@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Time series — joins, temporal types, bars and attributes</title>
+<title>Time series: joins, temporal types, bars and attributes</title>
 <meta name="description" content="The join family including as-of and window joins, how Amber stores times, bucketing into bars, and the column attributes that make lookups O(log n).">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Time series — joins, temporal types, bars and attributes">
+<meta property="og:title" content="Time series: joins, temporal types, bars and attributes">
 <meta property="og:description" content="The join family including as-of and window joins, how Amber stores times, bucketing into bars, and the column attributes that make lookups O(log n).">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
@@ -52,7 +52,7 @@
 
 <span class="pill pill-accent" style="margin-bottom:14px;display:inline-flex">Chapter 7 of 8</span>
 
-<h1>Time series — joins, temporal types, bars and attributes</h1>
+<h1>Time series: joins, temporal types, bars and attributes</h1>
 
 <p>This is what the engine is for. Everything in this chapter assumes two tables: trades and quotes, the shape every tick workload has.</p>
 
@@ -64,7 +64,7 @@ quotes: ([] sym: `a`a`b`a; time: 1 5 2 8; bid: 10 11 20 12.0)</code></pre></div>
 <div class="table-wrap">
 <table>
 <thead><tr><th>join</th><th>what it does</th></tr></thead>
-<tbody><tr><td><code>lj[t;kt]</code></td><td>left join against a keyed table</td></tr><tr><td><code>ij[t;kt]</code></td><td>inner join</td></tr><tr><td><code>uj[x;y]</code></td><td>union join — the column-wise concatenation</td></tr><tr><td><code>pj[t;kt]</code></td><td>plus join — adds matching numeric columns</td></tr><tr><td><code>ej[c;x;y]</code></td><td>equi join on named columns</td></tr><tr><td><code>aj[c;x;y]</code></td><td><strong>as-of</strong> join — the important one</td></tr><tr><td><code>wj[w;c;t;q;a]</code></td><td>window join — aggregates over a window per row</td></tr></tbody>
+<tbody><tr><td><code>lj[t;kt]</code></td><td>left join against a keyed table</td></tr><tr><td><code>ij[t;kt]</code></td><td>inner join</td></tr><tr><td><code>uj[x;y]</code></td><td>union join, the column-wise concatenation</td></tr><tr><td><code>pj[t;kt]</code></td><td>plus join, which adds matching numeric columns</td></tr><tr><td><code>ej[c;x;y]</code></td><td>equi join on named columns</td></tr><tr><td><code>aj[c;x;y]</code></td><td><strong>as-of</strong> join, the important one</td></tr><tr><td><code>wj[w;c;t;q;a]</code></td><td>window join, aggregating over a window per row</td></tr></tbody>
 </table>
 </div>
 
@@ -76,11 +76,11 @@ quotes: ([] sym: `a`a`b`a; time: 1 5 2 8; bid: 10 11 20 12.0)</code></pre></div>
 quotes: ([] sym: `a`a`b`a; time: 1 5 2 8; bid: 10 11 20 12.0)
 aj[`sym`time; trades; quotes]</code></pre></div>
 
-<p>Each trade keeps its own columns and gains the quote columns as they stood at or before its timestamp, within its own symbol. That is the whole operation — one line, and it is a native C kernel, not a loop.</p>
+<p>Each trade keeps its own columns and gains the quote columns as they stood at or before its timestamp, within its own symbol. That is the whole operation: one line, running a native C kernel rather than a loop.</p>
 
 <h2 id="window-join">Window join</h2>
 
-<p>Where <code>aj</code> takes the single prevailing row, <code>wj</code> aggregates everything inside a window around each row — for example the average quoted bid in the two seconds before each trade:</p>
+<p>Where <code>aj</code> takes the single prevailing row, <code>wj</code> aggregates everything inside a window around each row, for example the average quoted bid in the two seconds before each trade:</p>
 
 <div class="code"><pre><code class="lang-q">trades: ([] sym: `a`b`a; time: 3 4 9; px: 100 200 300.0; sz: 10 20 30)
 quotes: ([] sym: `a`a`b`a; time: 1 5 2 8; bid: 10 11 20 12.0)
@@ -89,12 +89,12 @@ wj[w; `sym`time; trades; quotes; ,(`ab; avg; `bid)]</code></pre></div>
 
 <div class="note">
   <span class="note-title">The window is two rows, not one pair per row</span>
-  <p><code>wj</code> wants <code>(begins;ends)</code> — a 2-item list of vectors — so the <code>+</code> matters. Without it you hand it one <code>(begin;end)</code> pair per row and get a length-mismatch error pointing into <code>wjK</code>.</p>
+  <p><code>wj</code> wants <code>(begins;ends)</code>, a 2-item list of vectors, so the <code>+</code> matters. Without it you hand it one <code>(begin;end)</code> pair per row and get a length-mismatch error pointing into <code>wjK</code>.</p>
 </div>
 
 <h2 id="how-times-are-stored">How times are stored</h2>
 
-<p>Temporal columns are numeric underneath — a date is an integer count of days, a time is an integer count of milliseconds since midnight. That is what lets sorting and the attributes work on them unchanged:</p>
+<p>Temporal columns are numeric underneath: a date is an integer count of days, a time is an integer count of milliseconds since midnight. That is what lets sorting and the attributes work on them unchanged:</p>
 
 <div class="code"><pre><code class="lang-q">tm: 09:30:00.000       / a time literal
 hh tm                  / 9   -- hour
@@ -105,7 +105,7 @@ stime tm               / &quot;09:30:00.000&quot;</code></pre></div>
 
 <div class="note">
   <span class="note-title">There is no time-vector literal</span>
-  <p>A single <code>09:30:00.000</code> parses, but <code>09:30:00.000 09:30:40.000</code> does not — there is no space-separated vector form. Build one with <code>ptime</code>, which parses a string to milliseconds: <code>ptime'("09:30:00.000"; "09:30:40.000")</code>. Underneath a time <em>is</em> the millisecond count, so writing the integers directly works too, and the accessors accept either spelling.</p>
+  <p>A single <code>09:30:00.000</code> parses, but <code>09:30:00.000 09:30:40.000</code> does not, because there is no space-separated vector form. Build one with <code>ptime</code>, which parses a string to milliseconds: <code>ptime'("09:30:00.000"; "09:30:40.000")</code>. Underneath a time <em>is</em> the millisecond count, so writing the integers directly works too, and the accessors accept either spelling.</p>
 </div>
 
 <div class="note">
@@ -119,7 +119,7 @@ stime tm               / &quot;09:30:00.000&quot;</code></pre></div>
 minbar[1; times]       / bucket into 1-minute bars
 xbar[5; 0 3 7 12 18]   / generic bucketing: 0 0 5 10 15</code></pre></div>
 
-<p>Bucketing plus a by-clause is the whole of OHLCV — one query, any bar width:</p>
+<p>Bucketing plus a by-clause is the whole of OHLCV, in one query, at any bar width:</p>
 
 <div class="code"><pre><code class="lang-q">tr: ([] sym: `a`a`b; time: ptime&#x27;(&quot;09:30:00.000&quot;;&quot;09:30:40.000&quot;;&quot;09:31:10.000&quot;); px: 10 11 20.0; sz: 1 2 3)
 select o: first px, h: max px, l: min px, c: last px, v: sum sz by sym, time: minbar[1; time] from tr</code></pre></div>
@@ -131,7 +131,7 @@ select o: first px, h: max px, l: min px, c: last px, v: sum sz by sym, time: mi
 <div class="table-wrap">
 <table>
 <thead><tr><th>attribute</th><th>promise</th><th>what it buys</th></tr></thead>
-<tbody><tr><td><code>`s</code> sorted</td><td>ascending</td><td>binary search — O(log n) find, and as-of joins</td></tr><tr><td><code>`u</code> unique</td><td>no duplicates</td><td>hash-like membership</td></tr><tr><td><code>`p</code> parted</td><td>equal values are contiguous</td><td>O(1) slice per distinct value</td></tr><tr><td><code>`g</code> grouped</td><td>any order</td><td>an index from value to positions</td></tr></tbody>
+<tbody><tr><td><code>`s</code> sorted</td><td>ascending</td><td>binary search: O(log n) find, and as-of joins</td></tr><tr><td><code>`u</code> unique</td><td>no duplicates</td><td>hash-like membership</td></tr><tr><td><code>`p</code> parted</td><td>equal values are contiguous</td><td>O(1) slice per distinct value</td></tr><tr><td><code>`g</code> grouped</td><td>any order</td><td>an index from value to positions</td></tr></tbody>
 </table>
 </div>
 

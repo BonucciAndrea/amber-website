@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tutorial: an end-to-end Grafana & Amber dashboard pipeline</title>
-<meta name="description" content="Store to marts to amberd to the Go datasource to provisioned panels — the full path, including the two failures that look like something else entirely.">
+<meta name="description" content="Store to marts to amberd to the Go datasource to provisioned panels: the full path, including the two failures that look like something else entirely.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Tutorial: an end-to-end Grafana & Amber dashboard pipeline">
-<meta property="og:description" content="Store to marts to amberd to the Go datasource to provisioned panels — the full path, including the two failures that look like something else entirely.">
+<meta property="og:description" content="Store to marts to amberd to the Go datasource to provisioned panels: the full path, including the two failures that look like something else entirely.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -174,18 +174,18 @@ pip install numpy pyarrow pandas
 python -m amber_tick.generate --out store --symbols 500 --sessions 5 --rows 100M</code></pre></div>
 <p>About four minutes on two cores and roughly 10 GB. The generator solves for the arrival intensity
 that hits your <code>--rows</code> target analytically, before drawing a single random number, so
-scaling changes the message <em>rate</em> only — the cross-sectional distribution, the clustering and
+scaling changes the message <em>rate</em> only. The cross-sectional distribution, the clustering and
 the trade-quote consistency are invariant.</p>
 <div class="code"><pre><code class="lang-sh">python tests/validate.py --store store      # 21 stylized facts, all passing</code></pre></div>
 </div>
 
 <div class="step"><span class="n">3</span>
-<h3>Build the marts — this is not optional</h3>
+<h3>Build the marts, which is not optional</h3>
 <div class="code"><pre><code class="lang-sh">python scripts/build_marts.py --store store --qhome q</code></pre></div>
 <div class="note note-warn">
   <span class="note-title">A dashboard cannot re-run an as-of join on every refresh</span>
   <p>Ten million prints joined against thirty million quotes is a 700-millisecond kernel call. A panel
-  refreshing every ten seconds, times six panels, is not a dashboard — it is a denial of service
+  refreshing every ten seconds, times six panels, is a denial of service
   against your own engine. <code>build_marts.py</code> derives four small tables <strong>once</strong>,
   using the same <code>taq.*</code> functions the ad-hoc queries use, and they come out about
   <strong>145&times; smaller</strong> than the tape.</p>
@@ -232,7 +232,7 @@ cd grafana-amber-datasource
 go mod tidy &amp;&amp; mage -v            # backend  -&gt; dist/gpx_amber_&lt;os&gt;_&lt;arch&gt;
 npm install &amp;&amp; npm run build      # frontend -&gt; dist/</code></pre></div>
 <p><code>mage</code> is the Grafana plugin SDK's build entry point. It links
-<code>github.com/grafana/grafana-plugin-sdk-go</code>, so the module proxy must be reachable — behind a
+<code>github.com/grafana/grafana-plugin-sdk-go</code>, so the module proxy must be reachable. Behind a
 corporate proxy, set <code>GOPROXY</code> first.</p>
 <div class="code"><pre><code class="lang-sh">cp -r dist "$GRAFANA_PLUGINS/bonucciandrea-amber-datasource"</code></pre></div>
 </div>
@@ -268,7 +268,7 @@ datasources:
 <div class="note note-warn">
   <span class="note-title">The <code>host</code> value is environment-specific</span>
   <p>Inside Compose it is the service name <code>amberd</code>. Outside Compose that name does not
-  resolve — use <code>127.0.0.1</code>, or <code>host.docker.internal</code> if Grafana is in a
+  resolve, so use <code>127.0.0.1</code>, or <code>host.docker.internal</code> if Grafana is in a
   container and <code>amberd</code> is on the host.</p>
 </div>
 </div>
@@ -293,9 +293,9 @@ quality</strong>.</p>
 <h3>Or do steps 6–9 in one command</h3>
 <div class="code"><pre><code class="lang-sh">cd amber-tick/grafana
 AMBER_TICK_STORE=$PWD/../store ./run.sh      # http://localhost:3000</code></pre></div>
-<p><code>run.sh</code> checks the things that otherwise fail as something else — a missing store,
+<p><code>run.sh</code> checks the things that otherwise fail as something else: a missing store,
 missing marts, a relative path Compose resolves differently from your shell, and access to the Docker
-daemon — then brings up three containers: an <code>amberd</code> built from source with the store
+daemon. It then brings up three containers: an <code>amberd</code> built from source with the store
 attached, a one-shot container that builds the plugin into a shared volume, and Grafana 11.3 with
 everything provisioned.</p>
 </div>
@@ -326,8 +326,8 @@ where within[date;($__fromNs;$__toNs)]</code></pre></div>
 <div class="note note-info">
   <span class="note-title">Every panel query runs at the prompt too</span>
   <p>Because each one is a call into <code>q/grafana.k</code>, you can paste it into
-  <code>./amber</code> with the store loaded and get the same answer. That is the whole point of keeping
-  the query surface in Amber rather than in dashboard JSON.</p>
+  <code>./amber</code> with the store loaded and get the same answer. That is why the query surface
+  stays in Amber rather than in dashboard JSON.</p>
 </div>
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">\l q/amber-tick.k
 tk.root:"/path/to/store"
@@ -346,7 +346,7 @@ show 5#gd.marketspan[]</code></pre></div>
 </table>
 </div>
 <p>The store's <code>time</code> columns are <code>ns-2000</code>, so <code>$__fromNs</code> /
-<code>$__toNs</code> are the ones you want. Using the wrong pair does not error — it returns an empty
+<code>$__toNs</code> are the ones you want. Using the wrong pair does not error. It returns an empty
 panel or a chart thirty years adrift. See <a href="../docs/temporal.html">Temporal
 mechanics</a>.</p>
 
@@ -363,7 +363,7 @@ mechanics</a>.</p>
     <h4 style="margin-top:0;color:var(--red)">"permission denied … docker.sock"</h4>
     <p class="small mb-0">Your user is not in the <code>docker</code> group. It has nothing to do with
     this stack. <code>sudo usermod -aG docker "$USER" &amp;&amp; newgrp docker</code>. On a
-    <em>snap</em>-installed Docker you must <code>sudo addgroup --system docker</code> first — the snap
+    <em>snap</em>-installed Docker you must <code>sudo addgroup --system docker</code> first, because the snap
     does not create the group, is confined to <code>$HOME</code> and <code>/media</code>, and ships its
     own Compose.</p>
   </div>
@@ -375,7 +375,7 @@ mechanics</a>.</p>
 python -m amber_tick.runtime.rdb --port 5010 --store store --qhome q &amp;
 python -m amber_tick.runtime.feed --store store --part 2026.08.21 --speed 60</code></pre></div>
 <p>The tickerplant writes its sequenced log <em>before</em> it publishes, so a subscriber can never see
-a message the log does not already contain — recovery is a replay from the last acknowledged sequence
+a message the log does not already contain, so recovery is a replay from the last acknowledged sequence
 number. Point a second datasource at the RDB's port, or put the <code>gateway</code> in front of both
 and let it fold RDB and historical results with an explicit combine rule (you cannot average five
 partitions' averages and get a VWAP).</p>

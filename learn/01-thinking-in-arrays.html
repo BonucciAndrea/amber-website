@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Thinking in arrays — the one idea everything else rests on</title>
+<title>Thinking in arrays: the one idea everything else rests on</title>
 <meta name="description" content="The mental shift from loops to whole-array operations, why Amber has no operator precedence, and how to read an expression right to left.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Thinking in arrays — the one idea everything else rests on">
+<meta property="og:title" content="Thinking in arrays: the one idea everything else rests on">
 <meta property="og:description" content="The mental shift from loops to whole-array operations, why Amber has no operator precedence, and how to read an expression right to left.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
@@ -52,11 +52,11 @@
 
 <span class="pill pill-accent" style="margin-bottom:14px;display:inline-flex">Chapter 1 of 8</span>
 
-<h1>Thinking in arrays — the one idea everything else rests on</h1>
+<h1>Thinking in arrays: the one idea everything else rests on</h1>
 
 <p>Amber is not a language with array <em>features</em>. It is a language where the array is the only unit of thought. Every habit you bring from Python, C or Java will fight you for about an hour, and then stop.</p>
 
-<p>This chapter is the hour. Nothing here is syntax you need to memorise — it is the three ideas that make the rest of the documentation readable.</p>
+<p>This chapter is the hour. None of it is syntax you need to memorise. It is the three ideas that make the rest of the documentation readable.</p>
 
 <h2 id="idea-1-the-loop-is-already-written">Idea 1 — the loop is already written</h2>
 
@@ -68,14 +68,14 @@ x + x                  / 2 4 6 8 10
 +/ x                   / 15           -- sum: the verb + folded over x
 x &gt; 2                  / 0 0 1 1 1    -- comparison is elementwise too</code></pre></div>
 
-<p>That last line matters more than it looks. A comparison does not give you a <code>bool</code>; it gives you a <strong>mask</strong> — one byte per element — and masks are how you select data:</p>
+<p>That last line matters more than it looks. A comparison does not give you a <code>bool</code>; it gives you a <strong>mask</strong>, one byte per element, and masks are how you select data:</p>
 
 <div class="code"><pre><code class="lang-q">x @ &amp; x &gt; 2            / 3 4 5        -- &amp; turns a mask into indices, @ takes them
 +/ x @ &amp; x &gt; 2         / 12           -- sum of the elements above 2</code></pre></div>
 
 <div class="note">
   <span class="note-title">Why this is fast, not just short</span>
-  <p><code>+/x@&amp;x&gt;2</code> looks like four passes over the data. The compiler recognises the shape and emits <em>one</em> fused primitive that never materialises the mask or the index vector. Writing the idiomatic thing and writing the fast thing are the same act — that is the whole design.</p>
+  <p><code>+/x@&amp;x&gt;2</code> looks like four passes over the data. The compiler recognises the shape and emits <em>one</em> fused primitive that never materialises the mask or the index vector. Writing the idiomatic thing and writing the fast thing are the same act, which is what the design is for.</p>
 </div>
 
 <h2 id="idea-2-right-to-left-always-no-exceptions">Idea 2 — right to left, always, no exceptions</h2>
@@ -95,7 +95,7 @@ x &gt; 2                  / 0 0 1 1 1    -- comparison is elementwise too</code>
 
 <h2 id="idea-3-one-glyph-two-verbs">Idea 3 — one glyph, two verbs</h2>
 
-<p>Most symbols are <strong>ambivalent</strong>: they mean one thing with one argument and another with two. This is not overloading for cleverness — the two meanings are almost always the same idea at different arity:</p>
+<p>Most symbols are <strong>ambivalent</strong>: they mean one thing with one argument and another with two. This is not overloading for cleverness. The two meanings are almost always the same idea at different arity:</p>
 
 <div class="table-wrap">
 <table>

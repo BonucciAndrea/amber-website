@@ -43,7 +43,7 @@
 <span class="pill pill-accent" style="margin-bottom:14px;display:inline-flex">Tutorial 03 · ~20 minutes</span>
 <h1>Interoperability: passing Arrow record batches from Amber to Python without copying</h1>
 <p class="lead">"Zero-copy" is a claim, and claims are cheap. This walkthrough ends with you asserting
-pointer equality between an Amber column, a NumPy array and an Arrow buffer — and then streaming four
+pointer equality between an Amber column, a NumPy array and an Arrow buffer, then streaming four
 hundred million rows through Python with one of them resident at a time.</p>
 
 <h2>Setup</h2>
@@ -61,7 +61,7 @@ pip install numpy pyarrow pandas
 <div class="note note-warn">
   <span class="note-title">Check you have one engine, not two</span>
   <p>If the loader satisfies <code>libamber_arrow.so</code>'s dependency with a <em>second</em> copy of
-  <code>libamber.so</code> from elsewhere on the search path, you get a second <strong>engine</strong> —
+  <code>libamber.so</code> from elsewhere on the search path, you get a second <strong>engine</strong>:
   two heaps, two symbol tables, and handles from one that are meaningless in the other, with no error at
   any point.</p>
 </div>
@@ -108,8 +108,8 @@ callback drops the Amber refcount.</p>
 <div class="note note-info">
   <span class="note-title">Symbol columns are the one exception</span>
   <p>Amber stores interned <code>int32</code> ids; Arrow's utf8 layout wants offsets and bytes. No
-  pointer arithmetic bridges that, so symbol columns are materialised. Numeric columns —
-  <code>px</code>, <code>sz</code>, <code>time</code>, <code>bid</code>, <code>ask</code> — are where
+  pointer arithmetic bridges that, so symbol columns are materialised. The numeric columns
+  (<code>px</code>, <code>sz</code>, <code>time</code>, <code>bid</code>, <code>ask</code>) are where
   the volume is, and they cross for free.</p>
 </div>
 </div>
@@ -136,7 +136,7 @@ True                                                     # the engine's buffer</
 <div class="step"><span class="n">5</span>
 <h3>Why a batch is a window, not a slice</h3>
 <p>The obvious way to stream a table in batches is to cut it into pieces. That copies every byte, once
-per stream — for a 400M-row table, that <em>is</em> the cost of the operation, and it defeats the point
+per stream. For a 400M-row table, that <em>is</em> the cost of the operation, and it defeats the point
 of using Arrow at all.</p>
 <p>So the library never cuts anything. It exports the table <strong>once</strong>, and every batch is a
 set of <code>ArrowArray</code> structs whose <code>buffers</code> pointers are the parent's, with
@@ -166,13 +166,13 @@ keep[0].column("px").to_numpy(zero_copy_only=True)[:5]     # still valid</code><
 <table>
   <thead><tr><th style="width:24%">Value</th><th>Effect</th></tr></thead>
   <tbody>
-    <tr><td><code>0</code> (default)</td><td>65,536 — the figure the Arrow ecosystem has converged on: large enough that per-batch overhead disappears, small enough that a handful of columns stays inside L2/L3.</td></tr>
+    <tr><td><code>0</code> (default)</td><td>65,536, the figure the Arrow ecosystem has converged on: large enough that per-batch overhead disappears, small enough that a handful of columns stays inside L2/L3.</td></tr>
     <tr><td><code>250k – 1M</code></td><td>Fewer Python-level iterations when your loop body is doing real work per batch.</td></tr>
     <tr><td>whole table</td><td><code>aa.table_to_arrow(t)</code>. Right for a <code>by sym</code> aggregate or a day of bars; wrong for the tape.</td></tr>
   </tbody>
 </table>
 </div>
-<p class="small muted">Raising <code>batch_rows</code> does not duplicate data — it changes how much of
+<p class="small muted">Raising <code>batch_rows</code> does not duplicate data. It changes how much of
 the engine's existing buffer each Arrow object addresses. What you save with a small value is whatever
 <em>your</em> loop body materialises.</p>
 </div>
@@ -184,7 +184,7 @@ the engine's existing buffer each Arrow object addresses. What you save with a s
 df = t.to_polars()                                   # via Arrow, numerics zero-copy
 duckdb.sql("select sym, avg(px) from at group by 1")  # `at` is the pyarrow.Table</code></pre></div>
 <p>Both consume the Arrow C Data Interface, so neither of them copies the numeric columns either.
-Nothing in this path links <code>libarrow</code> — <code>src/ar.c</code> is about ninety lines of C
+Nothing in this path links <code>libarrow</code>. <code>src/ar.c</code> is about ninety lines of C
 producing the standard structs, and <code>libamber_arrow.so</code> adds the stream on top.</p>
 </div>
 
@@ -205,7 +205,7 @@ t2 = aa.arrow_to_table(at)                           # copies — always</code><
 <div class="step"><span class="n">9</span>
 <h3>Fix the epoch before you plot</h3>
 <p>Amber's timestamps count nanoseconds from <strong>2000-01-01</strong>. pandas and Arrow count from
-1970. Nothing converts for you, on purpose — a silent thirty-year shift is worse than an honest
+1970. Nothing converts for you, on purpose, because a silent thirty-year shift is worse than an honest
 integer.</p>
 <div class="code"><pre><code class="lang-py">import pandas as pd
 
@@ -230,16 +230,16 @@ for info in c.list_flights():        # every global that IS a table, with real s
 
 t = c.do_get(fl.Ticket(b"select vwap:wavg[sz;px] by sym from trades")).read_all()</code></pre></div>
 <p>A ticket <em>is</em> an Amber query. The default <code>embedded</code> backend runs the engine in the
-Flight server's own process, so a batch handed to gRPC points at the engine's column buffers — the
+Flight server's own process, so a batch handed to gRPC points at the engine's column buffers and the
 result is never copied between evaluation and the socket. The <code>remote</code> backend fronts an
-<code>amberd</code> on another host and does copy and parse; reach for it only when the engine genuinely
+<code>amberd</code> on another host and does copy and parse; reach for it only when the engine really
 is somewhere else.</p>
 </div>
 
 <h2>Verify the whole thing</h2>
 <div class="code"><pre><code class="lang-sh">cd amber-arrow &amp;&amp; python -m pytest tests -q        # 31 tests
 cd ../python-amber &amp;&amp; python -m pytest tests -q</code></pre></div>
-<p>The suites assert pointer equality, not value equality — that every batch shares one buffer address,
+<p>The suites assert pointer equality rather than value equality: that every batch shares one buffer address,
 that the address is the engine's, that a batch survives its stream's release, and that the schema handed
 to a consumer is independent of the stream.</p>
 

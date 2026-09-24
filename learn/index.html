@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Amber for Mortals</title>
-<meta name="description" content="Amber for Mortals: a structured, in-depth course in the Amber array language — the mental model, the verbs, the adverbs, tables, qSQL, joins, time series and performance — in the order that makes each one easy.">
+<meta name="description" content="Amber for Mortals: a structured, in-depth course in the Amber array language. The mental model, the verbs, the adverbs, tables, qSQL, joins, time series and performance, in the order that makes each one easy.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Amber for Mortals">
-<meta property="og:description" content="Amber for Mortals: a structured, in-depth course in the Amber array language — the mental model, the verbs, the adverbs, tables, qSQL, joins, time series and performance — in the order that makes each one easy.">
+<meta property="og:description" content="Amber for Mortals: a structured, in-depth course in the Amber array language. The mental model, the verbs, the adverbs, tables, qSQL, joins, time series and performance, in the order that makes each one easy.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -61,18 +61,18 @@
 
 <h2 id="the-path">The path</h2>
 
-<p>Read them in order. Chapters 1 to 4 are the language; 5 to 6 are data and querying; 7 to 8 are what Amber is actually for.</p>
+<p>Read them in order. Chapters 1 to 4 are the language; 5 to 6 are data and querying; 7 to 8 are what Amber is for.</p>
 
 <div class="table-wrap">
 <table>
 <thead><tr><th>#</th><th>chapter</th><th>what you get</th></tr></thead>
-<tbody><tr><td>1</td><td><a href="../learn/01-thinking-in-arrays.html">Thinking in arrays</a></td><td>the mental shift; right-to-left; why there is no precedence</td></tr><tr><td>2</td><td><a href="../learn/02-first-session.html">Your first session</a></td><td>a prompt, the type system, atoms vs vectors, nulls</td></tr><tr><td>3</td><td><a href="../learn/03-verbs.html">Verbs</a></td><td>the twelve you use constantly, grouped by intent</td></tr><tr><td>4</td><td><a href="../learn/04-adverbs.html">Adverbs</a></td><td>each, over, scan, prior — where the power actually is</td></tr><tr><td>5</td><td><a href="../learn/05-tables.html">Dictionaries and tables</a></td><td>the column store, keyed tables, and what a table really is</td></tr><tr><td>6</td><td><a href="../learn/06-qsql.html">qSQL</a></td><td>select / by / where, sorted and limited selects, fby</td></tr><tr><td>7</td><td><a href="../learn/07-time-series.html">Time series</a></td><td>joins including as-of, temporal types, bars, attributes</td></tr><tr><td>8</td><td><a href="../learn/08-performance.html">Making it fast</a></td><td>fusion, moving windows, group aggregates, charts, parallelism</td></tr></tbody>
+<tbody><tr><td>1</td><td><a href="../learn/01-thinking-in-arrays.html">Thinking in arrays</a></td><td>the mental shift; right-to-left; why there is no precedence</td></tr><tr><td>2</td><td><a href="../learn/02-first-session.html">Your first session</a></td><td>a prompt, the type system, atoms vs vectors, nulls</td></tr><tr><td>3</td><td><a href="../learn/03-verbs.html">Verbs</a></td><td>the twelve you use constantly, grouped by intent</td></tr><tr><td>4</td><td><a href="../learn/04-adverbs.html">Adverbs</a></td><td>each, over, scan and prior, where the power lives</td></tr><tr><td>5</td><td><a href="../learn/05-tables.html">Dictionaries and tables</a></td><td>the column store, keyed tables, and what a table really is</td></tr><tr><td>6</td><td><a href="../learn/06-qsql.html">qSQL</a></td><td>select / by / where, sorted and limited selects, fby</td></tr><tr><td>7</td><td><a href="../learn/07-time-series.html">Time series</a></td><td>joins including as-of, temporal types, bars, attributes</td></tr><tr><td>8</td><td><a href="../learn/08-performance.html">Making it fast</a></td><td>fusion, moving windows, group aggregates, charts, parallelism</td></tr></tbody>
 </table>
 </div>
 
 <h2 id="before-you-start">Before you start</h2>
 
-<p>You need a terminal and a C compiler. Nothing else — no runtime, no package manager, no daemon.</p>
+<p>You need a terminal and a C compiler. Nothing else: no runtime, no package manager, no daemon.</p>
 
 <div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/amber
 cd amber
@@ -82,7 +82,7 @@ cd amber
 
 <h2 id="if-you-already-know-q-or-k">If you already know q or k</h2>
 
-<p>Start at chapter 3 and skim. The things that will catch you out are collected in <a href="../docs/gotchas.html">Gotchas</a>, and the dialect differences — which are real — are in the language reference under <a href="../docs/language.html">dialect notes</a>. The short version: two-argument library functions take brackets, there is no <code>select[n]</code>-free ordering clause, and <code>ss</code> is string-search so the time accessor is <code>sec</code>.</p>
+<p>Start at chapter 3 and skim. The things that will catch you out are collected in <a href="../docs/gotchas.html">Gotchas</a>, and the dialect differences, which are real, are in the language reference under <a href="../docs/language.html">dialect notes</a>. The short version: two-argument library functions take brackets, there is no <code>select[n]</code>-free ordering clause, and <code>ss</code> is string-search so the time accessor is <code>sec</code>.</p>
 
 <div class="pager">
   <a class="next" href="../learn/01-thinking-in-arrays.html"><span class="dir">Next</span><span class="ttl">1 · Thinking in arrays</span></a>

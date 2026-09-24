@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Dots — one Amber expression, 1024 dots, every frame</title>
+<title>Dots: one Amber expression, 1024 dots, every frame</title>
 <meta name="description" content="A grid of dots drawn by one line of Amber, re-evaluated every frame by the real interpreter compiled to WebAssembly. No per-pixel callback: X and Y are whole vectors, so your expression is one array operation over every cell.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Dots — one Amber expression, 1024 dots, every frame">
+<meta property="og:title" content="Dots: one Amber expression, 1024 dots, every frame">
 <meta property="og:description" content="Type an expression of t, X and Y. The real Amber engine evaluates it over the whole grid at once, 60 times a second, in your browser.">
 <meta property="og:site_name" content="Amber">
 <meta property="og:url" content="https://amber-lang.org/projects/dots">
@@ -56,7 +56,7 @@
       <div>
         <h1>One expression. 1024 dots. Every frame.</h1>
         <p class="lead">Type an expression of <code>t</code>, <code>X</code> and <code>Y</code>. The real Amber
-        interpreter — compiled to WebAssembly, running on this page — evaluates it once per frame over the
+        interpreter, compiled to WebAssembly and running on this page, evaluates it once per frame over the
         <strong>whole grid at once</strong>. There is no per-pixel callback: <code>X</code> and <code>Y</code> are
         1024-element vectors, and your line is a single array operation.</p>
       </div>
@@ -76,7 +76,7 @@
         </div>
 
         <div class="dots-exprrow">
-          <label for="dots-expr">Your expression — it re-runs as you type</label>
+          <label for="dots-expr">Your expression. It re-runs as you type</label>
           <div class="dots-input">
             <span class="dots-sigil" aria-hidden="true">&gt;</span>
             <input id="dots-expr" type="text" spellcheck="false" autocapitalize="off" autocomplete="off"
@@ -98,7 +98,7 @@
         </div>
 
         <details class="dots-setup" id="dots-setupwrap">
-          <summary>Setup — runs once, for expressions that keep state</summary>
+          <summary>Setup: runs once, for expressions that keep state</summary>
           <textarea id="dots-setup" spellcheck="false" autocapitalize="off" autocomplete="off"
                     aria-label="Setup code, runs once"></textarea>
           <div class="dots-row" style="margin-top:8px">
@@ -119,13 +119,13 @@
             <dt>Y</dt><dd>row of each cell</dd>
             <dt>i</dt><dd>flat index, <code>0</code>…<code>N-1</code></dd>
             <dt>R</dt><dd>distance from the centre</dd>
-            <dt>mx my</dt><dd>the cursor, in cells — <code>md</code> is 1 while pressed</dd>
+            <dt>mx my</dt><dd>the cursor, in cells. <code>md</code> is 1 while pressed</dd>
             <dt>cx cy</dt><dd>the centre of the grid</dd>
             <dt>G N</dt><dd>grid size, and <code>N</code> = <code>G*G</code> cells</dd>
             <dt>NB</dt><dd>the 8 wrapped neighbour index vectors, for Life-style rules</dd>
           </dl>
           <p class="dots-note">The result is read as one value per cell, clamped to
-          <code>-1</code>…<code>1</code>. Size is magnitude; colour is sign — amber positive,
+          <code>-1</code>…<code>1</code>. Size is magnitude; colour is sign, amber for positive and
           cyan negative. An atom fills the grid, so <code>1</code> is a legal expression.</p>
         </div>
 
@@ -133,7 +133,7 @@
           <h2>Why X and Y are capitals</h2>
           <p class="dots-note"><code>x</code> and <code>y</code> are k's implicit lambda parameters, so a
           global <code>x</code> would be shadowed the moment your expression contains
-          <code>{…}</code> — as in <code>{sin x}@X</code>. Capitals stay visible inside a lambda.</p>
+          <code>{…}</code>, as in <code>{sin x}@X</code>. Capitals stay visible inside a lambda.</p>
           <p class="dots-note">Two more traps worth knowing: <code>!</code> with an atom on the left is
           <em>mod</em>, not rotate (<code>2!X</code>), and with a vector on the left it builds a
           <em>dictionary</em>. <code>%</code> on one argument is square root.</p>
@@ -141,7 +141,7 @@
 
         <div class="dots-panel">
           <h2>Under it</h2>
-          <p class="dots-note">The same C99 engine that runs natively, compiled to wasm32 — not a
+          <p class="dots-note">The same C99 engine that runs natively, compiled to wasm32. Not a
           reimplementation and not a subset. A frame crosses the boundary once, as one string of
           <code>N</code> bytes, so nothing is parsed per cell.</p>
           <p class="dots-note">Want the whole language instead of one line?

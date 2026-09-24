@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Array Golf — 155 puzzles, scored in bytes</title>
+<title>Array Golf: 155 puzzles, scored in bytes</title>
 <meta name="description" content="155 array puzzles in three tiers. Write the shortest Amber expression that passes every test. The engine judges you as you type, and counts the bytes.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Array Golf — 155 puzzles, scored in bytes">
+<meta property="og:title" content="Array Golf: 155 puzzles, scored in bytes">
 <meta property="og:description" content="Write the shortest Amber expression that passes every test. Judged as you type by the real engine, scored in bytes.">
 <meta property="og:site_name" content="Amber">
 <meta property="og:url" content="https://amber-lang.org/projects/golf">
@@ -50,7 +50,7 @@
       <div>
         <h1>Say it in fewer bytes.</h1>
         <p class="lead">A hundred and fifty-five small problems, in three tiers. Write an expression in terms of
-        <code>x</code> that solves each one, and the engine judges it <strong>as you type</strong> —
+        <code>x</code> that solves each one, and the engine judges it <strong>as you type</strong>,
         against the examples on screen and a few more besides. The score is the number of
         characters. The warm-ups are two or three; the hardest run past thirty.</p>
       </div>
@@ -74,13 +74,13 @@
         <div class="gf-panel">
           <h2 style="margin:0 0 8px;font:600 .74rem var(--font-sans);letter-spacing:.07em;text-transform:uppercase;color:var(--text-faint)">Enough k to start</h2>
           <dl class="gf-cheat">
-            <dt>+/x</dt><dd>sum — <code>/</code> folds a verb over a list</dd>
+            <dt>+/x</dt><dd>sum, since <code>/</code> folds a verb over a list</dd>
             <dt>+\x</dt><dd>the same fold, keeping every step</dd>
             <dt>|x</dt><dd>reverse · <code>|/x</code> is the maximum</dd>
             <dt>#x</dt><dd>count · <code>n#x</code> takes n</dd>
             <dt>?x</dt><dd>distinct</dd>
-            <dt>&amp;x</dt><dd>where — the indices of the 1s</dd>
-            <dt>&lt;x</dt><dd>grade — the indices that would sort x</dd>
+            <dt>&amp;x</dt><dd>where: the indices of the 1s</dd>
+            <dt>&lt;x</dt><dd>grade: the indices that would sort x</dd>
             <dt>x@i</dt><dd>index · <code>f'x</code> applies f to each</dd>
             <dt>,/x</dt><dd>join a list of lists</dd>
             <dt>~</dt><dd>match, exactly · <code>=</code> only compares</dd>
@@ -98,7 +98,7 @@
           <p class="gf-prompt" id="gf-prompt"></p>
 
           <div class="gf-inputrow">
-            <label for="gf-expr">Your expression — judged as you type</label>
+            <label for="gf-expr">Your expression, judged as you type</label>
             <div class="gf-input">
               <span class="gf-sigil" aria-hidden="true">{</span>
               <input id="gf-expr" type="text" spellcheck="false" autocapitalize="off"
@@ -125,17 +125,17 @@
           <h2 style="margin:0 0 8px;font:600 .74rem var(--font-sans);letter-spacing:.07em;text-transform:uppercase;color:var(--text-faint)">How the judging works</h2>
           <p class="gf-hint">Your expression becomes a one-argument function and is run against
           every test by the engine itself. The comparison is <code>~</code>, <strong>match</strong>,
-          not <code>=</code> — so <code>1 2 3</code> and <code>1 2 3.0</code> are not the same
+          rather than <code>=</code>, so <code>1 2 3</code> and <code>1 2 3.0</code> are not the same
           answer, and something of the wrong shape cannot slip through by conforming.</p>
           <p class="gf-hint">A half-written expression is judged rather than thrown, because golf is
           typed one character at a time and most of what the judge sees is not valid yet. An error
           just means no test passed.</p>
-          <p class="gf-hint">The extra tests are not shown, but they are not secret either: the
+          <p class="gf-hint">The extra tests are not on screen, though nothing about them is secret: the
           judge runs in your browser, so every case ships with the page and anyone who opens
           <code>assets/golf/puzzles.js</code> can read them. They are out of the way, not hidden
-          from you — there is nowhere to hide them.</p>
+          from you, and there is nowhere to hide them.</p>
           <p class="gf-hint"><strong>Par</strong> is a known short solution, not a proven minimum.
-          If you get under it, you have found something better — and the share link carries your
+          If you get under it, you have found something better, and the share link carries your
           expression so you can prove it.</p>
         </div>
       </div>

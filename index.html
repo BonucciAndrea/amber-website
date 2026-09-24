@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Amber — a low-latency array language for market data</title>
+<title>Amber: a low-latency array language for market data</title>
 <meta name="description" content="Amber is a C99 columnar in-memory array engine with the working vocabulary of q: tables, the full join family including native as-of, qSQL select/by, C-level column attributes and a zero-copy Arrow bridge.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="./assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Amber — a low-latency array language for market data">
+<meta property="og:title" content="Amber: a low-latency array language for market data">
 <meta property="og:description" content="Amber is a C99 columnar in-memory array engine with the working vocabulary of q: tables, the full join family including native as-of, qSQL select/by, C-level column attributes and a zero-copy Arrow bridge.">
 <meta property="og:site_name" content="Amber">
 <meta property="og:url" content="https://amber-lang.org/">
@@ -45,13 +45,13 @@
       <div>
         <a class="announce" href="./docs/benchmarks.html">
           <span class="tag">v2.2.0</span>
-          <span>2.2.0 — a keys-only radix sort, a split float scan, and select without the copy</span>
+          <span>2.2.0: a keys-only radix sort, a split float scan, and select without the copy</span>
           <span class="arrow">&rarr;</span>
         </a>
         <h1>The array language<br><span class="grad">markets run on.</span></h1>
         <p class="lead">
           Amber is a small, fast, self-contained engine written in portable <strong>C99</strong>: columnar,
-          vectorised, in-memory, with the working vocabulary of <strong>q</strong> — dictionaries,
+          vectorised, in-memory, with the working vocabulary of <strong>q</strong>: dictionaries,
           tables and keyed tables, the full join family including a native as-of kernel, qSQL
           <code>select</code>/<code>by</code>, and column attributes implemented in C that turn search from
           <code>O(n)</code> into <code>O(log n)</code>.
@@ -80,7 +80,7 @@
         <div class="terminal">
           <div class="terminal-head">
             <span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span>
-            <span class="t">amber &mdash; 1-minute VWAP over 5,000,000 trades</span>
+            <span class="t">amber &middot; 1-minute VWAP over 5,000,000 trades</span>
             <span class="badge">live</span>
           </div>
           <div class="terminal-body" id="hero-term" aria-label="Animated Amber REPL session"></div>
@@ -107,9 +107,9 @@
   <div class="wrap">
     <div style="max-width:64ch;margin-bottom:36px">
       <div class="eyebrow">Engine</div>
-      <h2 style="margin-top:0">Built for the shape data actually has</h2>
+      <h2 style="margin-top:0">Built for the shape data has</h2>
       <p class="lead">A tick is not a row. It is one value in each of nine columns, and every question you
-      ask of a trading day is a question about columns. Amber is columnar all the way down — storage,
+      ask of a trading day is a question about columns. Amber is columnar all the way down: storage,
       evaluation, the wire, and the handoff to Arrow.</p>
     </div>
 
@@ -118,7 +118,7 @@
         <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="18" rx="1"/><rect x="10.5" y="3" width="6" height="18" rx="1"/><path d="M20 3v18"/></svg></div>
         <h3>Zero-copy memory layout</h3>
         <p class="small">A column is one contiguous, cache-line-aligned payload. <code>amber_get_vector_ptr()</code>
-        hands you that pointer — not a copy of it. NumPy's <code>base</code>, Arrow's data buffer and the
+        hands you that pointer, never a copy of it. NumPy's <code>base</code>, Arrow's data buffer and the
         engine's column are the same address, asserted by pointer equality in the test suites.</p>
       </div>
 
@@ -127,7 +127,7 @@
         <h3>Native TCP wire protocol</h3>
         <p class="small"><code>amberd</code> is ~450 lines of C: one engine, many connections, a one-line
         request and a length-prefixed reply in <code>text</code>, <code>json</code>, <code>jsonc</code> or
-        <code>raw</code>. Small enough to reimplement in an afternoon — which Go, TypeScript and Python
+        <code>raw</code>. Small enough to reimplement in an afternoon, which Go, TypeScript and Python
         clients all have.</p>
       </div>
 
@@ -136,13 +136,13 @@
         <h3>Array evaluation, not row loops</h3>
         <p class="small">Every expression compiles to a flat opcode array and runs on a real stack VM.
         Vector ops dispatch into AVX2 / NEON kernels and split across cores above 100,000 elements.
-        <code>\disasm</code> decodes the bytecode the compiler actually emitted.</p>
+        <code>\disasm</code> decodes the bytecode the compiler emitted.</p>
       </div>
 
       <div class="card reveal">
         <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></div>
         <h3>Columnar storage &amp; attributes</h3>
-        <p class="small">All four q-style attributes are implemented in C — <code>`s</code> sorted,
+        <p class="small">All four q-style attributes are implemented in C: <code>`s</code> sorted,
         <code>`u</code> unique, <code>`p</code> parted, <code>`g</code> grouped. Sorted turns
         <code>?</code> into a binary search: <strong>1.73 s &rarr; 1.4 ms</strong> on 2M rows, same answer.</p>
       </div>
@@ -159,7 +159,7 @@
         <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg></div>
         <h3>Diagnostics that read like Rust</h3>
         <p class="small">An <code>error[E0104]</code> line, a <code>--&gt;</code> locator, a gutter-aligned
-        source line, <code>^^^</code> underlines and a <code>= help:</code> note. One report, never two —
+        source line, <code>^^^</code> underlines and a <code>= help:</code> note. One report, never two,
         and switchable at runtime so a trap loop stays quiet.</p>
       </div>
     </div>
@@ -181,7 +181,7 @@
         infix (<code>sz wavg px</code>, <code>2 3 in 2 4 5</code>) or with brackets
         (<code>wavg[sz;px]</code>); three-argument functions like <code>aj[c;x;y]</code> use brackets.
         There is no <code>&gt;=</code> or <code>&lt;=</code>, and symbols cannot
-        contain <code>_</code> — because <code>_</code> is a verb.</p>
+        contain <code>_</code>, because <code>_</code> is a verb.</p>
         <div class="row" style="margin-top:20px">
           <a class="btn btn-ghost btn-sm" href="./docs/language.html">Language reference &rarr;</a>
           <a class="btn btn-ghost btn-sm" href="./notepad.html">Try it in the browser &rarr;</a>
@@ -226,13 +226,13 @@ p:arrow.export t            / (schemaAddr; arrayAddr)</code></pre>
         <div class="eyebrow">amber-tick</div>
         <h2 style="margin-top:0">A whole market, generated and stored</h2>
         <p><a href="./ecosystem/amber-tick.html">amber-tick</a> writes a partitioned, splayed column
-        store the engine reads natively — 38M prints, 89M quotes, ten-level book snapshots and LULD halts
+        store the engine reads natively: 38M prints, 89M quotes, ten-level book snapshots and LULD halts
         across five sessions and 500 names, from a simulator whose realism is <em>checked</em>: twenty-one
         published stylized facts, all passing on every generated store.</p>
         <dl class="kv" style="margin:22px 0">
-          <dt>arrivals</dt><dd>discrete-time Hawkes process — bursts, not flat Poisson</dd>
+          <dt>arrivals</dt><dd>discrete-time Hawkes process, so arrivals burst rather than arriving flat Poisson</dd>
           <dt>quotes first</dt><dd>so a print can never fall outside the NBBO</dd>
-          <dt>epoch</dt><dd>nanoseconds since 2000-01-01 — Amber's own, not Unix</dd>
+          <dt>epoch</dt><dd>nanoseconds since 2000-01-01, Amber's own rather than Unix</dd>
           <dt>files</dt><dd>each column is one <code>-8!</code> value, byte-identical to the engine's</dd>
         </dl>
         <a class="btn btn-ghost btn-sm" href="./tutorials/tick-store.html">Build a 5M-row store in 60 seconds &rarr;</a>
@@ -352,7 +352,7 @@ p:arrow.export t            / (schemaAddr; arrayAddr)</code></pre>
     <div class="eyebrow">Benchmarks</div>
     <h2 style="margin-top:0">Measured against C, and against everyone else</h2>
     <p class="lead" style="max-width:66ch">Seven engines, four workloads, one specification. Every answer is
-    an integer that fits float64 exactly, so summation order cannot change it — the harness compares
+    an integer that fits float64 exactly, so summation order cannot change it. The harness compares
     answers <strong>bit-exactly</strong> against the C reference and prints <code>WRONG</code> instead of a
     time for any engine that disagrees.</p>
     <div class="table-wrap" style="margin-top:26px">
@@ -364,9 +364,9 @@ p:arrow.export t            / (schemaAddr; arrayAddr)</code></pre>
         </tr></thead>
         <tbody>
           <tr><td>Vector arithmetic + mask</td><td class="num">10.06</td><td class="num best">22.06</td><td class="num">52.78</td><td class="num">35.73</td><td class="num">32.02</td><td class="num">29.00</td><td class="num">320.10</td></tr>
-          <tr><td>Reductions — sum + max + dot</td><td class="num">28.27</td><td class="num best">13.46</td><td class="num">69.08</td><td class="num">5.62</td><td class="num">10.21</td><td class="num">38.00</td><td class="num">299.92</td></tr>
-          <tr><td>Group-by — 100 groups</td><td class="num">8.27</td><td class="num best">76.67</td><td class="num">210.14</td><td class="num">38.28</td><td class="num">14.98</td><td class="num">18.00</td><td class="num">348.73</td></tr>
-          <tr><td>Inner join — 1M &times; 1,000 sparse keys</td><td class="num">1.07</td><td class="num best">4.39</td><td class="num">8.41</td><td class="num">2.38</td><td class="num">14.69</td><td class="num">11.00</td><td class="num">452.92</td></tr>
+          <tr><td>Reductions: sum + max + dot</td><td class="num">28.27</td><td class="num best">13.46</td><td class="num">69.08</td><td class="num">5.62</td><td class="num">10.21</td><td class="num">38.00</td><td class="num">299.92</td></tr>
+          <tr><td>Group-by, 100 groups</td><td class="num">8.27</td><td class="num best">76.67</td><td class="num">210.14</td><td class="num">38.28</td><td class="num">14.98</td><td class="num">18.00</td><td class="num">348.73</td></tr>
+          <tr><td>Inner join, 1M &times; 1,000 sparse keys</td><td class="num">1.07</td><td class="num best">4.39</td><td class="num">8.41</td><td class="num">2.38</td><td class="num">14.69</td><td class="num">11.00</td><td class="num">452.92</td></tr>
         </tbody>
       </table>
     </div>
@@ -385,7 +385,7 @@ p:arrow.export t            / (schemaAddr; arrayAddr)</code></pre>
     <h2 style="margin-top:0">Written down as it was built</h2>
     <p class="lead" style="max-width:66ch">Amber started as a 10,000-line C interpreter and became an
     engine one layer at a time. The build log follows the work in the order it happened, and the docs
-    carry what came out of it &mdash; the cost model, the internals, and the failures worth knowing
+    carry what came out of it: the cost model, the internals, and the failures worth knowing
     about.</p>
     <div class="grid grid-2" style="margin-top:28px">
       <a class="card card-link" href="blog/index.html">
@@ -426,7 +426,7 @@ p:arrow.export t            / (schemaAddr; arrayAddr)</code></pre>
       <a class="card card-link eco-card reveal" href="./ecosystem/python-amber.html">
         <div class="card-title-row"><h3>python-amber</h3><span class="pill">libamber.so</span></div>
         <p class="desc">The engine in your Python process. <code>pip install amber</code>, then NumPy views
-        that point at the engine's own column buffers — no server, no socket, no serialisation.</p>
+        that point at the engine's own column buffers. No server, no socket, no serialisation.</p>
         <div class="repo"><span class="arrow">Read more &rarr;</span></div>
       </a>
 
@@ -495,7 +495,7 @@ p:arrow.export t            / (schemaAddr; arrayAddr)</code></pre>
     <div class="card card-solid reveal" style="padding:44px;text-align:center">
       <h2 style="margin-top:0">One command. No install.</h2>
       <p class="lead" style="max-width:56ch;margin:0 auto 24px">Amber compiles from source on first run and
-      installs nothing system-wide. There is no <code>bin/</code>, no <code>QHOME</code>, no dotfile —
+      installs nothing system-wide. There is no <code>bin/</code>, no <code>QHOME</code> and no dotfile;
       deleting the folder uninstalls it completely.</p>
       <div class="code" style="max-width:640px;margin:0 auto 22px;text-align:left">
         <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">bash</span></div>

@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>amber-arrow — zero-copy Arrow streaming, amberd and Flight</title>
+<title>amber-arrow: zero-copy Arrow streaming, amberd and Flight</title>
 <meta name="description" content="An ArrowArrayStream over an Amber table whose batches are windows onto one export, the amberd TCP query server, and an Arrow Flight daemon where a ticket is an Amber query.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="amber-arrow — zero-copy Arrow streaming, amberd and Flight">
+<meta property="og:title" content="amber-arrow: zero-copy Arrow streaming, amberd and Flight">
 <meta property="og:description" content="An ArrowArrayStream over an Amber table whose batches are windows onto one export, the amberd TCP query server, and an Arrow Flight daemon where a ticket is an Amber query.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
@@ -48,7 +48,7 @@
 <a href="../ecosystem/amber-ai.html">amber-ai</a>
 </aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../ecosystem/index.html">Ecosystem</a> / amber-arrow</div>
 <h1>amber-arrow &amp; amber-flight</h1>
-<p class="lead">Streaming Apache Arrow over the Amber columnar engine, without copying anything — plus
+<p class="lead">Streaming Apache Arrow over the Amber columnar engine, without copying anything, plus
 a query daemon and an Arrow Flight server.</p>
 
 <div class="badge-row" style="margin-bottom:26px">
@@ -66,7 +66,7 @@ for batch in aa.query("select from trades", batch_rows=1_000_000):
     process(batch)                                       # 400 batches, 0 copies</code></pre></div>
 
 <p>Every batch above points at the <strong>same</strong> engine-owned column buffers. Not a copy of
-them, not a slice of them — a window, expressed with Arrow's own <code>offset</code> and
+them, not a slice of them, but a window, expressed with Arrow's own <code>offset</code> and
 <code>length</code> fields.</p>
 
 <div class="code"><pre><code class="lang-py">&gt;&gt;&gt; {b.column("px").buffers()[1].address for b in aa.stream(t, batch_rows=25_000)}
@@ -79,7 +79,7 @@ True                                                     # the engine's buffer</
 <table>
   <thead><tr><th style="width:24%">Component</th><th>What it is</th></tr></thead>
   <tbody>
-    <tr><td><code>libamber_arrow.so</code></td><td>C. Implements <code>ArrowArrayStream</code> over an Amber table — the one piece of the Arrow C Data Interface the engine deliberately does not carry. Links <code>libamber.so</code>, and nothing else. <strong>No libarrow.</strong></td></tr>
+    <tr><td><code>libamber_arrow.so</code></td><td>C. Implements <code>ArrowArrayStream</code> over an Amber table, the one piece of the Arrow C Data Interface the engine does not carry. Links <code>libamber.so</code>, and nothing else. <strong>No libarrow.</strong></td></tr>
     <tr><td><code>amberd</code></td><td>C. A TCP query server: many connections, one engine, four reply encodings. ~450 lines. The thing the Grafana datasource and the VS Code language server connect to.</td></tr>
     <tr><td><code>amber_arrow</code></td><td>Python. ctypes over <code>libamber_arrow.so</code> &rarr; <code>pyarrow.RecordBatchReader</code>, plus a reference client for the <code>amberd</code> protocol.</td></tr>
     <tr><td><code>amber_flight</code></td><td>Python. An Arrow Flight (gRPC) server. A ticket <em>is</em> an Amber query.</td></tr>
@@ -93,8 +93,8 @@ True                                                     # the engine's buffer</
 exactly the right amount of Arrow for a 10,000-line C runtime to own. It covers "hand me this table"
 completely.</p>
 <p>What it does not cover is <em>"hand me this 400-million-row table in batches, and stop when I stop
-asking"</em> — which is what a Flight server, a Polars scan, and any consumer with a memory budget
-actually need. That is the <code>ArrowArrayStream</code>, and it belongs out here, where it can grow,
+asking"</em>, which is what a Flight server, a Polars scan, and any consumer with a memory budget
+need. That is the <code>ArrowArrayStream</code>, and it belongs out here, where it can grow,
 rather than inside the engine, where it would be the largest single feature in the tree and would be
 paid for by every user who never touches Arrow.
 <a href="../blog/zero-copy-arrow.html">Zero-copy interop</a> walks the same boundary from the other
@@ -102,7 +102,7 @@ side: what it takes to hand an Amber buffer to Python without a copy, and how to
 
 <h3>A batch is a window, not a slice</h3>
 <p>The obvious way to stream a table in batches is to cut it into pieces. That copies every byte, once
-per stream — for a 400M-row table, that <em>is</em> the cost of the operation, and it defeats the
+per stream. For a 400M-row table, that <em>is</em> the cost of the operation, and it defeats the
 point of using Arrow at all.</p>
 <p>So this library never cuts anything. It exports the table <strong>once</strong>, and every batch is
 a set of <code>ArrowArray</code> structs whose <code>buffers</code> pointers are the parent's, with
@@ -110,7 +110,7 @@ a set of <code>ArrowArray</code> structs whose <code>buffers</code> pointers are
 primitive and utf8 layouts alike, so there is no per-type special case.</p>
 
 <div class="note note-warn">
-  <span class="note-title">The one genuinely hard problem is lifetime</span>
+  <span class="note-title">Lifetime is the hard part</span>
   <p><strong>Batch 3 may outlive the stream</strong>, and batches 1 and 2 may be released before batch
   3 is created. So the parent export is not owned by the stream. It is owned by a reference count that
   the stream holds one of, and each live batch holds one of, and it is torn down by whoever drops the
@@ -134,7 +134,7 @@ a prebuilt library at <code>$AMBER_LIB_DIR</code>, and builds it if it has to.</
   <p><code>amber_arrow</code> loads <code>libamber.so</code> <strong>from inside the installed
   <code>amber</code> package</strong>, with <code>RTLD_GLOBAL</code>, before it loads
   <code>libamber_arrow.so</code>. If the loader satisfies the dependency with a <em>second</em> copy
-  from elsewhere on the search path, you get a second <strong>engine</strong> — two heaps, two symbol
+  from elsewhere on the search path, you get a second <strong>engine</strong>: two heaps, two symbol
   tables, two global namespaces, and handles from one that are meaningless in the other, with no error
   at any point because nothing is technically wrong. <code>amber_arrow.library_path()</code> tells you
   which one you got.</p>
@@ -153,19 +153,19 @@ aa.library_path()</code></pre></div>
 <table>
   <thead><tr><th style="width:26%">Detail</th><th>Behaviour</th></tr></thead>
   <tbody>
-    <tr><td><code>batch_rows=0</code></td><td>selects <strong>65,536</strong> — the figure the Arrow ecosystem has converged on for streaming: large enough that per-batch overhead disappears, small enough that a handful of columns stays inside L2/L3.</td></tr>
+    <tr><td><code>batch_rows=0</code></td><td>selects <strong>65,536</strong>, the figure the Arrow ecosystem has converged on for streaming: large enough that per-batch overhead disappears, small enough that a handful of columns stays inside L2/L3.</td></tr>
     <tr><td>keyed results</td><td>A <code>select … by sym from t</code> is flattened with the grouping columns in front. Arrow has no keyed table, and dropping the keys would be worse than flattening them.</td></tr>
     <tr><td>inbound direction</td><td><strong>Copies.</strong> Amber stores a 32-byte object header immediately <em>before</em> every vector payload, so it cannot adopt a foreign allocation as a native column. Outbound is where the volume is.</td></tr>
   </tbody>
 </table>
 </div>
 
-<h2><code>amberd</code> — the query server</h2>
+<h2><code>amberd</code>, the query server</h2>
 <div class="code"><pre><code class="lang-sh">./build/amberd --home ../amber --port 5010 --eval "gentq 10000000" -v
 ./build/amberd --home ../amber --load /srv/hdb/load.k --mode jsonc --readonly</code></pre></div>
 
 <p>Single-threaded event loop over <code>poll()</code>: many connections, one query at a time,
-<strong>shared</strong> global state — the only model where two clients can see
+<strong>shared</strong> global state, which is the only model where two clients can see
 each other's writes. Full framing, encodings and client code are on the
 <a href="../docs/protocol.html">wire protocol page</a>.</p>
 
@@ -177,7 +177,7 @@ with AmberClient("localhost", 5010) as c:
     cols  = c.columns("select from trades where sym=`AAPL")
     frame = c.pandas("select n:#px by sym from trades")</code></pre></div>
 
-<h2><code>amber-flight</code> — Arrow over gRPC</h2>
+<h2><code>amber-flight</code>: Arrow over gRPC</h2>
 <div class="code"><pre><code class="lang-sh">python -m amber_flight --home ../amber --port 8815 --eval "gentq 10000000"</code></pre></div>
 
 <div class="code"><pre><code class="lang-py">import pyarrow.flight as fl
@@ -206,7 +206,7 @@ nothing to translate; bare qSQL works exactly as it does at the <code>amber&gt;<
     <h4 style="margin-top:0;color:var(--accent)"><code>remote</code></h4>
     <p class="small mb-0">Fronts an <code>amberd</code> on another host and pulls columnar JSON, which
     it converts to Arrow. That is a real copy and a real parse. It is here because sometimes the engine
-    genuinely <em>is</em> somewhere else — a tickerplant, an HDB node — and a slower path beats no
+    really <em>is</em> somewhere else, on a tickerplant or an HDB node, and a slower path beats no
     path. Do not reach for it when the engine could have been in-process.</p>
   </div>
 </div>
@@ -217,11 +217,11 @@ count and its real Arrow schema, obtained by streaming a zero-row slice of it.</
 
 <h2>Security</h2>
 <div class="note note-warn">
-  <span class="note-title">There is none, deliberately and visibly</span>
+  <span class="note-title">There is none, and the docs say so</span>
   <p>Both <code>amberd</code> and <code>amber-flight</code> let a client evaluate arbitrary Amber,
   which includes reading files and spawning processes. Both bind loopback by default and refuse a
   public address without <code>--i-know-this-is-unauthenticated</code>. <code>--readonly</code> is a
-  syntactic filter that exists to stop an <strong>accident</strong>, not an attacker — the real
+  syntactic filter that exists to stop an <strong>accident</strong> rather than an attacker. The real
   boundary is not exposing the port.</p>
 </div>
 

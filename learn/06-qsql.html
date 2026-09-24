@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>qSQL — querying tables</title>
+<title>qSQL: querying tables</title>
 <meta name="description" content="select, exec, update and delete; by-clauses; where-clauses; sorted and limited selects; fby; and the functional forms underneath.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="qSQL — querying tables">
+<meta property="og:title" content="qSQL: querying tables">
 <meta property="og:description" content="select, exec, update and delete; by-clauses; where-clauses; sorted and limited selects; fby; and the functional forms underneath.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
@@ -52,7 +52,7 @@
 
 <span class="pill pill-accent" style="margin-bottom:14px;display:inline-flex">Chapter 6 of 8</span>
 
-<h1>qSQL — querying tables</h1>
+<h1>qSQL: querying tables</h1>
 
 <p>Everything so far has been the K layer. qSQL is a surface syntax on top of it: you type <code>select ... by ... from ... where ...</code> and the line is rewritten into the array code from the previous chapters before it runs.</p>
 
@@ -96,7 +96,7 @@ update z: px * sz from trades           / add a computed column
 delete from trades where sz &lt; 2         / drop rows
 delete sz from trades                   / drop a column</code></pre></div>
 
-<p>These do not mutate in place — each returns a new table. Assign it if you want to keep it.</p>
+<p>These do not mutate in place. Each returns a new table, so assign it if you want to keep it.</p>
 
 <h2 id="fby-an-aggregate-broadcast-back-over-rows">fby — an aggregate broadcast back over rows</h2>
 
@@ -127,7 +127,7 @@ sel&quot;select from t where px &gt; 15&quot;              / the string form of 
 
 <p>Bare <code>select</code> is a line-level rewrite installed by the standard library. It works at the prompt, and in any file you pull in with <code>\l</code> from a running session.</p>
 
-<p>It does <strong>not</strong> work in a file run as <code>./amber script.k</code>, because that runs with no standard library loaded at all — neither the rewrite nor <code>sel</code> nor <code>qwhere</code> exists there. Load the library first:</p>
+<p>It does <strong>not</strong> work in a file run as <code>./amber script.k</code>, because that runs with no standard library loaded at all, and neither the rewrite nor <code>sel</code> nor <code>qwhere</code> exists there. Load the library first:</p>
 
 <div class="code"><pre><code class="lang-sh">\l amber.k
 \l std.k

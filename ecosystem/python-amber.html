@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>python-amber — the engine in your Python process</title>
+<title>python-amber: the engine in your Python process</title>
 <meta name="description" content="Zero-copy NumPy, pandas and Arrow interop with the Amber columnar engine, in-process. Install, API, the exact zero-copy contract, type mapping and threading.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="python-amber — the engine in your Python process">
+<meta property="og:title" content="python-amber: the engine in your Python process">
 <meta property="og:description" content="Zero-copy NumPy, pandas and Arrow interop with the Amber columnar engine, in-process. Install, API, the exact zero-copy contract, type mapping and threading.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
@@ -66,7 +66,7 @@ df = am.q("select vwap:wavg[sz;px], n:#px by sym from trades").to_pandas()</code
 
 <p><code>am.eval("2+3")</code> calls the same C function the Amber REPL calls, in the same address
 space, and a query result that comes back as a NumPy array is <em>pointing at the engine's own
-memory</em> — not at a copy of it.</p>
+memory</em>, not at a copy of it.</p>
 
 <div class="code"><pre><code class="lang-py">&gt;&gt;&gt; col = am.q("select from trades").column("px", raw=True)
 &gt;&gt;&gt; arr = numpy.asarray(col)
@@ -76,7 +76,7 @@ True</code></pre></div>
 <h2>Install</h2>
 <div class="code"><pre><code class="lang-sh">pip install amber</code></pre></div>
 <p>A binary wheel carries <code>libamber.so</code> <strong>and</strong> the eight <code>.k</code>
-standard-library modules, so that is genuinely all you need — no engine checkout, no
+standard-library modules, so that is all you need: no engine checkout, no
 <code>$AMBER_HOME</code>, no build toolchain.</p>
 
 <div class="code"><pre><code class="lang-sh"># from source, against an engine checkout
@@ -117,7 +117,7 @@ pip install "amber[all]"</code></pre></div>
    └──────────────────────────────────────────────────────────────┘</code></pre></div>
 
 <p>The engine repository is not modified by this package and does not know it exists. The entire
-contract between them is section 6 of <code>src/ext.h</code> — mirrored here in
+contract between them is section 6 of <code>src/ext.h</code>, mirrored here in
 <code>include/amber_capi.h</code> and checked at import time via <code>amber_abi_version()</code>.</p>
 
 <h2>Quick start</h2>
@@ -156,8 +156,8 @@ am.set("book", {"sym": ["AAPL", "MSFT"], "px": [187.2, 411.1]})</code></pre></di
   <tbody>
     <tr><td><code>am.init(home=None, *, bare=False)</code></td><td>Boot the engine. Automatic on first use. <code>bare=True</code> skips the <code>.k</code> standard library.</td></tr>
     <tr><td><code>am.eval(src, *, raw=False)</code></td><td>Evaluate Amber source; returns the last statement's value.</td></tr>
-    <tr><td><code>am.q(line, *, raw=False)</code></td><td>Evaluate one line <strong>after the bare-qSQL rewrite</strong> — <code>select … from …</code> works verbatim.</td></tr>
-    <tr><td><code>am.call(name, *args, raw=False)</code></td><td>Apply a global function to 0–8 native arguments — no string round-trip.</td></tr>
+    <tr><td><code>am.q(line, *, raw=False)</code></td><td>Evaluate one line <strong>after the bare-qSQL rewrite</strong>, so <code>select … from …</code> works verbatim.</td></tr>
+    <tr><td><code>am.call(name, *args, raw=False)</code></td><td>Apply a global function to 0–8 native arguments, with no string round-trip.</td></tr>
     <tr><td><code>am.get(name)</code> / <code>am.set(name, obj)</code></td><td>Read / bind an Amber global.</td></tr>
     <tr><td><code>am.make_table({name: seq, …})</code></td><td>Build a table from Python columns.</td></tr>
     <tr><td><code>am.load(path)</code></td><td>Load a <code>.k</code> script, as <code>\l</code> does in the REPL.</td></tr>
@@ -168,7 +168,7 @@ am.set("book", {"sym": ["AAPL", "MSFT"], "px": [187.2, 411.1]})</code></pre></di
 </table>
 </div>
 <p class="small muted"><code>raw=True</code> skips conversion and hands back a <code>Value</code>. Use it
-whenever the next thing you do is give the result back to the engine — conversion is the only step in
+whenever the next thing you do is give the result back to the engine. Conversion is the only step in
 the whole path that costs anything.</p>
 
 <h3><code>am.Table</code></h3>
@@ -194,7 +194,7 @@ the whole path that costs anything.</p>
 select vwap:wavg[sz;px] by sym from trades
 \py df = am.q("select from trades").to_pandas()</code></pre></div>
 
-<h2>Zero-copy, precisely</h2>
+<h2>What is and is not copied</h2>
 <p>Claims about zero copy are cheap, so here is exactly what is and is not copied.</p>
 
 <div class="grid grid-2" style="margin:20px 0">
@@ -209,7 +209,7 @@ select vwap:wavg[sz;px] by sym from trades
     <h4 style="margin-top:0;color:var(--green)">Engine &rarr; Arrow: zero-copy</h4>
     <p class="small mb-0">The <code>ArrowArray</code>'s data buffer <em>is</em> the Amber column's
     payload, and its release callback drops the Amber refcount. Symbol columns are materialised to
-    utf8 — Amber stores interned int32 ids, Arrow wants offsets and bytes, and no pointer arithmetic
+    utf8, because Amber stores interned int32 ids, Arrow wants offsets and bytes, and no pointer arithmetic
     bridges that.</p>
   </div>
   <div class="card">
@@ -255,7 +255,7 @@ assert arrow_buffer.address == raw.handle()</code></pre></div>
 <div class="note note-warn">
   <span class="note-title">datetime64 columns are not re-based</span>
   <p><code>Table.from_pandas</code> maps object/string columns to <strong>symbol</strong> vectors (four
-  bytes a row, integer comparisons — the reason Amber groups and joins fast on <code>sym</code>) and
+  bytes a row, integer comparisons, which is why Amber groups and joins fast on <code>sym</code>) and
   <code>datetime64</code> columns to int64 nanoseconds <strong>without re-basing the epoch</strong>,
   since Amber's own timestamps count from 2000-01-01 and silently shifting your data by thirty years
   would be worse than leaving it where pandas had it. See
@@ -267,7 +267,7 @@ assert arrow_buffer.address == raw.handle()</code></pre></div>
 GIL held and never releases it</strong>, which makes the GIL the engine's lock for free.</p>
 <p>That is deliberate. Releasing the GIL around a long evaluation would let a second Python thread
 re-enter the interpreter mid-evaluation, and the resulting corruption would be intermittent,
-timing-dependent and effectively unattributable — the worst possible failure mode in exchange for
+timing-dependent and effectively unattributable: the worst possible failure mode in exchange for
 parallelism you can get safely another way. If you need concurrency, use several Amber
 <strong>processes</strong>, which is what the engine's own <code>peach</code> does.</p>
 
@@ -279,7 +279,7 @@ parallelism you can get safely another way. If you need concurrency, use several
     <tr><td><code>ImportError: libamber.so: cannot open shared object file</code></td>
         <td>The wheel was built with <code>AMBER_BUNDLE=0</code>, or the library moved after install. Reinstall with bundling on, or put <code>libamber.so</code> on <code>LD_LIBRARY_PATH</code>.</td></tr>
     <tr><td><code>AmberError: 'value</code> on a name that clearly exists</td>
-        <td>The standard library did not load. Check <code>am.home()</code>; if it is <code>None</code> you have a bare engine — primitives only, no <code>gentq</code>, no <code>select</code>. Set <code>$AMBER_HOME</code>.</td></tr>
+        <td>The standard library did not load. Check <code>am.home()</code>; if it is <code>None</code> you have a bare engine, with primitives only, no <code>gentq</code> and no <code>select</code>. Set <code>$AMBER_HOME</code>.</td></tr>
     <tr><td><code>ImportError: libamber ABI mismatch</code></td>
         <td>Extension and library came from different engine versions. Rebuild one; the message names both ABI numbers.</td></tr>
     <tr><td>Underscores in Amber names</td>

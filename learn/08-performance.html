@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Making it fast — fusion, windows, aggregates, charts and parallelism</title>
+<title>Making it fast: fusion, windows, aggregates, charts and parallelism</title>
 <meta name="description" content="What the compiler fuses for you, the one-pass moving windows and group aggregates, drawing charts in the terminal, and running work across cores.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Making it fast — fusion, windows, aggregates, charts and parallelism">
+<meta property="og:title" content="Making it fast: fusion, windows, aggregates, charts and parallelism">
 <meta property="og:description" content="What the compiler fuses for you, the one-pass moving windows and group aggregates, drawing charts in the terminal, and running work across cores.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
@@ -52,7 +52,7 @@
 
 <span class="pill pill-accent" style="margin-bottom:14px;display:inline-flex">Chapter 8 of 8</span>
 
-<h1>Making it fast — fusion, windows, aggregates, charts and parallelism</h1>
+<h1>Making it fast: fusion, windows, aggregates, charts and parallelism</h1>
 
 <p>Amber's position is that the idiomatic spelling should also be the fast one. Mostly that is true because the compiler recognises shapes and the library exposes one-pass kernels. This chapter is the list of both, so you know what you are already getting.</p>
 
@@ -63,7 +63,7 @@
 <div class="table-wrap">
 <table>
 <thead><tr><th>write</th><th>instead of</th><th>what it saves</th></tr></thead>
-<tbody><tr><td><code>+/x*y</code></td><td>materialising <code>x*y</code></td><td>the product vector — a fused dot product</td></tr><tr><td><code>+/x&lt;50</code></td><td><code>#&amp;x&lt;50</code></td><td>the mask and the index vector</td></tr><tr><td><code>x@&amp;m</code></td><td><code>&amp;m</code> then index</td><td>the index vector</td></tr><tr><td><code>+/x@&amp;m</code></td><td>compress then sum</td><td>both, in one pass</td></tr><tr><td><code>a+s*b</code></td><td>two statements</td><td>one pass, product rounded then added</td></tr><tr><td><code>+/(a+s*b)@&amp;m</code></td><td>three statements</td><td>the whole chain in one pass</td></tr><tr><td><code>x@&lt;x</code></td><td>grade then gather</td><td>a value sort with no gather</td></tr></tbody>
+<tbody><tr><td><code>+/x*y</code></td><td>materialising <code>x*y</code></td><td>the product vector, in a fused dot product</td></tr><tr><td><code>+/x&lt;50</code></td><td><code>#&amp;x&lt;50</code></td><td>the mask and the index vector</td></tr><tr><td><code>x@&amp;m</code></td><td><code>&amp;m</code> then index</td><td>the index vector</td></tr><tr><td><code>+/x@&amp;m</code></td><td>compress then sum</td><td>both, in one pass</td></tr><tr><td><code>a+s*b</code></td><td>two statements</td><td>one pass, product rounded then added</td></tr><tr><td><code>+/(a+s*b)@&amp;m</code></td><td>three statements</td><td>the whole chain in one pass</td></tr><tr><td><code>x@&lt;x</code></td><td>grade then gather</td><td>a value sort with no gather</td></tr></tbody>
 </table>
 </div>
 
@@ -73,7 +73,7 @@ y: 1000 ? 100.0
 +/ x @ &amp; x &gt; 50        / fused masked sum
 x @ &lt; x                / fused value sort</code></pre></div>
 
-<p>You can see it for yourself — <code>\disasm</code> prints the bytecode:</p>
+<p>You can see it for yourself, because <code>\disasm</code> prints the bytecode:</p>
 
 <div class="code"><pre><code class="lang-sh">\disasm +/x*y</code></pre></div>
 
@@ -108,7 +108,7 @@ gfirst[k; v]  /  glast[k; v]</code></pre></div>
 
 <h2 id="charts-in-the-terminal">Charts, in the terminal</h2>
 
-<p>No dependencies, no window, no browser — braille line charts, candles and histograms drawn straight into the REPL:</p>
+<p>No dependencies, no window, no browser. Braille line charts, candles and histograms drawn straight into the REPL:</p>
 
 <div class="code"><pre><code class="lang-q">plot 14*{sin x%7}&#x27;!74
 hist 1000?100.0
@@ -128,7 +128,7 @@ chart `x`y`xunit ! (0 1 2; 10 12 11.0; `num)</code></pre></div>
 
 <h2 id="across-cores">Across cores</h2>
 
-<p><code>peach</code> forks worker processes — real parallelism, no interpreter lock — and is worth it when the per-item work is heavy:</p>
+<p><code>peach</code> forks worker processes, giving real parallelism with no interpreter lock, and is worth it when the per-item work is heavy:</p>
 
 <div class="code"><pre><code class="lang-q">peach[{avg x ? 1.0}; 4 # 100000]</code></pre></div>
 
@@ -146,11 +146,11 @@ chart `x`y`xunit ! (0 1 2; 10 12 11.0; `num)</code></pre></div>
 <h2 id="where-to-go-next">Where to go next</h2>
 
 <ul>
-<li><a href="../docs/language.html">Language reference</a> — every verb, adverb and clause</li>
-<li><a href="../docs/gotchas.html">Gotchas</a> — the silent failures worth knowing about</li>
-<li><a href="../tutorials/index.html">Applied tutorials</a> — a tick store, Grafana, Arrow</li>
-<li><a href="../docs/performance.html">Performance</a> — how to make your own code fast</li>
-<li><code>\l examples/tour.k</code> at the prompt — a worked example of every function</li>
+<li><a href="../docs/language.html">Language reference</a>: every verb, adverb and clause</li>
+<li><a href="../docs/gotchas.html">Gotchas</a>: the silent failures worth knowing about</li>
+<li><a href="../tutorials/index.html">Applied tutorials</a>: a tick store, Grafana, Arrow</li>
+<li><a href="../docs/performance.html">Performance</a>: how to make your own code fast</li>
+<li><code>\l examples/tour.k</code> at the prompt: a worked example of every function</li>
 </ul>
 
 <div class="pager">

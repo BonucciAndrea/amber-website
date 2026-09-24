@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>amber-jupyter — a native Amber kernel for Jupyter</title>
+<title>amber-jupyter: a native Amber kernel for Jupyter</title>
 <meta name="description" content="Install the Amber Jupyter kernel, run Amber cells and %%python cells in one process, and tune memory with batch_rows so a 400-million-row result streams instead of materialising.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="amber-jupyter — a native Amber kernel for Jupyter">
+<meta property="og:title" content="amber-jupyter: a native Amber kernel for Jupyter">
 <meta property="og:description" content="Install the Amber Jupyter kernel, run Amber cells and %%python cells in one process, and tune memory with batch_rows so a 400-million-row result streams instead of materialising.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
@@ -48,7 +48,7 @@
 <a href="../ecosystem/amber-ai.html">amber-ai</a>
 </aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../ecosystem/index.html">Ecosystem</a> / amber-jupyter</div>
 <h1>amber-jupyter</h1>
-<p class="lead">A Jupyter kernel for the Amber columnar time-series engine — with a zero-copy handoff
+<p class="lead">A Jupyter kernel for the Amber columnar time-series engine, with a zero-copy handoff
 to Python in the same process.</p>
 
 <div class="badge-row" style="margin-bottom:26px">
@@ -90,7 +90,7 @@ jupyter lab</code></pre></div>
 <h2>Design</h2>
 
 <h3>Cells are Amber. <code>%%python</code> is the escape hatch.</h3>
-<p>The inverse — a Python kernel with an <code>%%amber</code> magic — was the other option, and it
+<p>The inverse, a Python kernel with an <code>%%amber</code> magic, was the other option, and it
 inverts the emphasis. In a notebook about market data, the Amber <em>is</em> the content and the
 Python is the tool you reach for at the edges. So Amber gets the unmarked case, <code>Out</code> is
 Amber-shaped, and the rich display is a data grid rather than a <code>repr</code>.</p>
@@ -109,7 +109,7 @@ as the NumPy array exists.</p>
 <table>
   <thead><tr><th style="width:32%">Expression</th><th>What it gives you</th></tr></thead>
   <tbody>
-    <tr><td><code>A.trades</code></td><td>the global, converted — a <code>Table</code> whose numeric columns are NumPy <strong>views</strong></td></tr>
+    <tr><td><code>A.trades</code></td><td>the global, converted: a <code>Table</code> whose numeric columns are NumPy <strong>views</strong></td></tr>
     <tr><td><code>A.raw("trades")</code></td><td>the unconverted <code>Value</code>, for handing straight back to the engine</td></tr>
     <tr><td><code>A["signal"] = arr</code></td><td>bind a global from NumPy, pandas, a list, a dict …</td></tr>
     <tr><td><code>A.q("select … from t")</code></td><td>run a qSQL query from Python</td></tr>
@@ -127,7 +127,7 @@ other cells run, and a proxy that cached would show you the notebook as of whene
   <thead><tr><th style="width:26%">Magic</th><th>Effect</th></tr></thead>
   <tbody>
     <tr><td><code>%%python</code></td><td>run the cell as Python, in this process. State persists across cells.</td></tr>
-    <tr><td><code>%%amber</code></td><td>explicit — cells are Amber by default</td></tr>
+    <tr><td><code>%%amber</code></td><td>explicit, since cells are Amber by default</td></tr>
     <tr><td><code>%%time</code></td><td>wall-clock the cell</td></tr>
     <tr><td><code>%load file.k</code></td><td>load a script, as <code>\l</code> does at the REPL</td></tr>
     <tr><td><code>%ast EXPR</code></td><td>the parse tree, as the engine's <code>\ast</code> prints it</td></tr>
@@ -137,7 +137,7 @@ other cells run, and a proxy that cached would show you the notebook as of whene
 </table>
 </div>
 <p class="small muted">The three introspection magics print from C straight to file descriptor 1, so
-capturing them needs the <strong>descriptor</strong> redirected, not <code>sys.stdout</code> rebound —
+capturing them needs the <strong>descriptor</strong> redirected rather than <code>sys.stdout</code> rebound;
 the C side never looks at Python's stdout object. There is a test for that, because it is the kind of
 thing that works in development and silently prints into the terminal in production.</p>
 
@@ -158,9 +158,9 @@ total</code></pre></div>
 <table>
   <thead><tr><th style="width:22%"><code>batch_rows</code></th><th>When to use it</th></tr></thead>
   <tbody>
-    <tr><td><code>0</code> (default)</td><td>65,536 — the Arrow ecosystem's converged default. Per-batch overhead has disappeared and a handful of columns still fits in L2/L3.</td></tr>
+    <tr><td><code>0</code> (default)</td><td>65,536, the Arrow ecosystem's converged default. Per-batch overhead has disappeared and a handful of columns still fits in L2/L3.</td></tr>
     <tr><td><code>250_000 – 1_000_000</code></td><td>Aggregating in NumPy or pandas per batch. Fewer Python-level iterations; still tens of megabytes per column at most.</td></tr>
-    <tr><td>whole table</td><td>Only when the result is small — a <code>by sym</code> aggregate, a mart, a day of bars. <code>t.to_pandas()</code> is the right call there.</td></tr>
+    <tr><td>whole table</td><td>Only when the result is small: a <code>by sym</code> aggregate, a mart, a day of bars. <code>t.to_pandas()</code> is the right call there.</td></tr>
   </tbody>
 </table>
 </div>
@@ -168,7 +168,7 @@ total</code></pre></div>
 <div class="note note-ok">
   <span class="note-title">Batches do not add memory pressure the way slices would</span>
   <p>Every batch is a <em>window</em> onto one export, so raising <code>batch_rows</code> does not
-  duplicate the data — it changes how much of the engine's existing buffer each Arrow object addresses
+  duplicate the data. It changes how much of the engine's existing buffer each Arrow object addresses
   and how many Python objects you create. The memory you save with a small
   <code>batch_rows</code> is whatever <em>your</em> loop body materialises, not the column
   itself.</p>
@@ -181,7 +181,7 @@ fixed-width text block cannot be scrolled or read at 200,000 rows. So a notebook
 three rules:</p>
 <ul>
   <li><strong>Show the shape, not just the values.</strong> Every column header carries its Amber type
-  tag — <code>f</code> float, <code>j</code> long, <code>s</code> symbol, <code>t</code> time. Key
+  tag: <code>f</code> float, <code>j</code> long, <code>s</code> symbol, <code>t</code> time. Key
   columns of a <code>by</code> result are marked.</li>
   <li><strong>Never render a million rows.</strong> A notebook that tries produces a 400 MB document
   that locks the browser tab. The grid caps its body at <strong>500 rows</strong> and reports the true
@@ -190,13 +190,13 @@ three rules:</p>
   literal fallback, so a table rendered under the light theme stays legible when you switch to dark
   without re-running the cell.</li>
 </ul>
-<p>Every rich output also carries <code>text/plain</code> — the engine's own rendering, ANSI stripped —
+<p>Every rich output also carries <code>text/plain</code>, the engine's own rendering with ANSI stripped,
 because notebooks get exported to scripts, diffed in git, and read over terminal clients, and in all
 three the HTML is useless.</p>
 
 <h2>Completion and inspection</h2>
 <p>Tab completion draws its candidates from the <strong>live</strong> engine namespace, not from a
-static vocabulary file — so a function you defined two cells ago completes, and so does a column of a
+static vocabulary file, so a function you defined two cells ago completes, and so does a column of a
 table you just created. <kbd>Shift-Tab</kbd> on a name shows its type, its count, and its current
 value.</p>
 
@@ -212,9 +212,9 @@ three introspection magics.</p>
 python -m amber_kernel.install --sys-prefix
 python -m pytest tests -q</code></pre></div>
 <p>18 tests, driven over ZMQ against a <strong>real kernel process</strong> rather than by calling
-<code>do_execute</code> in-process. Most of what goes wrong with a kernel — the kernelspec pointing at
+<code>do_execute</code> in-process. Most of what goes wrong with a kernel (the kernelspec pointing at
 the wrong interpreter, the engine failing to boot in a fresh process, output landing on the wrong
-stream, a magic swallowing a reply — is invisible to a test that never starts a process.</p>
+stream, a magic swallowing a reply) is invisible to a test that never starts a process.</p>
 
 <div class="pager">
   <a href="../ecosystem/amber-arrow.html"><span class="dir">Previous</span><span class="ttl">amber-arrow</span></a>

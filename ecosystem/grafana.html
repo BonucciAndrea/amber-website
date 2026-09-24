@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Grafana Amber datasource — complete setup guide</title>
+<title>Grafana Amber datasource: complete setup guide</title>
 <meta name="description" content="Build the Go backend with mage, register the plugin with allow_loading_unsigned_plugins, provision the datasource, and create panels over bare qSQL with epoch-correct time macros.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Grafana Amber datasource — complete setup guide">
+<meta property="og:title" content="Grafana Amber datasource: complete setup guide">
 <meta property="og:description" content="Build the Go backend with mage, register the plugin with allow_loading_unsigned_plugins, provision the datasource, and create panels over bare qSQL with epoch-correct time macros.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
@@ -62,7 +62,7 @@ column-oriented on the wire, and the time axis knows that Amber counts from 2000
 <h2>Architecture</h2>
 <p>The plugin keeps a deliberate separation. <code>pkg/amberd</code> holds the wire protocol, the
 columnar decode, the temporal conversions and the connection pool, using <strong>only Go's standard
-library</strong> — and it has 26 tests that run against a real <code>amberd</code> on a real socket.
+library</strong>, and it has 26 tests that run against a real <code>amberd</code> on a real socket.
 <code>pkg/plugin</code> holds the Grafana-specific integration.</p>
 
 <div class="note note-info">
@@ -73,14 +73,14 @@ library</strong> — and it has 26 tests that run against a real <code>amberd</c
 
 <h2>Prerequisites</h2>
 <ul>
-  <li>The Amber engine built as a shared library — <code>./build.sh --shared</code></li>
-  <li><code>amberd</code>, which ships with <a href="../ecosystem/amber-arrow.html">amber-arrow</a> — <code>./build.sh --amberd</code></li>
+  <li>The Amber engine built as a shared library: <code>./build.sh --shared</code></li>
+  <li><code>amberd</code>, which ships with <a href="../ecosystem/amber-arrow.html">amber-arrow</a>: <code>./build.sh --amberd</code></li>
   <li>A Go toolchain and <a href="https://magefile.org" target="_blank" rel="noopener">Mage</a></li>
   <li>Node.js and npm, for the frontend</li>
   <li>Grafana 10.0 or newer</li>
 </ul>
 
-<h2>1 &mdash; Build the plugin</h2>
+<h2>1 &middot; Build the plugin</h2>
 <div class="code"><pre><code class="lang-sh">git clone https://github.com/BonucciAndrea/grafana-amber-datasource
 cd grafana-amber-datasource
 
@@ -102,7 +102,7 @@ binary for every supported platform and writes the results into <code>dist/</cod
   using the containerised stack). There is no way around it.</p>
 </div>
 
-<h2>2 &mdash; <code>plugin.json</code></h2>
+<h2>2 &middot; <code>plugin.json</code></h2>
 <p>The plugin's identity. The <code>id</code> is what every later configuration step refers to, and it
 must match exactly.</p>
 
@@ -136,7 +136,7 @@ must match exactly.</p>
 <table>
   <thead><tr><th style="width:24%">Field</th><th>Why it is set this way</th></tr></thead>
   <tbody>
-    <tr><td><code>"backend": true</code></td><td>All the logic — protocol, decode, temporal conversion — is in Go. The frontend only builds queries.</td></tr>
+    <tr><td><code>"backend": true</code></td><td>All the logic (protocol, decode, temporal conversion) is in Go. The frontend only builds queries.</td></tr>
     <tr><td><code>"executable": "gpx_amber"</code></td><td>Grafana appends <code>_&lt;os&gt;_&lt;arch&gt;</code> and launches that binary. <code>mage</code> produces exactly those names.</td></tr>
     <tr><td><code>"metrics": true</code></td><td>The datasource can back any panel, not only a time series.</td></tr>
     <tr><td><code>"alerting": false</code></td><td>Deliberate: <code>amberd</code> is single-threaded and unauthenticated. Alert rules would hammer it on their own schedule.</td></tr>
@@ -144,19 +144,19 @@ must match exactly.</p>
 </table>
 </div>
 
-<h2>3 &mdash; Install the plugin into Grafana</h2>
+<h2>3 &middot; Install the plugin into Grafana</h2>
 <div class="code"><pre><code class="lang-sh">cp -r dist "$GRAFANA_PLUGINS/bonucciandrea-amber-datasource"</code></pre></div>
 <p><code>$GRAFANA_PLUGINS</code> is usually <code>/var/lib/grafana/plugins</code> on a package install,
 or <code>&lt;grafana&gt;/data/plugins</code> on a tarball install.</p>
 
-<h2>4 &mdash; Allow the unsigned plugin</h2>
+<h2>4 &middot; Allow the unsigned plugin</h2>
 <div class="note note-warn">
   <span class="note-title">Grafana refuses unsigned plugins by default</span>
   <p>A locally built plugin has no signature. Without this step the plugin is present on disk, absent
   from the datasource list, and the only clue is one line in the Grafana log.</p>
 </div>
 
-<p>Pick <em>one</em> of the three forms — they are the same setting.</p>
+<p>Pick <em>one</em> of the three forms. They are the same setting.</p>
 
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">grafana.ini</span></div><pre><code class="lang-ini">[plugins]
 allow_loading_unsigned_plugins = bonucciandrea-amber-datasource</code></pre></div>
@@ -180,13 +180,13 @@ allow_loading_unsigned_plugins = bonucciandrea-amber-datasource</code></pre></di
 <div class="code"><pre><code class="lang-sh">grep -i "amber" /var/log/grafana/grafana.log | head
 # ... "Plugin registered" logger=plugin.loader pluginID=bonucciandrea-amber-datasource</code></pre></div>
 
-<h2>5 &mdash; Start <code>amberd</code></h2>
+<h2>5 &middot; Start <code>amberd</code></h2>
 <div class="code"><pre><code class="lang-sh">amberd --home /path/to/amber --port 5012 \
        --load /path/to/amber-tick/q/amber-tick.k \
        --eval 'tk.root:"/srv/store"; tk.init[]' \
        --mode jsonc -v</code></pre></div>
 
-<h2>6 &mdash; Provision the datasource</h2>
+<h2>6 &middot; Provision the datasource</h2>
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">provisioning/datasources/amber.yaml</span></div><pre><code class="lang-yaml"># amberd has no authentication: anything that can open the socket can evaluate
 # arbitrary Amber. Keep it on loopback (or inside the compose network, as here)
 # and never expose the port.
@@ -226,7 +226,7 @@ datasources:
 </table>
 </div>
 
-<h2>7 &mdash; Create a panel</h2>
+<h2>7 &middot; Create a panel</h2>
 <p>The query editor takes six things: the qSQL source, the reply format, the time unit, which column
 is the time axis, a row cap, and whether to substitute the panel's time range.</p>
 
@@ -253,11 +253,11 @@ cannot pick the wrong one by accident.</p>
 
 <h3>Editor features</h3>
 <ul>
-  <li><strong>Live completion from the engine</strong> — table names and their real column names, asked
+  <li><strong>Live completion from the engine</strong>: table names and their real column names, asked
   for at edit time, not read from a static list.</li>
   <li><strong>Real-time syntax validation</strong> via the engine's <code>\parse</code>, which runs the
   real parser and never touches the compiler or the evaluator. Nothing you type is executed.</li>
-  <li><strong>Verbatim engine diagnostics on failure</strong> — the <code>error[E0101]</code> report
+  <li><strong>Verbatim engine diagnostics on failure</strong>: the <code>error[E0101]</code> report
   you would have seen at the prompt, in the panel.</li>
 </ul>
 
@@ -282,8 +282,8 @@ cannot pick the wrong one by accident.</p>
   </div>
   <div class="card">
     <h4 style="margin-top:0;color:var(--text)">Pooled connections, one engine</h4>
-    <p class="small mb-0"><code>amberd</code> is single-threaded by design. Pooling means several
-    panels queue on the engine rather than on each other's sockets — and the fix for a slow dashboard
+    <p class="small mb-0"><code>amberd</code> is single-threaded on purpose. Pooling means several
+    panels queue on the engine rather than on each other's sockets, and the fix for a slow dashboard
     is a mart, not more connections.</p>
   </div>
 </div>
@@ -313,7 +313,7 @@ cd grafana &amp;&amp; ./run.sh                             # http://localhost:30
     <tr><td>Provisioned datasource cannot reach <code>amberd</code> outside Compose</td>
         <td>The provisioning file points at the Compose service name <code>amberd</code>, which does not exist outside Compose. Change <code>host</code> to <code>127.0.0.1</code>.</td></tr>
     <tr><td><code>permission denied … /var/run/docker.sock</code></td>
-        <td>Your user is not in the <code>docker</code> group. <code>sudo usermod -aG docker "$USER" &amp;&amp; newgrp docker</code>. On a snap install you must <code>sudo addgroup --system docker</code> first — the snap does not create it.</td></tr>
+        <td>Your user is not in the <code>docker</code> group. <code>sudo usermod -aG docker "$USER" &amp;&amp; newgrp docker</code>. On a snap install you must <code>sudo addgroup --system docker</code> first, because the snap does not create it.</td></tr>
     <tr><td>Everything looks right, times are thirty years off</td>
         <td>The panel's time unit is <code>ms-unix</code> against a <code>ns-2000</code> column. See <a href="../docs/temporal.html">Temporal mechanics</a>.</td></tr>
   </tbody>

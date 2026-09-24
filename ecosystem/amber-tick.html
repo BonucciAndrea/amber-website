@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>amber-tick — tick capture, a partitioned store and a live pipeline</title>
+<title>amber-tick: tick capture, a partitioned store and a live pipeline</title>
 <meta name="description" content="A US-equity market simulator checked against 21 stylized facts, a splayed partitioned column store in Amber's own binary format, TAQ analytics, and a tickerplant/RDB/HDB pipeline.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="amber-tick — tick capture, a partitioned store and a live pipeline">
+<meta property="og:title" content="amber-tick: tick capture, a partitioned store and a live pipeline">
 <meta property="og:description" content="A US-equity market simulator checked against 21 stylized facts, a splayed partitioned column store in Amber's own binary format, TAQ analytics, and a tickerplant/RDB/HDB pipeline.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
@@ -60,7 +60,7 @@ tickerplant / RDB / HDB pipeline, a Jupyter notebook, and provisioned Grafana da
 </div>
 
 <p>Nothing here modifies the engine. <code>amber-tick</code> consumes Amber the way any application
-should — through <code>libamber.so</code>, the <code>src/ext.h</code> C API seam, and
+should: through <code>libamber.so</code>, the <code>src/ext.h</code> C API seam, and
 <code>amberd</code>'s TCP port.</p>
 
 <div class="diagram">
@@ -201,7 +201,7 @@ writes roughly 10 GB.</p>
 </table>
 </div>
 
-<h2>The realism is the point</h2>
+<h2>Realism, and how it is checked</h2>
 <p><code>tests/validate.py</code> checks <strong>twenty-one published stylized facts</strong> on every
 generated store, and all twenty-one pass:</p>
 
@@ -237,7 +237,7 @@ languages</a>.</p>
 <div class="step"><span class="n">3</span>
   <h3>Quotes first</h3>
   <p class="small">The NBBO is a function of the efficient price and a spread state, quantised to the
-  symbol's tick — a penny, a half penny under the sub-penny rule, or an oh-one for names under a
+  symbol's tick: a penny, a half penny under the sub-penny rule, or an oh-one for names under a
   dollar.</p>
 </div>
 <div class="step"><span class="n">4</span>
@@ -258,7 +258,7 @@ near 0.6% of shares outstanding a day. The tickers are generated and any resembl
 symbol is coincidence.</p>
 
 <h3>Scaling</h3>
-<p><code>--rows</code> is a target, and the generator solves for the arrival intensity that hits it —
+<p><code>--rows</code> is a target, and the generator solves for the arrival intensity that hits it
 analytically, before drawing a single random number. <code>--rows natural</code> generates the full
 tape the universe implies (about 260 M rows for 500 symbols over 5 sessions). Scaling changes the
 message <em>rate</em> only; the cross-sectional distribution, the clustering, the intraday curves and
@@ -284,7 +284,7 @@ the trade-quote consistency are all invariant to it, and the generator says so o
   <div class="card">
     <h4 style="margin-top:0;color:var(--text)">Each file is an Amber value</h4>
     <p class="small mb-0">Four bytes of magic, a type tag, an attribute byte, a 64-bit count, then the
-    raw payload in native layout — the format <code>-8!</code> emits and <code>-9!</code> reads.
+    raw payload in native layout, which is the format <code>-8!</code> emits and <code>-9!</code> reads.
     <code>amber_tick/amberbin.py</code> writes it directly from NumPy, and its output is
     <strong>byte-identical to the engine's own</strong> for every type it emits.</p>
   </div>
@@ -307,7 +307,7 @@ the trade-quote consistency are all invariant to it, and the generator says so o
   <thead><tr><th style="width:22%">File</th><th>What it is</th></tr></thead>
   <tbody>
     <tr><td><code>q/tick.k</code></td><td>loads the store: partitions, columns, enumeration, attributes</td></tr>
-    <tr><td><code>q/taq.k</code></td><td>trade-and-quote analytics — where the substance is</td></tr>
+    <tr><td><code>q/taq.k</code></td><td>trade-and-quote analytics, where the substance is</td></tr>
     <tr><td><code>q/grafana.k</code></td><td>the query surface the dashboards call, one function per panel</td></tr>
     <tr><td><code>q/amber-tick.k</code></td><td>loads all three in the right order</td></tr>
   </tbody>
@@ -339,10 +339,10 @@ python -m amber_tick.runtime.feed --store store --part 2026.08.21 --speed 60</co
 <table>
   <thead><tr><th style="width:18%">Process</th><th>What it does</th></tr></thead>
   <tbody>
-    <tr><td><code>tickerplant</code></td><td>Assigns the sequence numbers and is the only thing that decides what order events happened in. It <strong>writes the log before it publishes</strong>, so a subscriber can never see a message the log does not already contain — which is what makes recovery just a replay from the last acknowledged sequence number. Each subscriber gets a bounded queue and its own writer thread; a slow consumer is dropped rather than allowed to stall the tape.</td></tr>
-    <tr><td><code>rdb</code></td><td>Keeps today's tape in NumPy and materialises it into the engine only when a query needs it — Amber tables are immutable values, so appending a batch at a time into the engine would be quadratic. At end of day it writes what it holds straight into a new partition and empties.</td></tr>
+    <tr><td><code>tickerplant</code></td><td>Assigns the sequence numbers and is the only thing that decides what order events happened in. It <strong>writes the log before it publishes</strong>, so a subscriber can never see a message the log does not already contain, which is what makes recovery just a replay from the last acknowledged sequence number. Each subscriber gets a bounded queue and its own writer thread; a slow consumer is dropped rather than allowed to stall the tape.</td></tr>
+    <tr><td><code>rdb</code></td><td>Keeps today's tape in NumPy and materialises it into the engine only when a query needs it, because Amber tables are immutable values and appending a batch at a time into the engine would be quadratic. At end of day it writes what it holds straight into a new partition and empties.</td></tr>
     <tr><td><code>feed</code></td><td>Replays a stored partition, either as fast as the socket will take it or on the tape's own clock compressed by <code>--speed</code>.</td></tr>
-    <tr><td><code>gateway</code></td><td>Routes a query across the RDB and the historical partitions and folds the results, with the combine rule as an explicit parameter — because you cannot average five partitions' averages and get a VWAP.</td></tr>
+    <tr><td><code>gateway</code></td><td>Routes a query across the RDB and the historical partitions and folds the results, with the combine rule as an explicit parameter, because you cannot average five partitions' averages and get a VWAP.</td></tr>
   </tbody>
 </table>
 </div>
@@ -351,14 +351,14 @@ python -m amber_tick.runtime.feed --store store --part 2026.08.21 --speed 60</co
 it, inspecting it, and querying it are operations you already know.</p>
 
 <h2>Dashboards</h2>
-<p>Three, provisioned — see the <a href="../ecosystem/grafana.html">Grafana datasource</a> page
+<p>Three, provisioned. See the <a href="../ecosystem/grafana.html">Grafana datasource</a> page
 and the <a href="../tutorials/grafana-pipeline.html">end-to-end tutorial</a>.</p>
 <ul>
-  <li><strong>Market overview</strong> — consolidated notional per minute, the intraday volume curve,
+  <li><strong>Market overview</strong>: consolidated notional per minute, the intraday volume curve,
   effective versus quoted spread, where the volume printed, and the day's most traded names.</li>
-  <li><strong>Symbol microstructure</strong> — one name: one-minute bars against VWAP, the buy/sell
+  <li><strong>Symbol microstructure</strong>, for one name: one-minute bars against VWAP, the buy/sell
   split, effective spread paid, and the ten-level book.</li>
-  <li><strong>Execution quality</strong> — effective spread and price improvement by venue, a venue
+  <li><strong>Execution quality</strong>: effective spread and price improvement by venue, a venue
   league table, and the widest spreads by name.</li>
 </ul>
 <p>Every panel is a one-line call into <code>q/grafana.k</code>, so any panel's query can be run in the

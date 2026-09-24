@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>The Pit — make a market, one line of Amber</title>
+<title>The Pit: make a market, one line of Amber</title>
 <meta name="description" content="You are the market maker. Order flow hits you 20 times a second and your quote is one line of Amber, re-evaluated on every tick. Quote too tight and you are picked off; too wide and you never trade.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="The Pit — make a market, one line of Amber">
-<meta property="og:description" content="Order flow hits you 20 times a second. Your quote is one line of Amber, re-evaluated every tick. Same seed, same tape — so scores are comparable.">
+<meta property="og:title" content="The Pit: make a market, one line of Amber">
+<meta property="og:description" content="Order flow hits you 20 times a second. Your quote is one line of Amber, re-evaluated every tick. Same seed, same tape, so scores are comparable.">
 <meta property="og:site_name" content="Amber">
 <meta property="og:url" content="https://amber-lang.org/projects/tape">
 <meta name="twitter:card" content="summary">
@@ -51,7 +51,7 @@
       <div>
         <h1>You are the market maker.</h1>
         <p class="lead">Order flow hits you twenty times a second. Your quote is <strong>one line of Amber</strong>,
-        re-evaluated on every tick, and the whole market — the tape, the fills, your inventory, your P&amp;L —
+        re-evaluated on every tick, and the whole market (the tape, the fills, your inventory, your P&amp;L)
         runs inside the engine. Quote too tight and informed flow picks you off; quote too wide and you never
         trade at all. The same seed is the same tape, so two scores mean something.</p>
       </div>
@@ -72,7 +72,7 @@
         </div>
 
         <div class="tp-exprrow">
-          <label for="tp-expr">Your quote — two numbers, a bid and an ask. It re-runs on every tick.</label>
+          <label for="tp-expr">Your quote: two numbers, a bid and an ask. It re-runs on every tick.</label>
           <div class="tp-input">
             <span class="tp-sigil" aria-hidden="true">&gt;</span>
             <input id="tp-expr" type="text" spellcheck="false" autocapitalize="off" autocomplete="off"
@@ -140,7 +140,7 @@
           <p class="tp-hint">Return two numbers. <code>px+-0.05 0.05</code> is a flat five-cent market;
           subtracting a multiple of <code>inv</code> leans your quote against the position you already have.</p>
           <p class="tp-hint">The mid is <code>px</code> and not <code>mid</code> on purpose: <code>mid</code> is a
-          real fin.k verb — the midpoint of a quote table — that <code>spreadbps</code>, <code>tsign</code> and
+          real fin.k verb, the midpoint of a quote table, that <code>spreadbps</code>, <code>tsign</code> and
           <code>effspread</code> all call, so the game leaves it alone.</p>
         </div>
       </aside>
@@ -164,7 +164,7 @@
         side of the mid.</p>
         <p>Buyers and sellers arrive about twelve times a second. A buyer who is willing to pay your
         ask lifts it, and you are now <em>short</em>. A seller who will take your bid hits it, and
-        you are <em>long</em>. You never choose to trade — you only choose your prices.</p>
+        you are <em>long</em>. You never choose to trade. You only choose your prices.</p>
       </div>
       <div class="card">
         <h3>2 · Tight quotes get picked off</h3>
@@ -172,8 +172,8 @@
         takes your quote tends to be <strong>right</strong>: you sell just before the price rises,
         and buy just before it falls. That is <em>adverse selection</em>, and it is what makes the
         <code>suicide</code> preset lose money on every seed despite trading constantly.</p>
-        <p>Widening your quote earns more per fill and gets you fewer of the bad ones — up to a
-        point, after which you simply stop trading.</p>
+        <p>Widening your quote earns more per fill and gets you fewer of the bad ones, up to a
+        point, after which you stop trading.</p>
       </div>
       <div class="card">
         <h3>3 · Inventory is the other risk</h3>
@@ -189,14 +189,14 @@
     <h3 class="tp-h3">Reading the screen</h3>
     <ul class="tp-list">
       <li><strong>The white line</strong> is the mid. <strong>The amber band</strong> is your own bid
-      and ask, drawn around it — when the band is wide you are quoting defensively.</li>
+      and ask, drawn around it. When the band is wide you are quoting defensively.</li>
       <li><strong>Amber dots</strong> are fills where you bought, <strong>cyan dots</strong> where
       you sold. Their size is the trade size.</li>
       <li><strong>Edge captured</strong> is the total distance between your fill prices and the mid
       at the moment each one happened. It is your gross income; P&amp;L is what is left after the
       market moves against your position.</li>
       <li><strong>Max drawdown</strong> is the worst fall from your best P&amp;L so far. Two quotes
-      can end at the same number and be wildly different trades — this is where you see it.</li>
+      can end at the same number and be wildly different trades, which is where you see it.</li>
       <li><strong>The tape</strong> prints every fill: side, size, price, and the edge in cents
       versus the mid at that instant. A run of negative numbers means you are being run over.</li>
     </ul>
@@ -215,10 +215,10 @@
 
     <h3 class="tp-h3">Comparing scores</h3>
     <p>The tape is generated from the <strong>seed</strong>, up front, before you trade. The same seed
-    is the same market, every time, for everyone — so <strong>Share</strong> copies a link carrying
+    is the same market, every time, for everyone. <strong>Share</strong> copies a link carrying
     both your quote and the seed, and whoever opens it is trading against exactly the tape you did.
     Changing the seed gives you a different market to test against, which is the honest way to find
-    out whether a quote is good or merely lucky.</p>
+    out whether a quote is good or lucky.</p>
   </div>
 </section>
 </main>

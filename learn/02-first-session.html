@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Your first session — install, the REPL, and the types</title>
+<title>Your first session: install, the REPL, and the types</title>
 <meta name="description" content="Getting Amber running, what the REPL gives you, and the full type system in one page: atoms, vectors, the null and infinity values, and how to read type tags.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Your first session — install, the REPL, and the types">
+<meta property="og:title" content="Your first session: install, the REPL, and the types">
 <meta property="og:description" content="Getting Amber running, what the REPL gives you, and the full type system in one page: atoms, vectors, the null and infinity values, and how to read type tags.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
@@ -52,7 +52,7 @@
 
 <span class="pill pill-accent" style="margin-bottom:14px;display:inline-flex">Chapter 2 of 8</span>
 
-<h1>Your first session — install, the REPL, and the types</h1>
+<h1>Your first session: install, the REPL, and the types</h1>
 
 <p>Amber is one folder. There is no installer, nothing is copied anywhere, and deleting the folder uninstalls it completely.</p>
 
@@ -68,7 +68,7 @@ cd amber
 
 <div class="note">
   <span class="note-title">Do not use rlwrap</span>
-  <p>Line editing is built in — history, Ctrl-A/E, Ctrl-W/U/K, reverse search, multi-line continuation. Wrapping Amber in <code>rlwrap</code> fights the built-in editor and gives you a worse terminal, not a better one.</p>
+  <p>Line editing is built in: history, Ctrl-A/E, Ctrl-W/U/K, reverse search, multi-line continuation. Wrapping Amber in <code>rlwrap</code> fights the built-in editor and gives you a worse terminal rather than a better one.</p>
 </div>
 
 <h2 id="the-repl-is-the-documentation">The REPL is the documentation</h2>
@@ -78,7 +78,7 @@ cd amber
 <div class="table-wrap">
 <table>
 <thead><tr><th>command</th><th>what it gives you</th></tr></thead>
-<tbody><tr><td><code>\</code></td><td>the help menu — every topic, one screen</td></tr><tr><td><code>\h</code></td><td>the one-screen cheat-sheet of every verb</td></tr><tr><td><code>\v</code> &middot; <code>\f</code></td><td>variables and functions currently defined</td></tr><tr><td><code>\\</code></td><td>exit</td></tr></tbody>
+<tbody><tr><td><code>\</code></td><td>the help menu, every topic on one screen</td></tr><tr><td><code>\h</code></td><td>the one-screen cheat-sheet of every verb</td></tr><tr><td><code>\v</code> &middot; <code>\f</code></td><td>variables and functions currently defined</td></tr><tr><td><code>\\</code></td><td>exit</td></tr></tbody>
 </table>
 </div>
 
@@ -127,12 +127,12 @@ g[10.5; 100]           / 1050.0</code></pre></div>
 
 <div class="note">
   <span class="note-title">No space before a parameter name</span>
-  <p><code>{[price;size] ...}</code> parses. <code>{[price; size] ...}</code> does <strong>not</strong> — a space may not precede a parameter name, either after <code>[</code> or after a <code>;</code>. Space <em>before</em> the semicolon, before the body, and anywhere in the call is all fine: <code>{[a ;b] a+b}[1; 2]</code> works. It is the one place in the language where whitespace is load-bearing, and it produces a bare syntax error that points at the whole lambda.</p>
+  <p><code>{[price;size] ...}</code> parses. <code>{[price; size] ...}</code> does <strong>not</strong>: a space may not precede a parameter name, either after <code>[</code> or after a <code>;</code>. Space <em>before</em> the semicolon, before the body, and anywhere in the call is all fine: <code>{[a ;b] a+b}[1; 2]</code> works. It is the one place in the language where whitespace is load-bearing, and it produces a bare syntax error that points at the whole lambda.</p>
 </div>
 
 <div class="note">
   <span class="note-title">Two-argument library functions need brackets</span>
-  <p>Built-in <em>verbs</em> like <code>+</code> can be written infix. Library functions are called with brackets: <code>wavg[sz;px]</code>, not <code>sz wavg px</code>. A handful of library dyads do work infix (<code>in</code>, <code>except</code>, <code>xasc</code>, <code>within</code>, <code>fby</code>) — <code>\q</code> lists them.</p>
+  <p>Built-in <em>verbs</em> like <code>+</code> can be written infix. Library functions are called with brackets: <code>wavg[sz;px]</code>, not <code>sz wavg px</code>. A handful of library dyads do work infix (<code>in</code>, <code>except</code>, <code>xasc</code>, <code>within</code>, <code>fby</code>), and <code>\q</code> lists them.</p>
 </div>
 
 <div class="pager">

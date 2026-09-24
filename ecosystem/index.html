@@ -143,7 +143,7 @@ compiled, linked or configured by the engine's build.</p>
     <tr><td><a href="../ecosystem/python-amber.html">python-amber</a></td><td><code>libamber.so</code></td>
         <td><code>pip install amber</code>. Zero-copy NumPy views of Amber columns, pandas and Arrow bridges, dynamic dispatch (<code>am.gentq(10_000_000)</code>).</td></tr>
     <tr><td><a href="../ecosystem/amber-arrow.html">amber-arrow</a></td><td><code>libamber.so</code></td>
-        <td><code>ArrowArrayStream</code> over an Amber table — batches that are <em>windows</em> onto one export, not slices of it. Plus <code>amberd</code>, the TCP query server, and an Arrow Flight daemon.</td></tr>
+        <td><code>ArrowArrayStream</code> over an Amber table: batches that are <em>windows</em> onto one export rather than slices of it. Plus <code>amberd</code>, the TCP query server, and an Arrow Flight daemon.</td></tr>
     <tr><td><a href="../ecosystem/amber-jupyter.html">amber-jupyter</a></td><td><code>python-amber</code></td>
         <td>A Jupyter kernel. Amber cells and <code>%%python</code> cells in <strong>one process</strong>, so a column crosses as a pointer.</td></tr>
     <tr><td><a href="../ecosystem/amber-tick.html">amber-tick</a></td><td>store + runtime</td>
@@ -155,7 +155,7 @@ compiled, linked or configured by the engine's build.</p>
     <tr><td><a href="../ecosystem/amber-ai.html">amber-ai</a></td><td><code>ext/</code> registry</td>
         <td>A local, offline co-pilot that reads your live tables before it answers. One endpoint, <code>127.0.0.1</code>, and it cannot hang or break the REPL.</td></tr>
     <tr><td><a href="https://github.com/BonucciAndrea/amber-flame" target="_blank" rel="noopener">amber-flame</a></td><td><code>python-amber</code> / <code>amberd</code></td>
-        <td>A visual profiler — flamegraphs, Speedscope and Chrome tracing, built on the engine's own <code>\trace</code>.</td></tr>
+        <td>A visual profiler: flamegraphs, Speedscope and Chrome tracing, built on the engine's own <code>\trace</code>.</td></tr>
   </tbody>
 </table>
 </div>
@@ -179,7 +179,7 @@ compiled, linked or configured by the engine's build.</p>
   <div class="card">
     <h4 style="margin-top:0;color:var(--text)"><code>ext/</code> registry</h4>
     <p class="small">Compiled into the binary you already had, plugged in from a constructor. Use it
-    when you are extending the <em>language or the REPL</em> — new verbs, new <code>\</code>-commands,
+    when you are extending the <em>language or the REPL</em>: new verbs, new <code>\</code>-commands,
     editor behaviour.</p>
     <p class="small mb-0 muted">amber-ai</p>
   </div>

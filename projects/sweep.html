@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sweep — Minesweeper with no loop over cells</title>
+<title>Sweep: Minesweeper with no loop over cells</title>
 <meta name="description" content="Minesweeper, where the whole board's adjacent-mine count is a single indexed sum and opening an empty region is a converge. Playable, and the entire game logic is on the page.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Sweep — Minesweeper with no loop over cells">
+<meta property="og:title" content="Sweep: Minesweeper with no loop over cells">
 <meta property="og:description" content="The whole board's neighbour count is one indexed sum; opening an empty region is a converge. Play it, then read the forty lines that run it.">
 <meta property="og:site_name" content="Amber">
 <meta property="og:url" content="https://amber-lang.org/projects/sweep">
@@ -52,7 +52,7 @@
         <h1>Minesweeper, with no loop over cells.</h1>
         <p class="lead">The game you already know how to play. What is worth a look is underneath:
         the whole board's adjacent-mine count is <strong>one indexed sum</strong>, and opening an
-        empty region is a <strong>converge</strong> — keep adding the neighbours of revealed empty
+        empty region is a <strong>converge</strong>: keep adding the neighbours of revealed empty
         cells until the set stops growing. No recursion, no queue, no loop over cells anywhere.
         The entire game is at the bottom of this page.</p>
       </div>
@@ -98,13 +98,13 @@
           <h2>How it works</h2>
           <p class="sw-hint"><code>NI</code> holds, for each of the eight directions, the index of
           that neighbour for <em>every</em> cell at once. <code>NV</code> says whether that neighbour
-          is actually on the board, which is what replaces the usual bounds check.</p>
+          is on the board, which is what replaces the usual bounds check.</p>
           <p class="sw-hint">So the adjacent-mine count for the entire board is
-          <code>cnt: +/NV*mn@NI</code> — index the mine vector by all eight neighbour vectors, mask
+          <code>cnt: +/NV*mn@NI</code>. Index the mine vector by all eight neighbour vectors, mask
           off the edges, and sum.</p>
           <p class="sw-hint">Opening an empty region is
           <code>{x|(|/NV*(x&amp;cnt=0)@NI)}/rv</code>: add the neighbours of every revealed empty
-          cell, and repeat until nothing changes. <code>f/x</code> is convergence — it stops on its
+          cell, and repeat until nothing changes. <code>f/x</code> is convergence, so it stops on its
           own when the set stops growing.</p>
           <p class="sw-hint">The mines are dealt with <code>-M?#ok</code>, a deal rather than a roll,
           because <code>M?n</code> would repeat and quietly give you fewer mines than advertised.</p>
@@ -121,7 +121,7 @@
     </div>
 
     <details class="sw-srcwrap">
-      <summary>The whole game — assets/sweep/sweep.k</summary>
+      <summary>The whole game: assets/sweep/sweep.k</summary>
       <div class="sw-panel"><pre class="sw-src" id="sw-source">loading…</pre></div>
     </details>
   </div>
