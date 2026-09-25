@@ -17,17 +17,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/amber.css?v=4">
 <script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
-<style>
-.bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:1.45em 0}
-@media (max-width:620px){.bg-grid{grid-template-columns:1fr}}
-.bg-card{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);padding:14px 15px 13px}
-.bg-card>code{font-size:.84rem;color:var(--text)}
-.bg-round{display:block;font-size:.61rem;text-transform:uppercase;letter-spacing:.09em;
-  color:var(--text-faint);font-weight:600;margin-top:4px}
-.bg-t{font-family:var(--font-mono);font-size:1.3rem;font-weight:600;color:var(--accent);margin:12px 0 3px}
-.bg-p{font-size:.79rem;line-height:1.45;color:var(--text-dim);margin:0}
-.bg-p span{color:var(--text-faint)}
-</style>
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -87,33 +76,17 @@ Language Benchmarks Game</a> is not that. Jack Andrews (<code>@effbiae</code>) s
 writes the rules, runs every entry on his own machine and publishes the table. Amber is entered
 there next to BQN, growler/k, Goal, q, Kap and a hand-written C program.</p>
 
-<div class="bg-grid">
-  <div class="bg-card">
-    <code>knucleotide</code><span class="bg-round">Round 1 &middot; closed</span>
-    <div class="bg-t">0.0425 s</div>
-    <p class="bg-p">Amber's entry, first of the seven on that board. <span>The C program is
-    1.49&times; that time.</span></p>
-  </div>
-  <div class="bg-card">
-    <code>nbody</code><span class="bg-round">Round 1 &middot; closed</span>
-    <div class="bg-t">0.635 s</div>
-    <p class="bg-p">Second of seven, behind the C program. <span>15.0&times; the C
-    time.</span></p>
-  </div>
-  <div class="bg-card">
-    <code>collatz</code><span class="bg-round">current round &middot; open</span>
-    <div class="bg-t">0.173 s</div>
-    <p class="bg-p">Second of five, behind the C program. <span>16.2&times; the C
-    time.</span></p>
-  </div>
-</div>
+<p>Amber has four entries: <code>knucleotide</code> and <code>nbody</code> from Round 1, which is
+closed, and <code>spectralnorm</code> and <code>collatz</code> in the current round, which is open.
+Each is one file in the game's own repository, sitting next to every other language's answer to the
+same problem.</p>
 
-<p>Those are Amber's three rows. The rest of each board, the source of every entry and the exact
-harness are <a href="https://effbiae.github.io/bench/" target="_blank" rel="noopener">on the game's
-own site</a>, which is where they should be read from: the current round is open, so its figures
-move as people contribute, and Round 1 is archived separately at
-<a href="https://effbiae.github.io/bench/r1.html" target="_blank" rel="noopener">r1.html</a>. The
-other benchmark in the current round is <code>spectralnorm</code>, which Amber has not entered.</p>
+<p>The figures are not repeated here. The current round is open, so they move as people contribute:
+an entry gets rewritten, someone answers it with a better one, the board changes that week. The
+table, the source of every entry and the exact harness are
+<a href="https://effbiae.github.io/bench/" target="_blank" rel="noopener">on the game's own site</a>,
+which is where they should be read from, and Round 1 is archived at
+<a href="https://effbiae.github.io/bench/r1.html" target="_blank" rel="noopener">r1.html</a>.</p>
 
 <div class="note note-warn">
   <span class="note-title">What a placing here does and does not tell you</span>
