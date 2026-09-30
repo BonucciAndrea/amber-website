@@ -66,15 +66,6 @@ cd amber
 
 <div class="code"><pre><code class="lang-sh">AMBER_NATIVE=1 ./a     # -march=native</code></pre></div>
 
-<p><strong>On Windows</strong>, run the same lines in WSL, or in plain
-<a href="https://cygwin.com" target="_blank" rel="noopener">Cygwin</a> (since 2.3). For Cygwin, install a compiler,
-make and git once, from PowerShell or cmd, then open a Cygwin terminal and clone with its git:</p>
-
-<div class="code"><pre><code class="lang-sh">setup-x86_64.exe -q -s https://mirrors.kernel.org/sourceware/cygwin/ -P gcc-core,make,git,python3</code></pre></div>
-
-<p>The <a href="../docs/install.html#windows-cygwin">installation guide</a> has the rest (line endings, and the one
-thing Cygwin can't do).</p>
-
 <div class="note">
   <span class="note-title">Do not use rlwrap</span>
   <p>Line editing is built in: history, Ctrl-A/E, Ctrl-W/U/K, reverse search, multi-line continuation. Wrapping Amber in <code>rlwrap</code> fights the built-in editor and gives you a worse terminal rather than a better one.</p>
