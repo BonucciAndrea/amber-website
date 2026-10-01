@@ -87,18 +87,18 @@ grammar shows through, and they are properties of the host, not bugs.</p>
 <table>
   <thead><tr><th>k type</th><th>list / atom</th><th>example</th><th>null</th></tr></thead>
   <tbody>
-    <tr><td>int</td><td><code>`I</code> / <code>`i</code></td><td><code>0 1 2</code>, <code>!5</code></td><td><code>0N</code></td></tr>
+    <tr><td>int</td><td><code>`I</code> / <code>`i</code></td><td><code>0 1 2</code>, <code>!5</code>, <code>101b</code></td><td><code>0N</code></td></tr>
     <tr><td>float</td><td><code>`F</code> / <code>`f</code></td><td><code>1.5 2.5</code></td><td><code>0n</code></td></tr>
     <tr><td>char</td><td><code>`C</code> / <code>`c</code></td><td><code>"abc"</code>, <code>"x"</code></td><td><code>" "</code></td></tr>
     <tr><td>symbol</td><td><code>`S</code> / <code>`s</code></td><td><code>`a`b`c</code></td><td><code>`</code></td></tr>
-    <tr><td>bool</td><td><code>`B</code></td><td><code>101b</code></td><td>(none)</td></tr>
     <tr><td>dict</td><td><code>`m</code></td><td><code>`a`b!1 2</code></td><td>(none)</td></tr>
     <tr><td>table</td><td><code>`M</code></td><td><code>+`a`b!(1 2;3 4)</code></td><td>(none)</td></tr>
   </tbody>
 </table>
 </div>
 <p><code>@x</code> returns the type symbol. <code>!n</code> gives <code>0..n-1</code>, a compact range
-whose <code>@</code> reads <code>`I</code>.</p>
+whose <code>@</code> reads <code>`I</code>. There is no separate bool type: a <code>b</code> literal such as
+<code>101b</code> is an int vector (<code>@101b</code> is <code>`I</code>), and comparisons give ints 0 and 1.</p>
 
 <div class="note note-info">
   <span class="note-title">Integer width is real, not hidden</span>
