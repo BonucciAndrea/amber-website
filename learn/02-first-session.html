@@ -114,7 +114,7 @@ cd amber
 !0                     / an empty integer vector
 0#`                    / an empty symbol vector -- 0# takes nothing</code></pre></div>
 
-<p>Nulls propagate silently through arithmetic, which is usually what you want in a time series and occasionally a trap. <code>^x</code> is how you check.</p>
+<p>Float nulls (<code>0n</code>) propagate silently through arithmetic, which is usually what you want in a time series and occasionally a trap. Int nulls don't: <code>0N</code> is just the smallest int, so <code>0N+1</code> is a big negative number, not a null. <code>^x</code> is how you check.</p>
 
 <h2 id="assignment-and-functions">Assignment and functions</h2>
 

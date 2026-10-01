@@ -98,8 +98,12 @@ them: <code>#?x</code> is <code>#(?x)</code>, "count of the distinct of <code>x<
 of verbs in <em>space-separated</em> parentheses makes that composition a value you can name and
 pass around.</p>
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">(,|) 1 2 3          / ,3 2 1     enlist of the reverse: ,(|x)
-last:(*|)           / first of the reverse = last element
+last:(*|:)          / first of the reverse = last element
 last 1 2 3 4        / 4</code></pre></div>
+<p><strong>One catch:</strong> kept in a name, <code>(*|)</code> grabs the two-argument <code>|</code>
+(max), so <code>last 1 2 3 4</code> would hand you back a projection. The <code>:</code> in
+<code>(*|:)</code> pins <code>|</code> to its one-argument meaning, reverse. Applied right away,
+<code>(*|) 1 2 3 4</code> is fine as it is.</p>
 <p><strong>Watch the semicolon.</strong> <code>(f g)</code> with a space is ordinary composition
 <code>f(g x)</code>. <code>(f;g)</code> with a semicolon is a <em>hook</em>, a train, described next.
 They are different constructs; the semicolon is the switch.</p>

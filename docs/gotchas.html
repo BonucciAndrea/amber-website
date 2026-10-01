@@ -122,9 +122,10 @@ noticed the variance was zero.</p>
 
 <h2>7. An out-of-range gather returns nulls, silently</h2>
 
-<p>Indexing a vector past its end yields nulls where NumPy raises <code>IndexError</code>. The nulls
-then propagate through every downstream scan and reduction, and the run completes with output that
-looks like output.</p>
+<p>Indexing a vector past its end yields nulls where NumPy raises <code>IndexError</code>. On floats
+the <code>0n</code>s then spread through every downstream scan and reduction. On ints it's sneakier:
+<code>0N</code> is just the smallest int, so instead of spreading it does arithmetic
+(<code>+/(1 2 3)@4 5</code> is <code>0</code>). Either way the run completes with output that looks like output.</p>
 
 <p>This surfaced when a 3,600-day start grid plus 756-day observation offsets overran a 2,600-day price
 history: the entire tensor filled with nulls and every summary statistic came back plausible.
