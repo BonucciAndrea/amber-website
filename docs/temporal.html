@@ -139,7 +139,7 @@ day  2026.07.30                     / 30
 dow  2026.07.30                     / day of week
 
 "D"$"2026.12.25"                    / string casts: "D"$ (date) "T"$ (time) "P"$ (timestamp)
-`i$2026.07.30                       / extract the raw numeric value -&gt; 9709</code></pre></div>
+`i$2026.07.30                       / extract the raw numeric value -&gt; 9707</code></pre></div>
 
 <h3>Accessors, and their q spellings</h3>
 <div class="table-wrap">
@@ -215,8 +215,8 @@ UNIXD:10957                        / days from 1970-01-01 to 2000-01-01
 UNIXNS:946684800000000000          / nanoseconds, same interval
 
 / date -&gt; unix days -&gt; unix seconds
-ud:(`i$2026.07.30) + UNIXD         / 20299
-us:86400 * ud                      / 1753833600
+ud:(`i$2026.07.30) + UNIXD         / 20664
+us:86400 * ud                      / 1785369600
 
 / timestamp -&gt; unix nanoseconds
 un:(`i$2026.07.30D09:30:00.000000000) + UNIXNS
