@@ -87,18 +87,18 @@ grammar shows through, and they are properties of the host, not bugs.</p>
 <table>
   <thead><tr><th>k type</th><th>list / atom</th><th>example</th><th>null</th></tr></thead>
   <tbody>
-    <tr><td>int</td><td><code>`I</code> / <code>`i</code></td><td><code>0 1 2</code>, <code>!5</code></td><td><code>0N</code></td></tr>
+    <tr><td>int</td><td><code>`I</code> / <code>`i</code></td><td><code>0 1 2</code>, <code>!5</code>, <code>101b</code></td><td><code>0N</code></td></tr>
     <tr><td>float</td><td><code>`F</code> / <code>`f</code></td><td><code>1.5 2.5</code></td><td><code>0n</code></td></tr>
     <tr><td>char</td><td><code>`C</code> / <code>`c</code></td><td><code>"abc"</code>, <code>"x"</code></td><td><code>" "</code></td></tr>
     <tr><td>symbol</td><td><code>`S</code> / <code>`s</code></td><td><code>`a`b`c</code></td><td><code>`</code></td></tr>
-    <tr><td>bool</td><td><code>`B</code></td><td><code>101b</code></td><td>(none)</td></tr>
     <tr><td>dict</td><td><code>`m</code></td><td><code>`a`b!1 2</code></td><td>(none)</td></tr>
     <tr><td>table</td><td><code>`M</code></td><td><code>+`a`b!(1 2;3 4)</code></td><td>(none)</td></tr>
   </tbody>
 </table>
 </div>
 <p><code>@x</code> returns the type symbol. <code>!n</code> gives <code>0..n-1</code>, a compact range
-whose <code>@</code> reads <code>`I</code>.</p>
+whose <code>@</code> reads <code>`I</code>. There is no separate bool type: a <code>b</code> literal such as
+<code>101b</code> is an int vector (<code>@101b</code> is <code>`I</code>), and comparisons give ints 0 and 1.</p>
 
 <div class="note note-info">
   <span class="note-title">Integer width is real, not hidden</span>
@@ -174,13 +174,13 @@ t`px                              / 187.3 411.2 187.4  (a column IS a vector)
 t 0                               / the first row, as a dictionary
 
 kt:([sym:`AAPL`MSFT] lot:100 10)  / keyed table
-keys kt                           / `sym
+keys kt                           / ,`sym
 xkey[`sym; t]                     / key an unkeyed table
 unkey kt                          / and back
 
 xcols[`px`sym`sz; t]              / reorder columns
 xasc[`sym; t]                     / sort ascending by a column (sets the `s attribute)
-insert[`t; (`GOOG; 141.2; 300)]   / append a row</code></pre></div>
+insert[t; `sym`px`sz!(`GOOG; 141.2; 300)]  / t with a row appended (a dict row; t itself is unchanged)</code></pre></div>
 
 <p>A bare table at the interactive prompt auto-renders as a grid. Big tables print Q-style, the
 first <code>CROWS</code> rows (default 20) then <code>..</code>, and the cap is applied
@@ -338,7 +338,7 @@ v ? 12345 67890               / O(log n) — see bench.k</code></pre></div>
 <h2>Strings</h2>
 <div class="code"><pre><code class="lang-q">lower upper ltrim rtrim trim ss ssr sv vs like lk1</code></pre></div>
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">ssr["abcabc"; "b"; "X"]      / "aXcaXc"
-vs[","; "a,b,c"]             / ("a";"b";"c")
+vs[","; "a,b,c"]             / (,"a";,"b";,"c")
 sv[","; ("a";"b";"c")]       / "a,b,c"
 like["AAPL"; "AA*"]          / 1b</code></pre></div>
 
