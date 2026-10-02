@@ -197,8 +197,9 @@ twice the steady state. Do it when a session opens, not on the user's first quer
 <li><strong>Set attributes when you can honour them.</strong> <code>`s</code> on a sorted column turns
 a linear find into a binary search. See <a href="../blog/03-attributes.html">one byte at offset
 −13</a>.</li>
-<li><strong>Reach for more processes before more threads.</strong> <code>peach</code> forks, and on a
-small core count the copy can cost more than the parallelism returns.</li>
+<li><strong>Give <code>peach</code> real work per item.</strong> It's a thread pool, so there's no copy to
+pay, but a task still has a handoff cost: chunk tiny items so each task does at least tens of
+microseconds. A 400-basket sweep goes 451&nbsp;ms &rarr; 215&nbsp;ms on 14 threads.</li>
 </ul>
 
 <div class="pager">

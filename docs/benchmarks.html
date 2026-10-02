@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Benchmarks: Amber vs C, PeachQ, ngn/k, CBQN, J, NumPy, Polars and DuckDB</title>
-<meta name="description" content="The full Scout matrix: 24 operations against 12 engines (PeachQ, ngn/k, CBQN, J, NumPy, pandas, Polars, DuckDB and a hand-written C reference) under a bit-exact correctness gate. Every operation where another engine beats Amber is published too.">
+<meta name="description" content="Amber 2.4.1 measured: the 24-operation matrix against 12 engines (PeachQ, ngn/k, CBQN, J, NumPy, pandas, Polars, DuckDB and a hand-written C reference) under a bit-exact correctness gate. Every operation where another engine beats Amber is published too.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Benchmarks: Amber vs C, PeachQ, ngn/k, CBQN, J, NumPy, Polars and DuckDB">
-<meta property="og:description" content="The full Scout matrix: 24 operations against 12 engines (PeachQ, ngn/k, CBQN, J, NumPy, pandas, Polars, DuckDB and a hand-written C reference) under a bit-exact correctness gate. Every operation where another engine beats Amber is published too.">
+<meta property="og:description" content="Amber 2.4.1 measured: the 24-operation matrix against 12 engines (PeachQ, ngn/k, CBQN, J, NumPy, pandas, Polars, DuckDB and a hand-written C reference) under a bit-exact correctness gate. Every operation where another engine beats Amber is published too.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,152 +51,63 @@
 <a href="../docs/development.html">Development &amp; testing</a>
 <a href="../docs/gotchas.html">Gotchas</a>
 </aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../docs/index.html">Docs</a> / Benchmarks</div>
+<style>
+.bp-hero{margin:1.6em 0 1.8em}
+.bp-hero .v{font-size:1.9rem;color:var(--accent)}
+.bp-hero .v span{font-size:.95rem;color:var(--text-faint);margin-left:2px}
+.bp-scan .l code{font-size:.74rem}
+.bp-ci td{vertical-align:top}
+.bp-ci td i{display:block;font-style:normal;font-size:.7rem;color:var(--text-faint);margin-top:2px}
+.bp-ci td small{display:block;font-size:.74rem;color:var(--text-faint);margin-top:3px;font-weight:400}
+.bp-ci td:first-child{min-width:190px}
+.bp-ci td.amb,.bp-ci th:nth-child(3),.bp-ci th:nth-child(4){background:rgba(255,176,32,.045)}
+.prose td.best,.prose .num.best{color:var(--accent);font-weight:600}
+.prose td.na{color:var(--text-faint)}
+details.bp-more{margin:1.1em 0;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);padding:0 16px}
+details.bp-more>summary{cursor:pointer;padding:11px 0;font-weight:550;font-size:.9rem;color:var(--text-dim);list-style:none}
+details.bp-more>summary::-webkit-details-marker{display:none}
+details.bp-more>summary::before{content:"+";display:inline-block;width:1.1em;color:var(--accent);font-family:var(--font-mono)}
+details.bp-more[open]>summary::before{content:"\2212"}
+details.bp-more[open]>summary{border-bottom:1px solid var(--border);margin-bottom:.8em}
+details.bp-more>:last-child{margin-bottom:1em}
+html[data-theme="light"] code.hl .tok-num{color:#2f7d32}
+html[data-theme="light"] code.hl .tok-str{color:#b4531a}
+html[data-theme="light"] code.hl .tok-sym{color:#8a6400}
+html[data-theme="light"] code.hl .tok-kw{color:#1b5fb3}
+html[data-theme="light"] code.hl .tok-fn{color:#0f7a83}
+html[data-theme="light"] code.hl .tok-op{color:#7a3db8}
+</style>
 <h1>Benchmarks</h1>
-<p class="lead">The first section below is somebody else's measurement, on somebody else's machine.
-Every number after it comes out of <code>bench/run_comparative.py</code>, which CI re-runs on every
-push; the workloads, the data model and the fairness rules are specified once in
-<code>bench/SPEC.md</code>, and every engine implements that document and nothing else.</p>
+<p class="lead">Everything here is Amber <strong>2.4.1</strong>. Unless a section says otherwise it was
+measured on one laptop (Intel Core Ultra 7 255U, WSL2, one core per run) in one sitting, and every
+answer was checked before its time counted.</p>
+
+<div class="stats bp-hero">
+  <div><div class="v">18<span>/24</span></div><div class="l">operations faster than hand-written C</div></div>
+  <div><div class="v">13<span>/24</span></div><div class="l">fastest of all 12 engines, one thread each</div></div>
+  <div><div class="v">15<span>/20</span></div><div class="l">ahead of CBQN where both run the op</div></div>
+  <div><div class="v">0</div><div class="l">wrong answers: every cell is checked bit for bit</div></div>
+</div>
 
 <div class="note note-ok">
   <span class="note-title">Correctness gate</span>
-  <p>Every answer in the suite is an integer that fits in float64 exactly, and every sum is over such
-  integers, so the result is independent of summation order. SIMD pairwise, Kahan-compensated and
-  naive left-fold summation all produce the identical bit pattern. The harness therefore compares
-  answers <strong>exactly</strong> against the C reference and prints <strong>WRONG</strong> in place
-  of a time for any engine that disagrees. Each engine also emits a checksum of its <em>input</em>
-  data, so a divergence in the generator is caught separately (<strong>BADDATA</strong>).
-  You cannot win a cell in this table by computing something cheaper.</p>
+  <p>Every answer is an integer that fits a float64 exactly, so the summation order can't change
+  it. Each engine's answer is compared <strong>exactly</strong> against the C reference and a wrong
+  one prints <strong>WRONG</strong> instead of a time; each engine also checksums its own input, so a
+  generator slip shows up as <strong>BADDATA</strong>. You can't win a cell by computing something cheaper.</p>
 </div>
 
-<h2>Measured by someone else</h2>
-
-<p>Everything else on this page is Amber measuring itself against a specification written in this
-repository. The <a href="https://effbiae.github.io/bench/" target="_blank" rel="noopener">Array
-Language Benchmarks Game</a> is not that. Jack Andrews (<code>@effbiae</code>) sets the problems,
-writes the rules, runs every entry on his own machine and publishes the table. Amber is entered
-there next to BQN, growler/k, Goal, q, Kap and a hand-written C program.</p>
-
-<p>Amber has four entries: <code>knucleotide</code> and <code>nbody</code> from Round 1, which is
-closed, and <code>spectralnorm</code> and <code>collatz</code> in the current round, which is open.
-Each is one file in the game's own repository, sitting next to every other language's answer to the
-same problem.</p>
-
-<p>The figures are not repeated here. The current round is open, so they move as people contribute:
-an entry gets rewritten, someone answers it with a better one, the board changes that week. The
-table, the source of every entry and the exact harness are
-<a href="https://effbiae.github.io/bench/" target="_blank" rel="noopener">on the game's own site</a>,
-which is where they should be read from, and Round 1 is archived at
-<a href="https://effbiae.github.io/bench/r1.html" target="_blank" rel="noopener">r1.html</a>.</p>
-
-<div class="note note-warn">
-  <span class="note-title">What a placing here does and does not tell you</span>
-  <p>These are four small programs. The game puts <strong>no restriction on the algorithm</strong>,
-  unlike the Computer Language Benchmarks Game it borrows its shape from, and every entry is written
-  by whoever felt like contributing one. So a row compares <em>two programs</em> at least as much as
-  it compares two languages, and a faster row can mean a better algorithm, a more practised author,
-  or an engine that happens to suit that shape of work. None of it says one language is better than
-  another, and a language with no entry in a row is absent rather than slow.</p>
-  <p>Every entry links to its own source, which is the useful part: you can read what Amber did and
-  what BQN did and see where the difference came from. All of it runs on an i5-1135g7 under a
-  2&nbsp;GB cap, which is not the machine anything else on this page was measured on, so these
-  numbers do not belong in the same table as the ones below.</p>
-</div>
-
-<h2>Cross-engine results</h2>
-<p class="small muted">Median of 5 timed runs after 2 warm-up passes, milliseconds. Kernel time only;
-process startup is excluded. Regenerated by CI on the 2.4.0 build, on a 2-core cloud box, so
-it doesn't line up with the matrix further down.</p>
-
-<div class="table-wrap">
-<table>
-  <thead><tr>
-    <th>Benchmark</th><th class="num">C (-O3)</th><th class="num">Amber</th><th class="num">Amber qSQL</th>
-    <th class="num">ngn/k</th><th class="num">CBQN</th><th class="num">J</th><th class="num">Uiua</th>
-    <th class="num">NumPy</th><th class="num">Julia</th><th class="num">DuckDB</th>
-  </tr></thead>
-  <tbody>
-    <tr><td>Vector arithmetic + mask: <code>sum((x*2.5)+y where x&gt;50)</code>, 10M</td>
-        <td class="num">9.09</td><td class="num best">21.17</td><td class="num">43.27</td><td class="num">297.80</td><td class="num">33.29</td><td class="num">136.56</td><td class="num">829.67</td><td class="num">32.97</td><td class="num">9.23</td><td class="num">28.00</td></tr>
-    <tr><td>Reductions: <code>sum + max + dot</code>, 10M elements</td>
-        <td class="num">25.39</td><td class="num best">10.12</td><td class="num">19.76</td><td class="num">277.59</td><td class="num">4.56</td><td class="num">118.85</td><td class="num">756.45</td><td class="num">9.96</td><td class="num">22.57</td><td class="num">37.00</td></tr>
-    <tr><td>Group-by aggregation, 100 groups over 10M rows</td>
-        <td class="num">6.82</td><td class="num best">65.59</td><td class="num">69.82</td><td class="num">312.06</td><td class="num">36.63</td><td class="num">177.99</td><td class="num">1,746.44</td><td class="num">13.06</td><td class="num">6.45</td><td class="num">18.00</td></tr>
-    <tr><td>Inner join, 1M left rows against 1,000 sparse keys</td>
-        <td class="num">0.98</td><td class="num best">3.03</td><td class="num">5.88</td><td class="num">410.65</td><td class="num">2.42</td><td class="num">109.64</td><td class="num">—</td><td class="num">12.99</td><td class="num">11.75</td><td class="num">11.00</td></tr>
-  </tbody>
-</table>
-</div>
-
-<h3>Relative to the C baseline</h3>
-<p class="small muted">Lower is better; 1.00&times; means it matched plain C.</p>
-<div class="table-wrap">
-<table>
-  <thead><tr>
-    <th>Benchmark</th><th class="num">C</th><th class="num">Amber</th><th class="num">Amber qSQL</th>
-    <th class="num">ngn/k</th><th class="num">CBQN</th><th class="num">NumPy</th><th class="num">Julia</th><th class="num">DuckDB</th>
-  </tr></thead>
-  <tbody>
-    <tr><td>Vector arithmetic + mask</td><td class="num">1.00&times;</td><td class="num">2.33&times;</td><td class="num">4.76&times;</td><td class="num">32.77&times;</td><td class="num">3.66&times;</td><td class="num">3.63&times;</td><td class="num">1.02&times;</td><td class="num">3.08&times;</td></tr>
-    <tr><td>Reductions</td><td class="num">1.00&times;</td><td class="num best">0.40&times;</td><td class="num">0.78&times;</td><td class="num">10.93&times;</td><td class="num">0.18&times;</td><td class="num">0.39&times;</td><td class="num">0.89&times;</td><td class="num">1.46&times;</td></tr>
-    <tr><td>Group-by aggregation</td><td class="num">1.00&times;</td><td class="num">9.62&times;</td><td class="num">10.24&times;</td><td class="num">45.78&times;</td><td class="num">5.37&times;</td><td class="num">1.92&times;</td><td class="num">0.95&times;</td><td class="num">2.64&times;</td></tr>
-    <tr><td>Inner join</td><td class="num">1.00&times;</td><td class="num">3.11&times;</td><td class="num">6.03&times;</td><td class="num">421.09&times;</td><td class="num">2.48&times;</td><td class="num">13.32&times;</td><td class="num">12.05&times;</td><td class="num">11.28&times;</td></tr>
-  </tbody>
-</table>
-</div>
-
-<div class="note note-info">
-  <span class="note-title">Amber is reported twice, on purpose</span>
-  <p><strong>Amber</strong> is array-primitive code, the fair peer of ngn/k, CBQN, J and Uiua.
-  <strong>Amber qSQL</strong> routes the same workloads through the <code>select … by … from</code>
-  layer, the fair peer of DuckDB's SQL planner. Publishing only the faster of the two would mean
-  picking whichever comparison flatters Amber; the gap between the rows <em>is</em> the query layer's
-  overhead and it is meant to be visible.</p>
-</div>
-
-<h3>Timing mode per engine</h3>
-<p class="small muted"><code>kernel</code> means the engine timed its own kernel with a monotonic clock;
-<code>net</code> means it has no usable in-language clock and was measured as
-<em>total process time − a measured startup baseline</em>. The table labels which mode produced each
-cell, so the two are never silently mixed.</p>
-<div class="table-wrap">
-<table>
-  <thead><tr><th>Engine</th><th>Peer group</th><th>Mode</th><th class="num">Startup baseline</th></tr></thead>
-  <tbody>
-    <tr><td>C (-O3)</td><td>baseline</td><td>kernel</td><td class="num">—</td></tr>
-    <tr><td>Amber</td><td>array primitives</td><td>kernel</td><td class="num">—</td></tr>
-    <tr><td>Amber qSQL</td><td>query layer</td><td>kernel</td><td class="num">—</td></tr>
-    <tr><td>ngn/k</td><td>array primitives</td><td>net</td><td class="num">1.65 ms</td></tr>
-    <tr><td>CBQN</td><td>array primitives</td><td>kernel</td><td class="num">3.28 ms</td></tr>
-    <tr><td>J</td><td>array primitives</td><td>net</td><td class="num">51.31 ms</td></tr>
-    <tr><td>Uiua</td><td>array primitives</td><td>net</td><td class="num">26.15 ms</td></tr>
-    <tr><td>NumPy</td><td>array primitives</td><td>kernel</td><td class="num">—</td></tr>
-    <tr><td>Julia</td><td>scalar loops (JIT)</td><td>kernel</td><td class="num">—</td></tr>
-    <tr><td>DuckDB</td><td>query layer</td><td>kernel</td><td class="num">12.92 ms</td></tr>
-  </tbody>
-</table>
-</div>
-
-<h2 id="scout">The full engine matrix: 24 operations, 12 engines</h2>
-<p class="lead">The widest run in the project: <strong>24 operations</strong> against every array
-language and columnar engine that could be installed on one machine (PeachQ (Rayforce),
-ngn/k, CBQN, J, NumPy, pandas, Polars, DuckDB and a hand-written C reference), specified once
-in <code>bench/scout/SCOUT_SPEC.md</code> and driven by <code>bench/scout/scout.py</code>. Every
-engine implements that document and nothing else, every engine runs one thread, and every cell is
-gated on a bit-exact answer against the C reference.</p>
-<p>This run is the <strong>2.4.0</strong> build. Against the 2.2.0 run on the same laptop,
-<code>distinct_100k</code> got <strong>4.6&times;</strong> faster, <code>mmax_64</code> and
-<code>sort_presorted</code> about <strong>2&times;</strong>, the moving sums and averages
-<strong>1.4&ndash;1.5&times;</strong>, <code>find</code> <strong>1.5&times;</strong> and
-<code>sort_f</code> <strong>1.4&times;</strong>. Amber now beats CBQN on <strong>15 of the 20</strong>
-operations both implement (was 12), and is the fastest of all twelve engines on
-<strong>13 of 24</strong> (was 9).</p>
-
-<div class="note">
-  <span class="note-title">One row moved the wrong way</span>
-  <p><code>group_10k</code> came out about <strong>20% slower</strong> than in the 2.2.0 run
-  (27.5 vs 22.5&nbsp;ms), and the scaling table below agrees. Haven't pinned it down yet, so
-  it stays up here until I do.</p>
-</div>
+<h2 id="scout">The engine matrix: 24 operations, 12 engines</h2>
+<p>The widest run there is: 24 operations against every array language and columnar engine that
+installs on one machine (PeachQ, ngn/k, CBQN, J, NumPy, pandas, Polars, DuckDB and a hand-written C
+reference), all on one thread. The spec is <code>bench/scout/SCOUT_SPEC.md</code>, the driver
+<code>bench/scout/scout.py</code>, and this block is generated straight from its
+<code>results.json</code>, so it can't drift from the repo.</p>
+<p>Against the 2.2.0 run on the same laptop: <code>distinct_100k</code> <strong>4.7&times;</strong>
+faster, <code>sort_presorted</code> <strong>2.7&times;</strong>, <code>mmax_64</code>
+<strong>2.1&times;</strong>, <code>distinct</code> <strong>2.0&times;</strong>, <code>find</code>
+<strong>1.6&times;</strong>, the moving sums <strong>1.4&ndash;1.5&times;</strong> and
+<code>sort_f</code> <strong>1.35&times;</strong>.</p>
 
 <style>
 .bm-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px 26px;margin:1.4em 0;
@@ -249,286 +160,298 @@ operations both implement (was 12), and is the fastest of all twelve engines on
   <div><span class="bm-k">SIMD</span><span class="bm-v">avx avx2 bmi2 sse4_2</span></div>
   <div><span class="bm-k">OS</span><span class="bm-v">Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39</span></div>
   <div><span class="bm-k">Rows</span><span class="bm-v">N = 10,000,000 &middot; 5 timed runs, 2 warm-up</span></div>
-  <div><span class="bm-k">Amber</span><span class="bm-v">build b97d9f8 (2.4.0)</span></div>
+  <div><span class="bm-k">Amber</span><span class="bm-v">build e8892b9 (2.4.1)</span></div>
 </div>
 <!--DV-->
 <div class="dv-chart">
   <div class="dv-head"><span>operation</span><span class="dv-axis"><em>C faster</em><b></b><em>Amber faster</em></span><span></span><span class="dv-ms">Amber / C</span></div>
-  <div class="dv-row"><code class="dv-op" title="distinct over 100k groups">distinct_100k</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:86.6%></i></div></div><span class="dv-val win">29.57&times; faster</span><span class="dv-ms">2.25 / 66.5 ms</span></div><div class="dv-row"><code class="dv-op" title="membership of 10M against a 10M set">member</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:63.6%></i></div></div><span class="dv-val win">12.04&times; faster</span><span class="dv-ms">9.67 / 116 ms</span></div><div class="dv-row"><code class="dv-op" title="sort of already-sorted input (best case)">sort_presorted</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:61.3%></i></div></div><span class="dv-val win">11.00&times; faster</span><span class="dv-ms">10.5 / 115 ms</span></div><div class="dv-row"><code class="dv-op" title="distinct over ~10 groups">distinct</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:55.0%></i></div></div><span class="dv-val win">8.60&times; faster</span><span class="dv-ms">3.71 / 31.8 ms</span></div><div class="dv-row"><code class="dv-op" title="sum of 10M integers 0..999 (engines differ in element width)">sum_i</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:44.7%></i></div></div><span class="dv-val win">5.75&times; faster</span><span class="dv-ms">0.832 / 4.78 ms</span></div><div class="dv-row"><code class="dv-op" title="group-by, 100k groups">group_100k</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:38.8%></i></div></div><span class="dv-val win">4.57&times; faster</span><span class="dv-ms">24.7 / 113 ms</span></div><div class="dv-row"><code class="dv-op" title="grade-up (argsort) of 10M int64">grade_i</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:33.9%></i></div></div><span class="dv-val win">3.77&times; faster</span><span class="dv-ms">24.3 / 91.8 ms</span></div><div class="dv-row"><code class="dv-op" title="ascending sort, 10M float64 from 1000 distinct values">sort_f</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:27.9%></i></div></div><span class="dv-val win">2.98&times; faster</span><span class="dv-ms">28.5 / 84.8 ms</span></div><div class="dv-row"><code class="dv-op" title="max of 10M float64">max_f</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:24.2%></i></div></div><span class="dv-val win">2.57&times; faster</span><span class="dv-ms">4.15 / 10.7 ms</span></div><div class="dv-row"><code class="dv-op" title="group-by, 10k groups">group_10k</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:17.9%></i></div></div><span class="dv-val win">2.01&times; faster</span><span class="dv-ms">27.5 / 55.4 ms</span></div><div class="dv-row"><code class="dv-op" title="sum of 10M float64">sum_f</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:12.0%></i></div></div><span class="dv-val win">1.60&times; faster</span><span class="dv-ms">3.53 / 5.65 ms</span></div><div class="dv-row"><code class="dv-op" title="group-by, 10 groups">group_10</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:10.5%></i></div></div><span class="dv-val win">1.51&times; faster</span><span class="dv-ms">20.3 / 30.6 ms</span></div><div class="dv-row"><code class="dv-op" title="group-by, 100 groups">group_100</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:8.7%></i></div></div><span class="dv-val win">1.40&times; faster</span><span class="dv-ms">21.5 / 30.3 ms</span></div><div class="dv-row"><code class="dv-op" title="dot product of two 10M float64 vectors">dot</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:7.4%></i></div></div><span class="dv-val win">1.33&times; faster</span><span class="dv-ms">6.92 / 9.23 ms</span></div><div class="dv-row"><code class="dv-op" title="moving max, window 64">mmax_64</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:5.7%></i></div></div><span class="dv-val win">1.25&times; faster</span><span class="dv-ms">13.5 / 16.8 ms</span></div><div class="dv-row"><code class="dv-op" title="moving sum, window 16">msum_16</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:5.0%></i></div></div><span class="dv-val win">1.21&times; faster</span><span class="dv-ms">10.5 / 12.7 ms</span></div><div class="dv-row"><code class="dv-op" title="first index of a value in 10M elements">find</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:3.9%></i></div></div><span class="dv-val win">1.17&times; faster</span><span class="dv-ms">13.0 / 15.1 ms</span></div><div class="dv-row"><code class="dv-op" title="running sum over 10M float64, materialised">scan_f</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:0.6%></i></div></div><span class="dv-val win">1.02&times; faster</span><span class="dv-ms">9.95 / 10.2 ms</span></div><div class="dv-row"><code class="dv-op" title="as-of join, the tick-desk workload">asof</code><div class="dv-track"><div class="dv-half l"><i class=dv-bar-loss style=width:1.7%></i></div><div class="dv-half r"></div></div><span class="dv-val loss">1.07&times; slower</span><span class="dv-ms">7.42 / 6.94 ms</span></div><div class="dv-row"><code class="dv-op" title="moving average, window 256">mavg_256</code><div class="dv-track"><div class="dv-half l"><i class=dv-bar-loss style=width:1.9%></i></div><div class="dv-half r"></div></div><span class="dv-val loss">1.08&times; slower</span><span class="dv-ms">12.2 / 11.3 ms</span></div><div class="dv-row"><code class="dv-op" title="(a*b)+c under a boolean mask">arith_mask</code><div class="dv-track"><div class="dv-half l"><i class=dv-bar-loss style=width:4.1%></i></div><div class="dv-half r"></div></div><span class="dv-val loss">1.18&times; slower</span><span class="dv-ms">15.4 / 13.1 ms</span></div><div class="dv-row"><code class="dv-op" title="3-column table sorted by two keys">tablesort</code><div class="dv-track"><div class="dv-half l"><i class=dv-bar-loss style=width:5.7%></i></div><div class="dv-half r"></div></div><span class="dv-val loss">1.25&times; slower</span><span class="dv-ms">92.3 / 73.9 ms</span></div><div class="dv-row"><code class="dv-op" title="inner join on an int key">join_inner</code><div class="dv-track"><div class="dv-half l"><i class=dv-bar-loss style=width:8.2%></i></div><div class="dv-half r"></div></div><span class="dv-val loss">1.38&times; slower</span><span class="dv-ms">2.58 / 1.88 ms</span></div><div class="dv-row"><code class="dv-op" title="select ... by ... from - the full query path">qsql_select</code><div class="dv-track"><div class="dv-half l"><i class=dv-bar-loss style=width:16.3%></i></div><div class="dv-half r"></div></div><span class="dv-val loss">1.89&times; slower</span><span class="dv-ms">4.13 / 2.18 ms</span></div>
+  <div class="dv-row"><code class="dv-op" title="distinct over 100k groups">distinct_100k</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:87.5%></i></div></div><span class="dv-val win">30.66&times; faster</span><span class="dv-ms">2.20 / 67.5 ms</span></div><div class="dv-row"><code class="dv-op" title="membership of 10M against a 10M set">member</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:78.6%></i></div></div><span class="dv-val win">21.61&times; faster</span><span class="dv-ms">9.38 / 203 ms</span></div><div class="dv-row"><code class="dv-op" title="sort of already-sorted input (best case)">sort_presorted</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:67.6%></i></div></div><span class="dv-val win">14.07&times; faster</span><span class="dv-ms">7.73 / 109 ms</span></div><div class="dv-row"><code class="dv-op" title="distinct over ~10 groups">distinct</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:55.4%></i></div></div><span class="dv-val win">8.75&times; faster</span><span class="dv-ms">3.81 / 33.3 ms</span></div><div class="dv-row"><code class="dv-op" title="sum of 10M integers 0..999 (engines differ in element width)">sum_i</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:42.3%></i></div></div><span class="dv-val win">5.23&times; faster</span><span class="dv-ms">0.809 / 4.23 ms</span></div><div class="dv-row"><code class="dv-op" title="grade-up (argsort) of 10M int64">grade_i</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:32.6%></i></div></div><span class="dv-val win">3.58&times; faster</span><span class="dv-ms">24.9 / 89.1 ms</span></div><div class="dv-row"><code class="dv-op" title="group-by, 100k groups">group_100k</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:32.3%></i></div></div><span class="dv-val win">3.54&times; faster</span><span class="dv-ms">33.3 / 118 ms</span></div><div class="dv-row"><code class="dv-op" title="ascending sort, 10M float64 from 1000 distinct values">sort_f</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:28.5%></i></div></div><span class="dv-val win">3.05&times; faster</span><span class="dv-ms">29.5 / 89.8 ms</span></div><div class="dv-row"><code class="dv-op" title="max of 10M float64">max_f</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:20.3%></i></div></div><span class="dv-val win">2.21&times; faster</span><span class="dv-ms">4.46 / 9.88 ms</span></div><div class="dv-row"><code class="dv-op" title="group-by, 10k groups">group_10k</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:17.7%></i></div></div><span class="dv-val win">2.00&times; faster</span><span class="dv-ms">26.6 / 53.2 ms</span></div><div class="dv-row"><code class="dv-op" title="group-by, 100 groups">group_100</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:9.7%></i></div></div><span class="dv-val win">1.46&times; faster</span><span class="dv-ms">21.2 / 30.9 ms</span></div><div class="dv-row"><code class="dv-op" title="dot product of two 10M float64 vectors">dot</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:7.7%></i></div></div><span class="dv-val win">1.35&times; faster</span><span class="dv-ms">6.24 / 8.44 ms</span></div><div class="dv-row"><code class="dv-op" title="group-by, 10 groups">group_10</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:7.6%></i></div></div><span class="dv-val win">1.35&times; faster</span><span class="dv-ms">16.7 / 22.5 ms</span></div><div class="dv-row"><code class="dv-op" title="sum of 10M float64">sum_f</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:7.2%></i></div></div><span class="dv-val win">1.33&times; faster</span><span class="dv-ms">3.93 / 5.21 ms</span></div><div class="dv-row"><code class="dv-op" title="first index of a value in 10M elements">find</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:5.6%></i></div></div><span class="dv-val win">1.25&times; faster</span><span class="dv-ms">11.7 / 14.6 ms</span></div><div class="dv-row"><code class="dv-op" title="moving max, window 64">mmax_64</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:4.4%></i></div></div><span class="dv-val win">1.19&times; faster</span><span class="dv-ms">13.8 / 16.3 ms</span></div><div class="dv-row"><code class="dv-op" title="running sum over 10M float64, materialised">scan_f</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:2.6%></i></div></div><span class="dv-val win">1.11&times; faster</span><span class="dv-ms">8.36 / 9.24 ms</span></div><div class="dv-row"><code class="dv-op" title="moving sum, window 16">msum_16</code><div class="dv-track"><div class="dv-half l"></div><div class="dv-half r"><i class=dv-bar-win style=width:1.0%></i></div></div><span class="dv-val win">1.04&times; faster</span><span class="dv-ms">11.0 / 11.4 ms</span></div><div class="dv-row"><code class="dv-op" title="as-of join, the tick-desk workload">asof</code><div class="dv-track"><div class="dv-half l"><i class=dv-bar-loss style=width:0.7%></i></div><div class="dv-half r"></div></div><span class="dv-val loss">1.03&times; slower</span><span class="dv-ms">7.50 / 7.28 ms</span></div><div class="dv-row"><code class="dv-op" title="moving average, window 256">mavg_256</code><div class="dv-track"><div class="dv-half l"><i class=dv-bar-loss style=width:1.9%></i></div><div class="dv-half r"></div></div><span class="dv-val loss">1.08&times; slower</span><span class="dv-ms">12.6 / 11.6 ms</span></div><div class="dv-row"><code class="dv-op" title="inner join on an int key">join_inner</code><div class="dv-track"><div class="dv-half l"><i class=dv-bar-loss style=width:2.5%></i></div><div class="dv-half r"></div></div><span class="dv-val loss">1.10&times; slower</span><span class="dv-ms">2.91 / 2.64 ms</span></div><div class="dv-row"><code class="dv-op" title="3-column table sorted by two keys">tablesort</code><div class="dv-track"><div class="dv-half l"><i class=dv-bar-loss style=width:6.0%></i></div><div class="dv-half r"></div></div><span class="dv-val loss">1.26&times; slower</span><span class="dv-ms">93.7 / 74.1 ms</span></div><div class="dv-row"><code class="dv-op" title="(a*b)+c under a boolean mask">arith_mask</code><div class="dv-track"><div class="dv-half l"><i class=dv-bar-loss style=width:11.0%></i></div><div class="dv-half r"></div></div><span class="dv-val loss">1.54&times; slower</span><span class="dv-ms">15.2 / 9.89 ms</span></div><div class="dv-row"><code class="dv-op" title="select ... by ... from - the full query path">qsql_select</code><div class="dv-track"><div class="dv-half l"><i class=dv-bar-loss style=width:16.0%></i></div><div class="dv-half r"></div></div><span class="dv-val loss">1.87&times; slower</span><span class="dv-ms">4.60 / 2.46 ms</span></div>
 </div>
 <p class="bm-sum">Amber is faster on <strong>18 of 24</strong> operations, slower on <strong>6</strong>.
 Bars are log-scaled; the centre line is parity.</p>
 <!--MX-->
 <div class="table-wrap bm-matrix"><table>
 <thead><tr><th class="op">operation</th><th class="">C</th><th class="eamber">Amber<sub>nat</sub></th><th class="eamber">Amber</th><th class="eamber">Amber<sub>qSQL</sub></th><th class="">PeachQ</th><th class="">ngn/k</th><th class="">CBQN</th><th class="">J</th><th class="">NumPy</th><th class="">pandas</th><th class="">Polars</th><th class="">DuckDB</th></tr></thead>
-<tbody><tr class="cat"><td colspan="13">Reductions &amp; vector arithmetic</td></tr><tr><th class="op"><code>sum_f</code><span>sum of 10M float64</span></th><td class="">5.65</td><td class="eamber">3.53</td><td class="eamber">3.91</td><td class="eamber na">skip</td><td class="">4.68</td><td class="">6.25</td><td class="best">1.52</td><td class="">4.16</td><td class="">4.97</td><td class="">9.62</td><td class="">3.75</td><td class="">10.3</td></tr><tr><th class="op"><code>sum_i</code><span>sum of 10M integers 0..999 (engines differ in element width)</span></th><td class="">4.78</td><td class="best eamber">0.832</td><td class="eamber">1.01</td><td class="eamber na">skip</td><td class="">2.10</td><td class="">1.69</td><td class="">1.31</td><td class="">5.09</td><td class="">3.46</td><td class="">3.49</td><td class="">3.75</td><td class="">15.1</td></tr><tr><th class="op"><code>max_f</code><span>max of 10M float64</span></th><td class="">10.7</td><td class="eamber">4.15</td><td class="eamber">3.72</td><td class="eamber na">skip</td><td class="">4.18</td><td class="">13.9</td><td class="best">0.935</td><td class="">3.93</td><td class="">4.03</td><td class="">12.6</td><td class="">4.39</td><td class="">41.0</td></tr><tr><th class="op"><code>dot</code><span>dot product of two 10M float64 vectors</span></th><td class="">9.23</td><td class="eamber">6.92</td><td class="eamber">6.70</td><td class="eamber na">skip</td><td class="">9.33</td><td class="">18.2</td><td class="">7.37</td><td class="">40.5</td><td class="best">6.20</td><td class="">7.64</td><td class="">16.8</td><td class="">19.4</td></tr><tr><th class="op"><code>arith_mask</code><span>(a*b)+c under a boolean mask</span></th><td class="best">13.1</td><td class="eamber">15.4</td><td class="eamber">17.0</td><td class="eamber na">skip</td><td class="">364</td><td class="">63.1</td><td class="">56.9</td><td class="">50.4</td><td class="">47.3</td><td class="">95.7</td><td class="">61.9</td><td class="">60.6</td></tr><tr><th class="op"><code>scan_f</code><span>running sum over 10M float64, materialised</span></th><td class="">10.2</td><td class="eamber">9.95</td><td class="best eamber">9.91</td><td class="eamber na">skip</td><td class="">35.4</td><td class="">212</td><td class="">12.1</td><td class="">31.8</td><td class="">25.4</td><td class="">44.0</td><td class="">33.1</td><td class="">1922</td></tr><tr class="cat"><td colspan="13">Sort &amp; grade</td></tr><tr><th class="op"><code>sort_f</code><span>ascending sort, 10M float64 from 1000 distinct values</span></th><td class="">84.8</td><td class="eamber">28.5</td><td class="eamber">30.1</td><td class="eamber na">skip</td><td class="">969</td><td class="">530</td><td class="best">6.97</td><td class="">5281</td><td class="">56.2</td><td class="">894</td><td class="">94.0</td><td class="">906</td></tr><tr><th class="op"><code>sort_presorted</code><span>sort of already-sorted input (best case)</span></th><td class="">115</td><td class="eamber">10.5</td><td class="eamber">11.3</td><td class="eamber na">skip</td><td class="">695</td><td class="">273</td><td class="best">1.54</td><td class="">95.9</td><td class="">66.8</td><td class="">126</td><td class="">18.8</td><td class="">692</td></tr><tr><th class="op"><code>grade_i</code><span>grade-up (argsort) of 10M int64</span></th><td class="">91.8</td><td class="best eamber">24.3</td><td class="eamber">25.7</td><td class="eamber na">skip</td><td class="">40.5</td><td class="">94.6</td><td class="">30.2</td><td class="">54.7</td><td class="">599</td><td class="">862</td><td class="">283</td><td class="">25.0</td></tr><tr><th class="op"><code>tablesort</code><span>3-column table sorted by two keys</span></th><td class="best">73.9</td><td class="eamber">92.3</td><td class="eamber">98.7</td><td class="eamber na">skip</td><td class="">1010</td><td class="na">skip</td><td class="na">skip</td><td class="na">skip</td><td class="">230</td><td class="">122</td><td class="">495</td><td class="">319</td></tr><tr class="cat"><td colspan="13">Search, distinct &amp; group-by</td></tr><tr><th class="op"><code>find</code><span>first index of a value in 10M elements</span></th><td class="">15.1</td><td class="best eamber">13.0</td><td class="eamber">13.8</td><td class="eamber na">skip</td><td class="">80.4</td><td class="">1121</td><td class="">17.2</td><td class="">52.0</td><td class="">117</td><td class="na">skip</td><td class="na">skip</td><td class="">38.7</td></tr><tr><th class="op"><code>member</code><span>membership of 10M against a 10M set</span></th><td class="">116</td><td class="best eamber">9.67</td><td class="eamber">9.88</td><td class="eamber na">skip</td><td class="">153</td><td class="">2152</td><td class="">16.2</td><td class="">32.6</td><td class="">57.9</td><td class="">73.7</td><td class="">29.1</td><td class="">43.6</td></tr><tr><th class="op"><code>distinct</code><span>distinct over ~10 groups</span></th><td class="">31.8</td><td class="best eamber">3.71</td><td class="eamber">4.83</td><td class="eamber na">skip</td><td class="">543</td><td class="">215</td><td class="">5.55</td><td class="">34.4</td><td class="">307</td><td class="">47.5</td><td class="">84.4</td><td class="">41.6</td></tr><tr><th class="op"><code>distinct_100k</code><span>distinct over 100k groups</span></th><td class="">66.5</td><td class="best eamber">2.25</td><td class="eamber">7.12</td><td class="eamber na">skip</td><td class="">1823</td><td class="">403</td><td class="">49.3</td><td class="">48.0</td><td class="">806</td><td class="">75.2</td><td class="">138</td><td class="">122</td></tr><tr><th class="op"><code>group_10</code><span>group-by, 10 groups</span></th><td class="">30.6</td><td class="best eamber">20.3</td><td class="eamber">22.1</td><td class="eamber">23.3</td><td class="">341</td><td class="">59.1</td><td class="">26.2</td><td class="">40.6</td><td class="">246</td><td class="">55.8</td><td class="">33.7</td><td class="">34.3</td></tr><tr><th class="op"><code>group_100</code><span>group-by, 100 groups</span></th><td class="">30.3</td><td class="best eamber">21.5</td><td class="eamber">24.3</td><td class="eamber">28.6</td><td class="">412</td><td class="">114</td><td class="">67.6</td><td class="">40.4</td><td class="">783</td><td class="">56.2</td><td class="">34.4</td><td class="">34.0</td></tr><tr><th class="op"><code>group_10k</code><span>group-by, 10k groups</span></th><td class="">55.4</td><td class="best eamber">27.5</td><td class="eamber">33.7</td><td class="eamber">34.8</td><td class="">1702</td><td class="">176</td><td class="">113</td><td class="">39.5</td><td class="">1039</td><td class="">102</td><td class="">283</td><td class="">74.6</td></tr><tr><th class="op"><code>group_100k</code><span>group-by, 100k groups</span></th><td class="">113</td><td class="best eamber">24.7</td><td class="eamber">39.8</td><td class="eamber">36.4</td><td class="">4174</td><td class="">434</td><td class="">244</td><td class="">60.6</td><td class="">739</td><td class="">102</td><td class="">365</td><td class="">132</td></tr><tr class="cat"><td colspan="13">Joins</td></tr><tr><th class="op"><code>join_inner</code><span>inner join on an int key</span></th><td class="best">1.88</td><td class="eamber">2.58</td><td class="eamber">2.71</td><td class="eamber">6.18</td><td class="">9.85</td><td class="">111</td><td class="">2.14</td><td class="">4.12</td><td class="">14.2</td><td class="">51.9</td><td class="">11.7</td><td class="">5.94</td></tr><tr><th class="op"><code>asof</code><span>as-of join, the tick-desk workload</span></th><td class="best">6.94</td><td class="eamber">7.42</td><td class="eamber">7.12</td><td class="eamber na">skip</td><td class="">236</td><td class="na">skip</td><td class="na">skip</td><td class="na">skip</td><td class="">24.4</td><td class="">73.3</td><td class="">15.2</td><td class="">200</td></tr><tr class="cat"><td colspan="13">Moving windows</td></tr><tr><th class="op"><code>msum_16</code><span>moving sum, window 16</span></th><td class="">12.7</td><td class="best eamber">10.5</td><td class="eamber">11.7</td><td class="eamber na">skip</td><td class="">460</td><td class="">236</td><td class="">27.6</td><td class="">56.4</td><td class="">102</td><td class="">120</td><td class="">42.3</td><td class="">1027</td></tr><tr><th class="op"><code>mavg_256</code><span>moving average, window 256</span></th><td class="best">11.3</td><td class="eamber">12.2</td><td class="eamber">12.8</td><td class="eamber na">skip</td><td class="">9934</td><td class="">266</td><td class="">47.9</td><td class="">93.1</td><td class="">146</td><td class="">132</td><td class="">52.7</td><td class="">1426</td></tr><tr><th class="op"><code>mmax_64</code><span>moving max, window 64</span></th><td class="">16.8</td><td class="best eamber">13.5</td><td class="eamber">15.2</td><td class="eamber na">skip</td><td class="">1980</td><td class="na">skip</td><td class="na">skip</td><td class="na">skip</td><td class="">453</td><td class="">131</td><td class="">55.8</td><td class="">1471</td></tr><tr class="cat"><td colspan="13">qSQL-shaped</td></tr><tr><th class="op"><code>qsql_select</code><span>select ... by ... from - the full query path</span></th><td class="best">2.18</td><td class="eamber">4.13</td><td class="eamber">4.41</td><td class="eamber">3.84</td><td class="">127</td><td class="na">skip</td><td class="na">skip</td><td class="na">skip</td><td class="">48.4</td><td class="">20.2</td><td class="">10.3</td><td class="">8.64</td></tr></tbody></table></div>
+<tbody><tr class="cat"><td colspan="13">Reductions &amp; vector arithmetic</td></tr><tr><th class="op"><code>sum_f</code><span>sum of 10M float64</span></th><td class="">5.21</td><td class="eamber">3.93</td><td class="eamber">4.63</td><td class="eamber na">skip</td><td class="">4.58</td><td class="">5.38</td><td class="best">1.05</td><td class="">4.03</td><td class="">4.94</td><td class="">9.60</td><td class="">3.79</td><td class="">12.0</td></tr><tr><th class="op"><code>sum_i</code><span>sum of 10M integers 0..999 (engines differ in element width)</span></th><td class="">4.23</td><td class="eamber">0.809</td><td class="best eamber">0.801</td><td class="eamber na">skip</td><td class="">2.30</td><td class="">1.62</td><td class="">1.27</td><td class="">5.05</td><td class="">3.65</td><td class="">3.77</td><td class="">4.12</td><td class="">10.8</td></tr><tr><th class="op"><code>max_f</code><span>max of 10M float64</span></th><td class="">9.88</td><td class="eamber">4.46</td><td class="eamber">4.26</td><td class="eamber na">skip</td><td class="">4.68</td><td class="">12.5</td><td class="best">1.18</td><td class="">4.43</td><td class="">3.91</td><td class="">13.0</td><td class="">4.91</td><td class="">35.8</td></tr><tr><th class="op"><code>dot</code><span>dot product of two 10M float64 vectors</span></th><td class="">8.44</td><td class="eamber">6.24</td><td class="best eamber">5.85</td><td class="eamber na">skip</td><td class="">8.50</td><td class="">15.8</td><td class="">6.58</td><td class="">27.7</td><td class="">6.00</td><td class="">7.20</td><td class="">12.6</td><td class="">21.2</td></tr><tr><th class="op"><code>arith_mask</code><span>(a*b)+c under a boolean mask</span></th><td class="best">9.89</td><td class="eamber">15.2</td><td class="eamber">14.5</td><td class="eamber na">skip</td><td class="">364</td><td class="">51.5</td><td class="">50.0</td><td class="">50.7</td><td class="">44.9</td><td class="">95.1</td><td class="">55.8</td><td class="">56.7</td></tr><tr><th class="op"><code>scan_f</code><span>running sum over 10M float64, materialised</span></th><td class="">9.24</td><td class="best eamber">8.36</td><td class="eamber">9.11</td><td class="eamber na">skip</td><td class="">30.9</td><td class="">207</td><td class="">9.41</td><td class="">21.7</td><td class="">23.4</td><td class="">40.9</td><td class="">32.5</td><td class="">1659</td></tr><tr class="cat"><td colspan="13">Sort &amp; grade</td></tr><tr><th class="op"><code>sort_f</code><span>ascending sort, 10M float64 from 1000 distinct values</span></th><td class="">89.8</td><td class="eamber">29.5</td><td class="eamber">31.2</td><td class="eamber na">skip</td><td class="">930</td><td class="">521</td><td class="best">6.31</td><td class="">5258</td><td class="">53.7</td><td class="">856</td><td class="">96.1</td><td class="">856</td></tr><tr><th class="op"><code>sort_presorted</code><span>sort of already-sorted input (best case)</span></th><td class="">109</td><td class="eamber">7.73</td><td class="eamber">8.82</td><td class="eamber na">skip</td><td class="">667</td><td class="">263</td><td class="best">1.35</td><td class="">94.2</td><td class="">59.6</td><td class="">114</td><td class="">18.2</td><td class="">624</td></tr><tr><th class="op"><code>grade_i</code><span>grade-up (argsort) of 10M int64</span></th><td class="">89.1</td><td class="eamber">24.9</td><td class="eamber">34.2</td><td class="eamber na">skip</td><td class="">40.9</td><td class="">123</td><td class="">34.6</td><td class="">71.8</td><td class="">615</td><td class="">770</td><td class="">254</td><td class="best">23.2</td></tr><tr><th class="op"><code>tablesort</code><span>3-column table sorted by two keys</span></th><td class="best">74.1</td><td class="eamber">93.7</td><td class="eamber">105</td><td class="eamber na">skip</td><td class="">1372</td><td class="na">skip</td><td class="na">skip</td><td class="na">skip</td><td class="">207</td><td class="">118</td><td class="">438</td><td class="">384</td></tr><tr class="cat"><td colspan="13">Search, distinct &amp; group-by</td></tr><tr><th class="op"><code>find</code><span>first index of a value in 10M elements</span></th><td class="">14.6</td><td class="best eamber">11.7</td><td class="eamber">13.4</td><td class="eamber na">skip</td><td class="">82.0</td><td class="">1153</td><td class="">18.2</td><td class="">52.2</td><td class="">127</td><td class="na">skip</td><td class="na">skip</td><td class="">37.8</td></tr><tr><th class="op"><code>member</code><span>membership of 10M against a 10M set</span></th><td class="">203</td><td class="best eamber">9.38</td><td class="eamber">10.6</td><td class="eamber na">skip</td><td class="">143</td><td class="">2037</td><td class="">15.6</td><td class="">31.9</td><td class="">53.5</td><td class="">70.6</td><td class="">30.8</td><td class="">43.2</td></tr><tr><th class="op"><code>distinct</code><span>distinct over ~10 groups</span></th><td class="">33.3</td><td class="best eamber">3.81</td><td class="eamber">5.25</td><td class="eamber na">skip</td><td class="">525</td><td class="">219</td><td class="">5.19</td><td class="">34.0</td><td class="">300</td><td class="">45.6</td><td class="">85.9</td><td class="">40.1</td></tr><tr><th class="op"><code>distinct_100k</code><span>distinct over 100k groups</span></th><td class="">67.5</td><td class="best eamber">2.20</td><td class="eamber">7.78</td><td class="eamber na">skip</td><td class="">1859</td><td class="">362</td><td class="">44.3</td><td class="">48.5</td><td class="">709</td><td class="">60.9</td><td class="">116</td><td class="">87.1</td></tr><tr><th class="op"><code>group_10</code><span>group-by, 10 groups</span></th><td class="">22.5</td><td class="best eamber">16.7</td><td class="eamber">17.6</td><td class="eamber">22.9</td><td class="">359</td><td class="">49.5</td><td class="">27.4</td><td class="">40.7</td><td class="">241</td><td class="">55.6</td><td class="">33.7</td><td class="">33.2</td></tr><tr><th class="op"><code>group_100</code><span>group-by, 100 groups</span></th><td class="">30.9</td><td class="best eamber">21.2</td><td class="eamber">25.9</td><td class="eamber">28.7</td><td class="">418</td><td class="">117</td><td class="">62.0</td><td class="">38.9</td><td class="">789</td><td class="">58.4</td><td class="">31.9</td><td class="">35.1</td></tr><tr><th class="op"><code>group_10k</code><span>group-by, 10k groups</span></th><td class="">53.2</td><td class="best eamber">26.6</td><td class="eamber">28.0</td><td class="eamber">31.3</td><td class="">1664</td><td class="">177</td><td class="">120</td><td class="">41.9</td><td class="">1093</td><td class="">120</td><td class="">316</td><td class="">92.1</td></tr><tr><th class="op"><code>group_100k</code><span>group-by, 100k groups</span></th><td class="">118</td><td class="best eamber">33.3</td><td class="eamber">39.2</td><td class="eamber">45.7</td><td class="">4196</td><td class="">439</td><td class="">241</td><td class="">60.1</td><td class="">704</td><td class="">133</td><td class="">355</td><td class="">142</td></tr><tr class="cat"><td colspan="13">Joins</td></tr><tr><th class="op"><code>join_inner</code><span>inner join on an int key</span></th><td class="">2.64</td><td class="eamber">2.91</td><td class="eamber">2.87</td><td class="eamber">6.11</td><td class="">11.4</td><td class="">141</td><td class="best">2.14</td><td class="">6.58</td><td class="">22.3</td><td class="">53.4</td><td class="">11.2</td><td class="">7.22</td></tr><tr><th class="op"><code>asof</code><span>as-of join, the tick-desk workload</span></th><td class="best">7.28</td><td class="eamber">7.50</td><td class="eamber">7.29</td><td class="eamber na">skip</td><td class="">216</td><td class="na">skip</td><td class="na">skip</td><td class="na">skip</td><td class="">25.5</td><td class="">70.6</td><td class="">15.8</td><td class="">212</td></tr><tr class="cat"><td colspan="13">Moving windows</td></tr><tr><th class="op"><code>msum_16</code><span>moving sum, window 16</span></th><td class="">11.4</td><td class="eamber">11.0</td><td class="best eamber">10.8</td><td class="eamber na">skip</td><td class="">416</td><td class="">256</td><td class="">28.7</td><td class="">56.2</td><td class="">122</td><td class="">122</td><td class="">49.6</td><td class="">1034</td></tr><tr><th class="op"><code>mavg_256</code><span>moving average, window 256</span></th><td class="best">11.6</td><td class="eamber">12.6</td><td class="eamber">13.1</td><td class="eamber na">skip</td><td class="">10257</td><td class="">259</td><td class="">50.6</td><td class="">95.5</td><td class="">142</td><td class="">129</td><td class="">53.3</td><td class="">1334</td></tr><tr><th class="op"><code>mmax_64</code><span>moving max, window 64</span></th><td class="">16.3</td><td class="best eamber">13.8</td><td class="eamber">15.0</td><td class="eamber na">skip</td><td class="">1989</td><td class="na">skip</td><td class="na">skip</td><td class="na">skip</td><td class="">452</td><td class="">134</td><td class="">58.9</td><td class="">1471</td></tr><tr class="cat"><td colspan="13">qSQL-shaped</td></tr><tr><th class="op"><code>qsql_select</code><span>select ... by ... from - the full query path</span></th><td class="best">2.46</td><td class="eamber">4.60</td><td class="eamber">5.21</td><td class="eamber">3.93</td><td class="">123</td><td class="na">skip</td><td class="na">skip</td><td class="na">skip</td><td class="">46.5</td><td class="">16.2</td><td class="">12.1</td><td class="">9.05</td></tr></tbody></table></div>
 <p class="bm-note">Milliseconds, lower is better. <span class="k-best">Amber-coloured</span> is the fastest
 single-threaded engine in that row. <code>skip</code> means the engine has no
 faithful way to express the operation under <code>SCOUT_SPEC.md</code>, not that it failed.</p>
 <!--SC-->
 <div class="table-wrap bm-matrix"><table>
 <thead><tr><th class="op">operation</th><th>100,000</th><th>1,000,000</th><th>10,000,000</th><th>100k&rarr;10M</th></tr></thead>
-<tbody><tr><th class="op"><code>sum_f</code></th><td>0.005</td><td>0.245</td><td>3.46</td><td class="growth">&times;692</td></tr><tr><th class="op"><code>sort_f</code></th><td>0.134</td><td>2.38</td><td>30.2</td><td class="growth">&times;225</td></tr><tr><th class="op"><code>group_10k</code></th><td>0.380</td><td>4.52</td><td>26.4</td><td class="growth">&times;70</td></tr></tbody></table></div>
+<tbody><tr><th class="op"><code>sum_f</code></th><td>0.006</td><td>0.253</td><td>3.42</td><td class="growth">&times;569</td></tr><tr><th class="op"><code>sort_f</code></th><td>0.135</td><td>2.32</td><td>29.3</td><td class="growth">&times;217</td></tr><tr><th class="op"><code>group_10k</code></th><td>0.324</td><td>2.73</td><td>28.1</td><td class="growth">&times;87</td></tr></tbody></table></div>
 <p class="bm-note">Amber (native build), milliseconds. A 100&times; growth for a 100&times; row count is
 linear; below 100&times; is superlinear cache behaviour paying off, above it is the algorithm's log factor
 or a cache cliff.</p>
 <!--HR-->
 <div class="table-wrap bm-matrix"><table>
 <thead><tr><th class="op">operation</th><th>Amber (ms)</th><th>best (ms)</th><th>by</th><th>headroom</th></tr></thead>
-<tbody><tr><th class="op"><code>sort_presorted</code></th><td>10.5</td><td class="best">1.54</td><td class="eng">CBQN</td><td class="gap">&times;6.81</td></tr><tr><th class="op"><code>max_f</code></th><td>4.15</td><td class="best">0.935</td><td class="eng">CBQN</td><td class="gap">&times;4.44</td></tr><tr><th class="op"><code>sort_f</code></th><td>28.5</td><td class="best">6.97</td><td class="eng">CBQN</td><td class="gap">&times;4.09</td></tr><tr><th class="op"><code>sum_f</code></th><td>3.53</td><td class="best">1.52</td><td class="eng">CBQN</td><td class="gap">&times;2.32</td></tr><tr><th class="op"><code>qsql_select</code></th><td>4.13</td><td class="best">2.18</td><td class="eng">C</td><td class="gap">&times;1.89</td></tr><tr><th class="op"><code>join_inner</code></th><td>2.58</td><td class="best">1.88</td><td class="eng">C</td><td class="gap">&times;1.38</td></tr><tr><th class="op"><code>tablesort</code></th><td>92.3</td><td class="best">73.9</td><td class="eng">C</td><td class="gap">&times;1.25</td></tr><tr><th class="op"><code>arith_mask</code></th><td>15.4</td><td class="best">13.1</td><td class="eng">C</td><td class="gap">&times;1.18</td></tr><tr><th class="op"><code>dot</code></th><td>6.92</td><td class="best">6.20</td><td class="eng">NumPy</td><td class="gap">&times;1.12</td></tr><tr><th class="op"><code>mavg_256</code></th><td>12.2</td><td class="best">11.3</td><td class="eng">C</td><td class="gap">&times;1.08</td></tr><tr><th class="op"><code>asof</code></th><td>7.42</td><td class="best">6.94</td><td class="eng">C</td><td class="gap">&times;1.07</td></tr></tbody></table></div>
-<div class="note">
-  <span class="note-title">Where CBQN still wins, and why</span>
-  <p>BQN has no user-visible float/int distinction, so CBQN stores this dataset's 0..999 &ldquo;float&rdquo;
-  values as 16-bit integers and streams a quarter of the bytes on <code>sum_f</code>, <code>max_f</code>,
-  <code>sort_f</code> and <code>sort_presorted</code>. Those cells are a property of its
-  number model rather than of its kernels. At equal width Amber's <code>+/</code> is at the memory roofline and
-  CBQN's is a scalar loop. Everywhere else the earlier gap closed or reversed.</p>
+<tbody><tr><th class="op"><code>sort_presorted</code></th><td>7.73</td><td class="best">1.35</td><td class="eng">CBQN</td><td class="gap">&times;5.73</td></tr><tr><th class="op"><code>sort_f</code></th><td>29.5</td><td class="best">6.31</td><td class="eng">CBQN</td><td class="gap">&times;4.67</td></tr><tr><th class="op"><code>max_f</code></th><td>4.46</td><td class="best">1.18</td><td class="eng">CBQN</td><td class="gap">&times;3.78</td></tr><tr><th class="op"><code>sum_f</code></th><td>3.93</td><td class="best">1.05</td><td class="eng">CBQN</td><td class="gap">&times;3.75</td></tr><tr><th class="op"><code>qsql_select</code></th><td>4.60</td><td class="best">2.46</td><td class="eng">C</td><td class="gap">&times;1.87</td></tr><tr><th class="op"><code>arith_mask</code></th><td>15.2</td><td class="best">9.89</td><td class="eng">C</td><td class="gap">&times;1.54</td></tr><tr><th class="op"><code>join_inner</code></th><td>2.91</td><td class="best">2.14</td><td class="eng">CBQN</td><td class="gap">&times;1.36</td></tr><tr><th class="op"><code>tablesort</code></th><td>93.7</td><td class="best">74.1</td><td class="eng">C</td><td class="gap">&times;1.26</td></tr><tr><th class="op"><code>mavg_256</code></th><td>12.6</td><td class="best">11.6</td><td class="eng">C</td><td class="gap">&times;1.08</td></tr><tr><th class="op"><code>grade_i</code></th><td>24.9</td><td class="best">23.2</td><td class="eng">DuckDB</td><td class="gap">&times;1.07</td></tr><tr><th class="op"><code>dot</code></th><td>6.24</td><td class="best">6.00</td><td class="eng">NumPy</td><td class="gap">&times;1.04</td></tr><tr><th class="op"><code>asof</code></th><td>7.50</td><td class="best">7.28</td><td class="eng">C</td><td class="gap">&times;1.03</td></tr></tbody></table></div>
+
+<div class="note note-warn">
+  <span class="note-title">Two rows moved the wrong way</span>
+  <p><code>group_10k</code> and <code>group_100k</code> are 16% and 28% slower than the 2.2.0 run
+  (26.6 vs 22.5&nbsp;ms, 33.3 vs 23.9&nbsp;ms). Haven't pinned it down yet, so it stays up here until I do.</p>
 </div>
 
-<div class="note">
-  <span class="note-title">Two rows that flatter Amber, and why</span>
-  <p>The same disclosure the other way round. <strong><code>sum_i</code></strong> is not a pure kernel
-  comparison: Amber narrows integer storage to the value range, so these 0..999 values occupy
-  <strong>2 bytes each</strong> against the genuine <code>int64</code> that C, NumPy and pandas read.
-  Amber streams a quarter of the bytes. At equal width, the same vector shifted past
-  2<sup>32</sup>, Amber's <code>+/</code> takes 4.4&nbsp;ms, which is the honest number for a
-  64-bit reduction. The narrow storage is real and useful; it is just not what <code>+/a</code>
-  measures.</p>
-  <p><strong><code>sort_f</code></strong> is not a general sorting comparison: this dataset's 10M
-  &ldquo;floats&rdquo; hold only <strong>1000 distinct integral values</strong>, exactly the shape
-  2.1.0's counting sort recognises, which is why the figure moved 197&nbsp;&rarr;&nbsp;58&nbsp;ms in
-  that release. On random <code>float64</code> the same build takes
-  <strong>~864&nbsp;ms</strong>. Market prices are integral ticks, so the fast path fires on real data
-  too, but a reader comparing sorting algorithms should use the second number.</p>
+<details class="bp-more">
+  <summary>Where CBQN still wins, and why</summary>
+  <p>BQN has no float/int split, so CBQN keeps this dataset's 0..999 &ldquo;floats&rdquo; as 16-bit
+  ints and streams a quarter of the bytes on <code>sum_f</code>, <code>max_f</code>, <code>sort_f</code>
+  and <code>sort_presorted</code>. That's its number model more than its kernels. <code>join_inner</code>
+  is a real CBQN win (2.1 vs 2.9&nbsp;ms).</p>
+</details>
+<details class="bp-more">
+  <summary>Two rows that flatter Amber</summary>
+  <p><strong><code>sum_i</code></strong>: Amber stores these 0..999 ints in 2 bytes each, C and NumPy
+  read real <code>int64</code>. Shift the same vector past 2<sup>32</sup> so Amber has to use 8 bytes
+  too and <code class="k hl"><span class="tok-op">+</span>/</code> takes <strong>3.3&nbsp;ms</strong>, which is the honest 64-bit number.</p>
+  <p><strong><code>sort_f</code></strong>: 10M &ldquo;floats&rdquo; with only 1000 distinct whole values is
+  exactly what the counting sort picks up. On random <code>float64</code> the same build takes
+  <strong>~291&nbsp;ms</strong>. Prices are whole ticks, so the fast path fires on real data too, but
+  if you're comparing sort algorithms use the second number.</p>
+</details>
+
+<h2 id="ci">The CI table</h2>
+<p>Four workloads, ten engines, re-run by CI on every push (<code>bench/run_comparative.py</code>, spec
+in <code>bench/SPEC.md</code>). This one runs on a small 2-core cloud box, so it doesn't line up with
+the laptop numbers above. Median of 5 runs after 2 warm-ups, kernel time only, ms; the small number
+under each is the multiple of C.</p>
+
+<div class="table-wrap bp-ci">
+<table>
+  <thead><tr><th>Workload</th><th class="num">C</th><th class="num">Amber</th><th class="num">Amber qSQL</th><th class="num">ngn/k</th><th class="num">CBQN</th><th class="num">J</th><th class="num">Uiua</th><th class="num">NumPy</th><th class="num">Julia</th><th class="num">DuckDB</th></tr></thead>
+  <tbody>
+    <tr><td>Vector arithmetic + mask<small><code class="k hl"><span class="tok-fn">sum</span>((x<span class="tok-op">*</span><span class="tok-num">2.5</span>)<span class="tok-op">+</span>y <span class="tok-kw">where</span> x<span class="tok-op">&gt;</span><span class="tok-num">50</span>)</code>, 10M</small></td>
+      <td class="num">8.26</td><td class="num amb">19.99<i>2.42&times;</i></td><td class="num amb">37.98<i>4.60&times;</i></td><td class="num">255.56<i>30.9&times;</i></td><td class="num">31.82<i>3.85&times;</i></td><td class="num">109.70<i>13.3&times;</i></td><td class="num">801.43<i>97.0&times;</i></td><td class="num">27.26<i>3.30&times;</i></td><td class="num best">7.82<i>0.95&times;</i></td><td class="num">22.00<i>2.66&times;</i></td></tr>
+    <tr><td>Reductions<small><code class="k hl"><span class="tok-fn">sum</span> <span class="tok-op">+</span> <span class="tok-fn">max</span> <span class="tok-op">+</span> <span class="tok-fn">dot</span></code>, 10M</small></td>
+      <td class="num">21.91</td><td class="num amb">9.22<i>0.42&times;</i></td><td class="num amb">17.01<i>0.78&times;</i></td><td class="num">236.71<i>10.8&times;</i></td><td class="num best">3.96<i>0.18&times;</i></td><td class="num">101.07<i>4.61&times;</i></td><td class="num">743.72<i>34.0&times;</i></td><td class="num">8.76<i>0.40&times;</i></td><td class="num">21.93<i>1.00&times;</i></td><td class="num">29.00<i>1.32&times;</i></td></tr>
+    <tr><td>Group-by<small>100 groups over 10M rows</small></td>
+      <td class="num">6.33</td><td class="num amb">35.06<i>5.54&times;</i></td><td class="num amb">40.53<i>6.40&times;</i></td><td class="num">279.34<i>44.1&times;</i></td><td class="num">29.65<i>4.68&times;</i></td><td class="num">137.88<i>21.8&times;</i></td><td class="num">1,566.32<i>247&times;</i></td><td class="num">11.53<i>1.82&times;</i></td><td class="num best">5.43<i>0.86&times;</i></td><td class="num">14.00<i>2.21&times;</i></td></tr>
+    <tr><td>Inner join<small>1M rows against 1,000 sparse keys</small></td>
+      <td class="num best">0.83</td><td class="num amb">2.41<i>2.90&times;</i></td><td class="num amb">5.13<i>6.18&times;</i></td><td class="num">364.35<i>439&times;</i></td><td class="num">1.80<i>2.17&times;</i></td><td class="num">90.85<i>109&times;</i></td><td class="num na">&mdash;</td><td class="num">11.32<i>13.6&times;</i></td><td class="num">9.92<i>11.9&times;</i></td><td class="num">9.00<i>10.8&times;</i></td></tr>
+  </tbody>
+</table>
 </div>
+<p class="small muted">Amber is in there twice on purpose: <strong>Amber</strong> is array-primitive code, the
+fair peer of ngn/k, CBQN, J and Uiua; <strong>Amber qSQL</strong> goes through
+<code class="k hl"><span class="tok-kw">select</span> … <span class="tok-kw">by</span> … <span class="tok-kw">from</span></code>, the fair peer of DuckDB's planner. The gap between the two
+rows <em>is</em> the query layer's cost.</p>
 
-<h2>Two shortcuts that were removed</h2>
-<p>Both were in the previous suite, both are documented in <code>SPEC.md</code>, and both are the kind
-of thing a benchmark table quietly relies on unless someone goes looking.</p>
-<ul>
-  <li><strong><code>+/!10000000</code> is O(1) in Amber.</strong> <code>src/3.c</code>'s
-  <code>arf</code> constant-folds a sum over a <em>range</em> into the closed form
-  <code>n(n-1)/2</code>. The old <code>vecsum</code> benchmark was exactly that expression, so Amber
-  "won" it by never touching 10M elements while every other engine ran a real reduction. All data is
-  now materialised before the clock starts.</li>
-  <li><strong>A dense-key "join" is just an array index.</strong> With right keys
-  <code>0..K-1</code>, every array language answers the join with a single gather while DuckDB still
-  builds a hash table. Right keys are now sparse and unsorted, forcing a genuine key lookup
-  everywhere.</li>
-</ul>
+<details class="bp-more">
+  <summary>How each engine is timed</summary>
+  <p><code>kernel</code>: the engine times its own kernel with a monotonic clock. <code>net</code>: no
+  usable clock inside the language, so it's total process time minus a measured startup baseline.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Engine</th><th>Peer group</th><th>Mode</th><th class="num">Startup baseline</th></tr></thead>
+    <tbody>
+      <tr><td>C (-O3)</td><td>baseline</td><td>kernel</td><td class="num">&mdash;</td></tr>
+      <tr><td>Amber</td><td>array primitives</td><td>kernel</td><td class="num">&mdash;</td></tr>
+      <tr><td>Amber qSQL</td><td>query layer</td><td>kernel</td><td class="num">&mdash;</td></tr>
+      <tr><td>ngn/k</td><td>array primitives</td><td>net</td><td class="num">1.61 ms</td></tr>
+      <tr><td>CBQN</td><td>array primitives</td><td>kernel</td><td class="num">2.78 ms</td></tr>
+      <tr><td>J</td><td>array primitives</td><td>net</td><td class="num">44.61 ms</td></tr>
+      <tr><td>Uiua</td><td>array primitives</td><td>net</td><td class="num">9.57 ms</td></tr>
+      <tr><td>NumPy</td><td>array primitives</td><td>kernel</td><td class="num">&mdash;</td></tr>
+      <tr><td>Julia</td><td>scalar loops (JIT)</td><td>kernel</td><td class="num">&mdash;</td></tr>
+      <tr><td>DuckDB</td><td>query layer</td><td>kernel</td><td class="num">11.40 ms</td></tr>
+    </tbody>
+  </table></div>
+</details>
+<details class="bp-more">
+  <summary>Two shortcuts that were taken out</summary>
+  <ul>
+    <li><strong><code class="k hl"><span class="tok-op">+</span>/<span class="tok-op">!</span><span class="tok-num">10000000</span></code> is O(1) in Amber.</strong> <code>arf</code> in
+    <code>src/3.c</code> folds a sum over a range into <code>n(n-1)/2</code>, so the old
+    <code>vecsum</code> benchmark &ldquo;won&rdquo; by never touching the 10M elements. All data is
+    materialised before the clock starts now.</li>
+    <li><strong>A dense-key join is just an index.</strong> With right keys <code>0..K-1</code> every
+    array language answers with one gather while DuckDB still builds a hash table. Right keys are sparse
+    and unsorted now, so everyone does a real lookup.</li>
+  </ul>
+</details>
 
-<h2>Attributes: why they matter</h2>
-<p><code>bench.k</code> measures <code>?</code> (find) on identical data, sorted-attributed versus
-not. Results are identical; only the time differs.</p>
+<h2 id="game">Measured by someone else</h2>
+<p>Everything else on this page is Amber measuring itself against a spec in this repo. The
+<a href="https://effbiae.github.io/bench/" target="_blank" rel="noopener">Array Language Benchmarks
+Game</a> isn't: its author picks the problems, writes the rules, runs every entry on their own machine
+(an i5-1135g7, 2&nbsp;GB cap) and publishes the table. Amber has four entries there next to BQN,
+growler/k, Goal, q, Kap and C: <code>spectralnorm</code> and <code>collatz</code> in the current round,
+<code>knucleotide</code> and <code>nbody</code> in <a href="https://effbiae.github.io/bench/r1.html" target="_blank" rel="noopener">round 1</a>.</p>
+<p>The figures aren't copied here because the round is open and they move every week; read them on
+the game's own site, next to every entry's source. There's no restriction on algorithms, so a row
+compares two programs at least as much as two languages.</p>
+
+<h2 id="numpy">Against NumPy, on a real workload</h2>
+<p>One application kernel instead of a synthetic suite: a structured-payoff backtest, against a
+line-for-line NumPy port of the same algorithm (same tensor, same three scans,
+<code>np.maximum.accumulate</code> where Amber uses <code class="k hl"><span class="tok-fn">maxs</span></code>). NumPy 2.5.2, both on one
+core, warm, best of repeated runs. It isn't flattering everywhere, which is the point.</p>
+
+<h3>Building the tensor: NumPy wins</h3>
 <div class="table-wrap">
 <table>
-  <thead><tr><th>rows</th><th class="num">linear scan</th><th class="num">binary (<code>`s</code>)</th><th class="num">speedup</th></tr></thead>
+  <thead><tr><th>Universe</th><th class="num">Cells</th><th class="num">Amber</th><th class="num">NumPy</th><th class="num">NumPy ahead by</th></tr></thead>
   <tbody>
-    <tr><td>100 k</td><td class="num">87 ms</td><td class="num">0.6 ms</td><td class="num best">141&times;</td></tr>
-    <tr><td>500 k</td><td class="num">417 ms</td><td class="num">0.9 ms</td><td class="num best">470&times;</td></tr>
-    <tr><td>2 M</td><td class="num">1.73 s</td><td class="num">1.4 ms</td><td class="num best">1244&times;</td></tr>
-    <tr><td>5 M</td><td class="num">4.23 s</td><td class="num">1.9 ms</td><td class="num best">2261&times;</td></tr>
+    <tr><td>U = 25</td><td class="num">0.54 M</td><td class="num">3 ms</td><td class="num best">0.7 ms</td><td class="num">4.3&times;</td></tr>
+    <tr><td>U = 50</td><td class="num">1.08 M</td><td class="num">6 ms</td><td class="num best">1.8 ms</td><td class="num">3.3&times;</td></tr>
+    <tr><td>U = 100</td><td class="num">2.16 M</td><td class="num">13 ms</td><td class="num best">7.1 ms</td><td class="num">1.8&times;</td></tr>
+    <tr><td>U = 200</td><td class="num">4.32 M</td><td class="num">28 ms</td><td class="num best">14.6 ms</td><td class="num">1.9&times;</td></tr>
+    <tr><td>U = 400</td><td class="num">8.64 M</td><td class="num">55 ms</td><td class="num best">29.2 ms</td><td class="num">1.9&times;</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small muted">S&nbsp;=&nbsp;1800 start dates, n&nbsp;=&nbsp;12 observations. The tensor at
+U&nbsp;=&nbsp;100 is 17.3&nbsp;MB and the U&nbsp;=&nbsp;400 price history 14.7&nbsp;MB. The first build
+after a cold start costs 2&ndash;4&times; a warm one, so build it when a session opens, not on the
+first query.</p>
+
+<h3>Running a product: Amber wins once there are enough observations</h3>
+<p>Amber pays a fixed cost per <em>operation</em> (allocate, dispatch) that barely moves as the data
+inside it grows; NumPy's per-operation cost is tiny, so its time tracks the data. Time per basket:</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Observations</th><th class="num">6</th><th class="num">12</th><th class="num">24</th><th class="num">48</th><th class="num">96</th><th class="num">120</th></tr></thead>
+  <tbody>
+    <tr><td>Amber &micro;s</td><td class="num">1,040</td><td class="num">1,164</td><td class="num">1,230</td><td class="num best">1,391</td><td class="num best">1,900</td><td class="num best">2,388</td></tr>
+    <tr><td>NumPy &micro;s</td><td class="num best">228</td><td class="num best">464</td><td class="num best">1,217</td><td class="num">3,225</td><td class="num">7,103</td><td class="num">9,040</td></tr>
+    <tr><td>Amber &divide; NumPy</td><td class="num">4.6&times;</td><td class="num">2.5&times;</td><td class="num">1.0&times;</td><td class="num best">0.43&times;</td><td class="num best">0.27&times;</td><td class="num best">0.26&times;</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Amber's cost goes up 2.3&times; while the data grows 20&times;; NumPy's goes up 40&times;. They
+cross at about <strong>24 observations</strong> (it was ~43 a few releases ago). A three-year quarterly
+note has 12 and belongs to NumPy; a ten-year monthly one has 120, where Amber is
+<strong>3.8&times; faster</strong>.</p>
+<div class="note note-info">
+  <span class="note-title">Read it the right way round</span>
+  <p>Both halves are the <em>same code</em>. Amber's cost is about how many primitives you call, not how
+  much data each one touches. <a href="../docs/performance.html">Writing fast Amber</a> turns that into
+  a rule you can apply.</p>
+</div>
+
+<h2 id="scans">Float scans</h2>
+<p>Up to 2.0 every float <code class="k hl"><span class="tok-op">+</span><span class="tok-op">\</span></code>, <code class="k hl"><span class="tok-op">*</span><span class="tok-op">\</span></code>, <code class="k hl"><span class="tok-op">&amp;</span><span class="tok-op">\</span></code>
+and <code class="k hl"><span class="tok-op">|</span><span class="tok-op">\</span></code> (so <code class="k hl"><span class="tok-fn">sums</span></code>, <code class="k hl"><span class="tok-fn">prds</span></code>,
+<code class="k hl"><span class="tok-fn">mins</span></code>, <code class="k hl"><span class="tok-fn">maxs</span></code> on doubles) went through a generic loop that
+boxed an atom per element. Since 2.1 they're native. Same laptop, 2.0.1 against 2.4.1, best of 7:</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>21,600 doubles</th><th class="num">2.0.1</th><th class="num">2.4.1</th><th class="num">Speedup</th></tr></thead>
+  <tbody>
+    <tr><td><code class="k hl"><span class="tok-fn">maxs</span></code></td><td class="num">688 &micro;s</td><td class="num best">21 &micro;s</td><td class="num">33&times;</td></tr>
+    <tr><td><code class="k hl"><span class="tok-fn">mins</span></code></td><td class="num">695 &micro;s</td><td class="num best">26 &micro;s</td><td class="num">27&times;</td></tr>
+    <tr><td><code class="k hl"><span class="tok-fn">sums</span></code></td><td class="num">370 &micro;s</td><td class="num best">13 &micro;s</td><td class="num">28&times;</td></tr>
+    <tr><td><code class="k hl"><span class="tok-fn">prds</span></code></td><td class="num">372 &micro;s</td><td class="num best">14 &micro;s</td><td class="num">27&times;</td></tr>
+  </tbody>
+</table>
+</div>
+<p>And the ones a quant writes all day, on a 1,000,000-point price path:</p>
+<div class="stats bp-scan">
+  <div><div class="v">19&times;</div><div class="l">running max <code class="k hl"><span class="tok-op">|</span><span class="tok-op">\</span>p</code><br>32.3 ms &rarr; 1.7 ms</div></div>
+  <div><div class="v">14&times;</div><div class="l">max drawdown <code class="k hl"><span class="tok-op">|</span>/<span class="tok-num">1</span><span class="tok-op">-</span>p<span class="tok-op">%</span><span class="tok-op">|</span><span class="tok-op">\</span>p</code><br>33.7 ms &rarr; 2.5 ms</div></div>
+  <div><div class="v">11&times;</div><div class="l">cumulative return <code class="k hl"><span class="tok-op">-</span><span class="tok-num">1</span><span class="tok-op">+</span><span class="tok-op">*</span><span class="tok-op">\</span><span class="tok-num">1</span><span class="tok-op">+</span>r</code><br>18.3 ms &rarr; 1.6 ms</div></div>
+</div>
+<p class="small muted">Min and max go through the same order-preserving integer domain as the reductions,
+so a scan and a reduce agree bit for bit on NaN and &plusmn;0.0.</p>
+
+<h2 id="peach">Multicore: what <code class="k hl"><span class="tok-fn">peach</span></code> buys you</h2>
+<p>A basket sweep is embarrassingly parallel. <code class="k hl"><span class="tok-fn">peach</span></code> is a persistent thread pool now
+(no fork, no copying the tensor to a child), so even one basket per task pays off. 400 baskets through
+the payoff kernel above, best of 5:</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>400 baskets</th><th class="num">2 threads</th><th class="num">4 threads</th><th class="num">14 threads</th></tr></thead>
+  <tbody>
+    <tr><td>serial <code class="k hl">each</code></td><td class="num">465 ms</td><td class="num">487 ms</td><td class="num">451 ms</td></tr>
+    <tr><td><code class="k hl"><span class="tok-fn">peach</span></code>, one basket per task</td><td class="num">391 ms</td><td class="num">314 ms</td><td class="num best">215 ms</td></tr>
+    <tr><td><code class="k hl"><span class="tok-fn">peach</span></code>, 4 chunks</td><td class="num">366 ms</td><td class="num">311 ms</td><td class="num">299 ms</td></tr>
+    <tr><td><code class="k hl"><span class="tok-fn">peach</span></code>, 14 chunks</td><td class="num">378 ms</td><td class="num">324 ms</td><td class="num">232 ms</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Same 400 answers in every configuration. It tops out around <strong>2.1&times;</strong> on this laptop
+(2 performance cores, the rest efficiency cores); on heavier per-item work it scales further, e.g.
+<code class="k hl">{<span class="tok-fn">avg</span> x<span class="tok-op">?</span><span class="tok-num">1.0</span>}</code> over 8 &times; 800k draws goes from 25.1&nbsp;ms to 6.2&nbsp;ms on 8
+threads (4.0&times;).</p>
+
+<h2 id="attributes">Sorted attributes</h2>
+<p><code>bench.k</code> times 5,000 lookups with <code class="k hl"><span class="tok-op">?</span></code> (find) on the same column, with and
+without the sorted attribute. Without it, find builds a hash of the whole column every call; with
+it (<code class="k hl"><span class="tok-fn">asc</span></code> sets it) it's a binary search per lookup. Same answers, very different times:</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Rows</th><th class="num">plain</th><th class="num">sorted (<code class="k hl"><span class="tok-sym">`s</span></code>)</th><th class="num">Speedup</th></tr></thead>
+  <tbody>
+    <tr><td>100 k</td><td class="num">3.2 ms</td><td class="num best">0.41 ms</td><td class="num">7&times;</td></tr>
+    <tr><td>500 k</td><td class="num">16.8 ms</td><td class="num best">0.94 ms</td><td class="num">17&times;</td></tr>
+    <tr><td>2 M</td><td class="num">184 ms</td><td class="num best">2.0 ms</td><td class="num">93&times;</td></tr>
+    <tr><td>5 M</td><td class="num">827 ms</td><td class="num best">2.9 ms</td><td class="num">288&times;</td></tr>
   </tbody>
 </table>
 </div>
 
-<h2>Self-benchmarks: what each release moved</h2>
+<h2 id="hft">A real HFT run</h2>
+<p><code>demo/hft_demo.k</code> on 500,000 trades and a million quotes: generate the tape, VWAP per symbol,
+a 50-period EMA and an as-of join of every trade to its quote. The script prints this itself:</p>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">./amber demo/hft_demo.k</span></div><pre><code class="lang-out">== benchmark summary ========================================
+stage      ms
+gentq   418.7
+vwap     10.2
+ema       0.1
+asof     15.0
+------------------------------------------------------------
+total: 444.1 ms for 500000 trades end-to-end</code></pre></div>
+
+<h2 id="history">What each release moved</h2>
+<p>Each row is a before/after of one change, measured on the machine of its day, so read rows on their
+own, not against each other. The full tables are in
+<a href="https://github.com/BonucciAndrea/amber/blob/main/docs/BENCHMARKS.md">docs/BENCHMARKS.md</a>.</p>
 <div class="table-wrap">
 <table>
   <thead><tr><th style="width:12%">Release</th><th>Change</th><th class="num">Effect</th></tr></thead>
   <tbody>
-    <tr><td><strong>1.9.1</strong></td><td>the <code>select … by … from</code> layer groups and probes on <strong>raw column vectors</strong> instead of boxing one K object per row</td><td class="num">group-by <span class="best">24.7&times;</span><br>inner join <span class="best">19.3&times;</span></td></tr>
-    <tr><td><strong>1.9.2</strong></td><td>integer <code>?</code> (find) builds an index over its left argument instead of scanning it per probe</td><td class="num">180.95 ms &rarr; 5.66 ms<br><span class="best">32&times;</span></td></tr>
-    <tr><td><strong>1.9.2</strong></td><td>float <code>+/</code> uses four independent accumulators so it vectorises; array payloads are cache-line aligned</td><td class="num">8.9 ms &rarr; 6.3 ms<br>1.41&times;</td></tr>
-    <tr><td><strong>1.9.3</strong></td><td><code>peach</code> ships worker results over the <code>-8!</code> binary wire instead of formatting and reparsing text</td><td class="num">500k @ 4 threads<br>~23 ms</td></tr>
+    <tr><td><strong>1.9.1</strong></td><td>the <code class="k hl"><span class="tok-kw">select</span> … <span class="tok-kw">by</span> … <span class="tok-kw">from</span></code> layer groups and probes on <strong>raw column vectors</strong> instead of boxing one K object per row</td><td class="num">group-by <span class="best">24.7&times;</span><br>inner join <span class="best">19.3&times;</span></td></tr>
+    <tr><td><strong>1.9.2</strong></td><td>integer <code class="k hl"><span class="tok-op">?</span></code> (find) builds an index over its left argument instead of scanning it per probe</td><td class="num">180.95 ms &rarr; 5.66 ms<br><span class="best">32&times;</span></td></tr>
+    <tr><td><strong>1.9.2</strong></td><td>float <code class="k hl"><span class="tok-op">+</span>/</code> uses four independent accumulators so it vectorises; array payloads are cache-line aligned</td><td class="num">8.9 ms &rarr; 6.3 ms<br>1.41&times;</td></tr>
+    <tr><td><strong>1.9.3</strong></td><td><code class="k hl"><span class="tok-fn">peach</span></code> ships worker results over the <code class="k hl"><span class="tok-op">-</span><span class="tok-num">8</span><span class="tok-op">!</span></code> binary wire instead of formatting and reparsing text</td><td class="num">500k @ 4 threads<br>~23 ms</td></tr>
     <tr><td><strong>1.9.5</strong></td><td>single-pass O(<em>N</em>) sliding windows + a key-carrying LSD radix sort</td><td class="num">moving windows <span class="best">up to 273.9&times;</span><br>multi-col sort <span class="best">29.6&times;</span> · as-of join <span class="best">16.0&times;</span></td></tr>
     <tr><td><strong>2.0.0</strong></td><td>table group-by keys on the interned 4-byte <strong>symbol id</strong> instead of a per-character string sort</td><td class="num">587 ms &rarr; 34 ms<br><span class="best">17&times;</span></td></tr>
-    <tr><td><strong>2.1.0</strong></td><td>one-pass fused group aggregate (<code>`gagg</code>) behind <code>gsum</code> and <code>select … by</code>, 10M rows, 100k groups</td><td class="num">222 ms &rarr; 30 ms<br><span class="best">7.4&times;</span></td></tr>
-    <tr><td><strong>2.1.0</strong></td><td>one-pass membership (<code>`memb</code> behind <code>in</code>), 10M values against 1,000 keys</td><td class="num">51 ms &rarr; 9.6 ms<br><span class="best">5.3&times;</span></td></tr>
+    <tr><td><strong>2.1.0</strong></td><td>one-pass fused group aggregate (<code class="k hl"><span class="tok-sym">`gagg</span></code>) behind <code class="k hl">gsum</code> and <code class="k hl"><span class="tok-kw">select</span> … <span class="tok-kw">by</span></code>, 10M rows, 100k groups</td><td class="num">222 ms &rarr; 30 ms<br><span class="best">7.4&times;</span></td></tr>
+    <tr><td><strong>2.1.0</strong></td><td>one-pass membership (<code class="k hl"><span class="tok-sym">`memb</span></code> behind <code class="k hl"><span class="tok-fn">in</span></code>), 10M values against 1,000 keys</td><td class="num">51 ms &rarr; 9.6 ms<br><span class="best">5.3&times;</span></td></tr>
     <tr><td><strong>2.1.0</strong></td><td>bitmap distinct, 10M values, 100k distinct</td><td class="num">181 ms &rarr; 20 ms<br><span class="best">9.0&times;</span></td></tr>
     <tr><td><strong>2.1.0</strong></td><td>direct-table slice pass in the as-of join, 1M trades &times; 200k quotes</td><td class="num">37 ms &rarr; 7.8 ms<br><span class="best">4.8&times;</span></td></tr>
     <tr><td><strong>2.1.0</strong></td><td>counting sort for integral-valued floats, no grade, no gather, 10M float64</td><td class="num">197 ms &rarr; 58 ms<br><span class="best">3.4&times;</span></td></tr>
-    <tr><td><strong>2.1.0</strong></td><td>compiler idiom fusion: <code>+/x*y</code>, <code>+/x@&amp;m</code>, <code>x@&amp;m</code>, <code>a+s*b</code>, 10M</td><td class="num">dot 14.1 &rarr; 6.8 ms · mask 63 &rarr; 23 ms<br><span class="best">2.1&times; / 2.7&times;</span></td></tr>
-    <tr><td><strong>2.1.0</strong></td><td>moving windows without the input copy or the per-call mapping: <code>msum[16;x]</code>, 10M</td><td class="num">43 ms &rarr; 16 ms<br><span class="best">2.7&times;</span></td></tr>
+    <tr><td><strong>2.1.0</strong></td><td>compiler idiom fusion: <code class="k hl"><span class="tok-op">+</span>/x<span class="tok-op">*</span>y</code>, <code class="k hl"><span class="tok-op">+</span>/x<span class="tok-op">@</span><span class="tok-op">&amp;</span>m</code>, <code class="k hl">x<span class="tok-op">@</span><span class="tok-op">&amp;</span>m</code>, <code class="k hl">a<span class="tok-op">+</span>s<span class="tok-op">*</span>b</code>, 10M</td><td class="num">dot 14.1 &rarr; 6.8 ms · mask 63 &rarr; 23 ms<br><span class="best">2.1&times; / 2.7&times;</span></td></tr>
+    <tr><td><strong>2.1.0</strong></td><td>moving windows without the input copy or the per-call mapping: <code class="k hl"><span class="tok-fn">msum</span>[<span class="tok-num">16</span><span class="tok-op">;</span>x]</code>, 10M</td><td class="num">43 ms &rarr; 16 ms<br><span class="best">2.7&times;</span></td></tr>
     <tr><td><strong>2.1.0</strong></td><td><code>src/simd.c</code> compiled twice (AVX2 + baseline) and selected at load time: the portable build matches the native one</td><td class="num">—</td></tr>
     <tr><td><strong>2.2.0</strong></td><td>keys-only radix sort: the order-preserving radix key is a bijection, so the permutation is applied to the <strong>keys</strong> and unfolded rather than gathering the input. 10M non-integral float64</td><td class="num">304.7 ms &rarr; 119.4 ms<br><span class="best">2.6&times;</span></td></tr>
-    <tr><td><strong>2.2.0</strong></td><td>the float range scan split from the integrality test, and <code>floor()</code> dropped from it. 10M float64, already sorted</td><td class="num">20.6 ms &rarr; 3.6 ms<br><span class="best">5.8&times;</span></td></tr>
-    <tr><td><strong>2.2.0</strong></td><td>float <code>distinct</code> grows its hash with the distinct count instead of allocating 2<em>n</em> slots up front. 10M float64</td><td class="num">26.7 ms &rarr; 13.6 ms<br><span class="best">2.0&times;</span></td></tr>
-    <tr><td><strong>2.2.0</strong></td><td>compiler idiom fusion: <code>+/(a&plusmn;s*b)@&amp;m</code> in one masked pass, 10M</td><td class="num">20.1 ms &rarr; 13.3 ms<br><span class="best">1.5&times;</span></td></tr>
-    <tr><td><strong>2.2.0</strong></td><td><code>select</code> stops materialising the filtered table on the paths that ignore it: <code>select from t</code>, 10M rows</td><td class="num">5.7 ms &rarr; 0.7 ms<br><span class="best">8.2&times; / 19&times; wide</span></td></tr>
+    <tr><td><strong>2.2.0</strong></td><td>the float range scan split from the integrality test, and <code class="k hl"><span class="tok-fn">floor</span>()</code> dropped from it. 10M float64, already sorted</td><td class="num">20.6 ms &rarr; 3.6 ms<br><span class="best">5.8&times;</span></td></tr>
+    <tr><td><strong>2.2.0</strong></td><td>float <code class="k hl"><span class="tok-fn">distinct</span></code> grows its hash with the distinct count instead of allocating 2<em>n</em> slots up front. 10M float64</td><td class="num">26.7 ms &rarr; 13.6 ms<br><span class="best">2.0&times;</span></td></tr>
+    <tr><td><strong>2.2.0</strong></td><td>compiler idiom fusion: <code class="k hl"><span class="tok-op">+</span>/(a±s<span class="tok-op">*</span>b)<span class="tok-op">@</span><span class="tok-op">&amp;</span>m</code> in one masked pass, 10M</td><td class="num">20.1 ms &rarr; 13.3 ms<br><span class="best">1.5&times;</span></td></tr>
+    <tr><td><strong>2.2.0</strong></td><td><code class="k hl"><span class="tok-kw">select</span></code> stops materialising the filtered table on the paths that ignore it: <code class="k hl"><span class="tok-kw">select</span> <span class="tok-kw">from</span> t</code>, 10M rows</td><td class="num">5.7 ms &rarr; 0.7 ms<br><span class="best">8.2&times; / 19&times; wide</span></td></tr>
     <tr><td><strong>2.3.0</strong></td><td>integer distinct, 10M values (and with ~100k distinct)</td><td class="num"><span class="best">1.9&times; / 3.9&times;</span></td></tr>
     <tr><td><strong>2.3.0</strong></td><td>sorting a float column of whole numbers that is already sorted skips a pass, 10M</td><td class="num"><span class="best">2.6&times;</span></td></tr>
-    <tr><td><strong>2.3.0</strong></td><td><code>mmax</code>/<code>mmin</code> as van Herk/Gil-Werman, the same cost at any window; <code>msum</code>/<code>mavg</code> as blocked running sums</td><td class="num"><span class="best">2.3&times; at 64 / 1.5&times; at 16</span></td></tr>
+    <tr><td><strong>2.3.0</strong></td><td><code class="k hl"><span class="tok-fn">mmax</span></code>/<code class="k hl"><span class="tok-fn">mmin</span></code> as van Herk/Gil-Werman, the same cost at any window; <code class="k hl"><span class="tok-fn">msum</span></code>/<code class="k hl"><span class="tok-fn">mavg</span></code> as blocked running sums</td><td class="num"><span class="best">2.3&times; at 64 / 1.5&times; at 16</span></td></tr>
     <tr><td><strong>2.3.0</strong></td><td>find on int64 keys; inner join</td><td class="num"><span class="best">1.4&times; / 1.2&times;</span></td></tr>
-    <tr><td><strong>2.4.0</strong></td><td>masked float sums without the fused kernel, equal to the unfused expression bit for bit: <code>+/x@&amp;x&gt;50</code>, 10M</td><td class="num">48.8 ms &rarr; 10.3 ms<br><span class="best">4.7&times;</span></td></tr>
-    <tr><td><strong>2.4.0</strong></td><td>the same with arithmetic in it: <code>+/((x*2.5)+y)@&amp;x&gt;50</code>, 10M</td><td class="num">56.1 ms &rarr; 26.5 ms<br><span class="best">2.1&times;</span></td></tr>
+    <tr><td><strong>2.4.0</strong></td><td>masked float sums without the fused kernel, equal to the unfused expression bit for bit: <code class="k hl"><span class="tok-op">+</span>/x<span class="tok-op">@</span><span class="tok-op">&amp;</span>x<span class="tok-op">&gt;</span><span class="tok-num">50</span></code>, 10M</td><td class="num">48.8 ms &rarr; 10.3 ms<br><span class="best">4.7&times;</span></td></tr>
+    <tr><td><strong>2.4.0</strong></td><td>the same with arithmetic in it: <code class="k hl"><span class="tok-op">+</span>/((x<span class="tok-op">*</span><span class="tok-num">2.5</span>)<span class="tok-op">+</span>y)<span class="tok-op">@</span><span class="tok-op">&amp;</span>x<span class="tok-op">&gt;</span><span class="tok-num">50</span></code>, 10M</td><td class="num">56.1 ms &rarr; 26.5 ms<br><span class="best">2.1&times;</span></td></tr>
     <tr><td><strong>2.4.0</strong></td><td>float find, 1,000 lookups in 1M floats</td><td class="num">0.109 ms &rarr; 0.061 ms<br><span class="best">1.8&times;</span></td></tr>
-    <tr><td><strong>2.4.0</strong></td><td>tail calls reuse the frame: <code>{$[x;o x-1;0]}1000000</code></td><td class="num"><code>'stack</code> at 2048 &rarr; 66 ms</td></tr>
-    <tr><td><strong>2.4.1</strong></td><td>reverse as one copy, 8 bytes at a time; <code>0 :':x</code> and <code>m!x</code> (power of two) in one pass. The bignum collatz loop, 2<sup>18</sup></td><td class="num">~300 ms &rarr; ~255 ms<br><span class="best">1.18&times;</span></td></tr>
-  </tbody>
-</table>
-</div>
-<p class="small muted">After 1.9.1 both group-by and inner join sit within ~1.1–1.5&times; of
-hand-written Amber array code. Each figure shares one machine and one dataset within its row;
-rows are not comparable across machines. Full before/after tables live in
-<a href="https://github.com/BonucciAndrea/amber/blob/main/docs/BENCHMARKS.md">docs/BENCHMARKS.md</a>.</p>
-
-<h2>A real HFT run</h2>
-<p><code>demo/hft_demo.k</code>, on 500,000 trades and a million quotes. Row counts and timings vary by
-machine, and the script prints its own table every time.</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">./demo.sh</span></div><pre><code class="lang-out">== benchmark summary =======================================
-stage      ms
-----------
-gentq   2381.9
-vwap     151.2
-ema        0.1
-asof     704.0
-------------------------------------------------------------
-total: ~3.2 s end-to-end for 500,000 trades</code></pre></div>
-
-<h2>Against NumPy, on a real workload</h2>
-
-<p>The table above is a synthetic suite. This section is a single application benchmark, a
-structured-payoff backtest kernel, measured against a line-for-line NumPy port of the same
-algorithm. Same tensor, same three cumulative scans,
-<code>np.maximum.accumulate</code> where Amber uses <code>maxs</code>. It compares engines, not
-approaches, and it is the honest place to look because the answer is not flattering everywhere.</p>
-
-<p class="small muted">Intel Xeon 2.10&nbsp;GHz, two cores, 8&nbsp;GB. Amber built portable
-<code>-O3 -flto</code> with OpenMP; NumPy 2.4.4. Single-threaded, warm, best of repeated runs.</p>
-
-<h3>Where NumPy wins: few observations</h3>
-
-<div class="tbl">
-<table>
-  <thead><tr><th>Universe</th><th class="n">Cells</th><th class="n">Amber</th><th class="n">NumPy</th><th class="n">Ratio</th></tr></thead>
-  <tbody>
-    <tr><td>U = 25</td><td class="n">0.54 M</td><td class="n">9 ms</td><td class="n">0.9 ms</td><td class="n">10×</td></tr>
-    <tr><td>U = 50</td><td class="n">1.08 M</td><td class="n">13 ms</td><td class="n">1.8 ms</td><td class="n">7.2×</td></tr>
-    <tr><td>U = 100</td><td class="n">2.16 M</td><td class="n">20 ms</td><td class="n">6.7 ms</td><td class="n">3.0×</td></tr>
-    <tr><td>U = 200</td><td class="n">4.32 M</td><td class="n">199 ms</td><td class="n">10.3 ms</td><td class="n hi">19×</td></tr>
-    <tr><td>U = 400</td><td class="n">8.64 M</td><td class="n">377 ms</td><td class="n">30.4 ms</td><td class="n hi">12×</td></tr>
+    <tr><td><strong>2.4.0</strong></td><td>tail calls reuse the frame: <code class="k hl">{<span class="tok-op">$</span>[x<span class="tok-op">;</span>o x<span class="tok-op">-</span><span class="tok-num">1</span><span class="tok-op">;</span><span class="tok-num">0</span>]}1000000</code></td><td class="num"><code class="k hl"><span class="tok-op">'</span>stack</code> at 2048 &rarr; 66 ms</td></tr>
+    <tr><td><strong>2.4.1</strong></td><td>reverse as one copy, 8 bytes at a time; <code class="k hl"><span class="tok-num">0</span> <span class="tok-op">:</span><span class="tok-op">'</span><span class="tok-op">:</span>x</code> and <code class="k hl">m<span class="tok-op">!</span>x</code> (power of two) in one pass. The bignum collatz loop, 2<sup>18</sup></td><td class="num">~300 ms &rarr; ~255 ms<br><span class="best">1.18&times;</span></td></tr>
   </tbody>
 </table>
 </div>
 
-<p>Tensor build, S&nbsp;=&nbsp;1800 start dates, n&nbsp;=&nbsp;12 observations. The U&nbsp;=&nbsp;100
-row is the warm steady state; the 200 and 400 rows were measured in sequence after it and carry
-allocator pressure. Cold builds cost roughly double a warm one, so pre-warm the tensor when a session
-opens rather than on the user's first query.</p>
-
-<h3>Where Amber wins: many observations</h3>
-
-<p>The two engines scale differently, and the difference is structural rather than incidental. Amber
-carries a high fixed cost per <em>operation</em>, allocating an intermediate and dispatching a kernel,
-but that cost barely moves when the data inside the operation grows. NumPy's per-operation overhead is
-tiny, so its cost tracks the data almost exactly.</p>
-
-<div class="tbl">
-<table>
-  <thead><tr><th>Observations per product</th><th class="n">6</th><th class="n">12</th><th class="n">24</th><th class="n">48</th><th class="n">96</th><th class="n">120</th></tr></thead>
-  <tbody>
-    <tr><td>Amber µs</td><td class="n">1,052</td><td class="n">1,468</td><td class="n">1,153</td><td class="n">1,418</td><td class="n">1,746</td><td class="n">2,013</td></tr>
-    <tr><td>NumPy µs</td><td class="n">277</td><td class="n">396</td><td class="n">695</td><td class="n">1,528</td><td class="n">2,974</td><td class="n">3,697</td></tr>
-    <tr><td>Amber / NumPy</td><td class="n">3.8×</td><td class="n">3.7×</td><td class="n">1.7×</td><td class="n hi">0.93×</td><td class="n hi">0.59×</td><td class="n hi">0.54×</td></tr>
-  </tbody>
-</table>
-</div>
-
-<p>Amber's cost rises 1.9× while the data grows 20×; NumPy's rises 13×. The crossover sits at roughly
-<strong>43 observations</strong>. A three-year quarterly note has 12 and belongs to NumPy; a ten-year
-monthly has 120, where Amber is 1.8× faster.</p>
-
-<div class="note note-info">
-  <span class="note-title">Read this the right way round</span>
-  <p>Both halves of that table were true of the <em>same code</em>. The lesson is not that one engine
-  is faster. It is that Amber's cost model is dominated by how many primitive calls you make, not how
-  much data each one touches. <a href="../docs/performance.html">Writing fast Amber</a> is the
-  page that turns that into a rule you can apply, and the same kernel rewritten against it beats NumPy
-  at <em>every</em> size on this workload.</p>
-</div>
-
-<h2>Native float scans</h2>
-
-<p>Until recently the fast scan path was gated on integer and char data only, so every float
-<code>+\</code>, <code>*\</code>, <code>&amp;\</code> and <code>|\</code>, which is to say
-<code>sums</code>, <code>prds</code>, <code>mins</code> and <code>maxs</code> on doubles, fell through
-to a generic loop that allocates an atom and goes through the generic dyadic apply once per element.
-It measured 57&nbsp;ns per element against 0.69&nbsp;ns for the identical scan on longs.</p>
-
-<div class="tbl">
-<table>
-  <thead><tr><th>21,600 doubles</th><th class="n">Before</th><th class="n">After</th><th class="n">Speed-up</th></tr></thead>
-  <tbody>
-    <tr><td><code>maxs</code></td><td class="n">1,290 µs</td><td class="n">85 µs</td><td class="n hi">15×</td></tr>
-    <tr><td><code>mins</code></td><td class="n">1,191 µs</td><td class="n">43 µs</td><td class="n hi">28×</td></tr>
-    <tr><td><code>sums</code></td><td class="n">610 µs</td><td class="n">25 µs</td><td class="n hi">24×</td></tr>
-    <tr><td><code>prds</code></td><td class="n">587 µs</td><td class="n">27 µs</td><td class="n hi">22×</td></tr>
-  </tbody>
-</table>
-</div>
-
-<p>On the operations a quant writes most often, over a 1,000,000-element price path:</p>
-
-<div class="stats">
-  <div><div class="v">17×</div><div class="l">running max<br>79.8 ms → 4.6 ms</div></div>
-  <div><div class="v">22×</div><div class="l">max drawdown<br>56.2 ms → 2.6 ms</div></div>
-  <div><div class="v">36×</div><div class="l">cumulative return<br>27.4 ms → 0.77 ms</div></div>
-</div>
-
-<p>Min and max fold through the existing order-preserving integer domain rather than comparing IEEE
-doubles directly, so scan and reduce agree bit-for-bit on NaN and signed zero. Output is identical to
-the previous path on every input tested, including NaN, ±0.0, ±∞ and seeded forms.</p>
-
-<h2>Multicore: when <code>peach</code> does not help</h2>
-
-<p>A basket sweep is embarrassingly parallel, so <code>peach</code> looks like free speed. On two
-cores it is not:</p>
-
-<div class="tbl">
-<table>
-  <thead><tr><th>400 baskets, 2 cores</th><th class="n">Wall time</th><th class="n">vs serial</th></tr></thead>
-  <tbody>
-    <tr><td>serial <code>each</code></td><td class="n">559 ms</td><td class="n">1.00×</td></tr>
-    <tr><td><code>peach</code>, one basket per task</td><td class="n">772 ms</td><td class="n">0.73×</td></tr>
-    <tr><td><code>peach</code>, 2 chunks</td><td class="n">722 ms</td><td class="n">0.77×</td></tr>
-    <tr><td><code>peach</code>, 4 chunks</td><td class="n">746 ms</td><td class="n">0.75×</td></tr>
-  </tbody>
-</table>
-</div>
-
-<p>Results were byte-identical in every configuration, so this is a cost problem and not a correctness one.
-<code>peach</code> forks, and the per-task cost of handing a slice of a 17&nbsp;MB tensor to a child
-and collecting its result exceeds what a second core buys at this granularity. Chunking reduces the
-task count but not the copy. For throughput, run several <code>amberd</code> processes and shard the
-work across them rather than reaching for <code>peach</code>.</p>
-
-<h2>Memory</h2>
-
-<div class="tbl">
-<table>
-  <thead><tr><th>Structure</th><th>Shape</th><th class="n">Resident</th></tr></thead>
-  <tbody>
-    <tr><td>Performance tensor</td><td>U = 100, S = 1800, n = 12</td><td class="n">17.3 MB</td></tr>
-    <tr><td>Price history</td><td>U = 400, T = 4600</td><td class="n">14.7 MB</td></tr>
-  </tbody>
-</table>
-</div>
-
-<p>Worth noting against the 16&nbsp;MB thread-local scratch arena: a U&nbsp;=&nbsp;100 tensor already
-exceeds it, which is the most likely explanation for the allocator cliff visible in the U&nbsp;=&nbsp;200
-row of the first table.</p>
-
-<h2>Running them yourself</h2>
-<div class="code"><pre><code class="lang-sh">./amber bench.k                  # attribute / find speedups
-./amber bench-fin.k              # the finance module
-./amber bench-std.k              # moving windows, sorts
-bash bench/run.sh                # cross-engine sanity + speed vs numpy / pandas / polars / duckdb
-python bench/run_comparative.py  # the ten-engine CI table</code></pre></div>
-
-<p>The per-engine query files live in <code>bench/queries/</code> and are separate, independently
-tuned scripts rather than the same file reused. Each <code>amber_*.k</code> documents in its header what
-optimisation was tried, what was measured, and why.</p>
+<h2 id="run">Running them yourself</h2>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">shell</span></div><pre><code class="lang-sh">./amber bench.k                        # sorted attributes vs plain find
+./amber demo/hft_demo.k &lt; /dev/null    # the HFT run (edit N at the top)
+python3 bench/scout/scout.py --build    # the 24 x 12 engine matrix
+python3 bench/run_comparative.py        # the ten-engine CI table
+bash bench/run_suite.sh                 # vs numpy, pandas, Polars, DuckDB
+./amber bench-std.k                     # moving windows, sorts</code></pre></div>
+<p>The per-engine query files are in <code>bench/queries/</code>, separately tuned scripts rather than one
+file reused, and each <code>amber_*.k</code> says in its header what was tried and why.</p>
 
 <div class="pager">
   <a href="../docs/capi.html"><span class="dir">Previous</span><span class="ttl">C API &amp; extensions</span></a>
