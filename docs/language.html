@@ -22,7 +22,7 @@
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="nav">
   <div class="nav-inner">
-    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v2.5.0</span></a>
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v2.6.0</span></a>
     <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../learn/index.html">Learn</a><a href="../docs/" class="active">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a><a href="../projects/">Projects</a><a href="../notepad.html">Notepad</a>
     </nav>
     <div class="nav-right">
@@ -147,6 +147,12 @@ x@&lt;x   x@&gt;x                   / sort by value: a counting sort for integra
 gsum[sym;px]                  / one pass: acc[group]+=px  (select sum px by sym from t takes the same path)
 h in kr                       / one pass, one byte per element (`memb underneath)</code></pre></div>
 
+<h3>Fused trees (since 2.6)</h3>
+<p>Inside a lambda, a whole tree of <code>+ - * % &amp; |</code> over float or int vectors and numbers (with
+<code>&lt; &gt; =</code> at the top, and <code>+/</code> on top of that) runs as one pass in cache-sized blocks,
+split over the threads, once the vectors have 2048 items or more. Same bits as the unfused code.</p>
+<div class="code"><pre><code class="lang-q">f:{[a;b;c]+/(a*b)-c%2.0}      / one pass, no a*b or c%2.0 vectors</code></pre></div>
+
 <h3>The two everyone gets backwards</h3>
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">wavg[sz; px]        / WEIGHTS FIRST. wavg[px;sz] is a plausible wrong number.
 xbar[w; x]          / bucket width first: xbar[5;0 1 2 3 4 5 6 7] -&gt; 0 0 0 0 0 5 5 5</code></pre></div>
@@ -266,7 +272,7 @@ qexec[t; t[`px]&gt;100; ,`sym; (,`n)!,{#x`px}]         / where + by + aggregate,
     <tr><td><code>ej[c;x;y]</code></td><td>equi join on the named columns</td></tr>
     <tr><td><code>aj[c;x;y]</code> · <code>aj0[c;x;y]</code></td><td><strong>as-of</strong>: for each left row, the most recent right row at or before it</td></tr>
     <tr><td><code>wj[w;c;x;y;a]</code></td><td><strong>window</strong>: aggregate right rows inside a window around each left row, plus the one in force when it opens (as q)</td></tr>
-    <tr><td><code>wj1[w;c;x;y;a]</code></td><td>the same, only the rows inside the window</td></tr>
+    <tr><td><code>wj1[w;c;x;y;a]</code></td><td>The same, only the rows inside the window</td></tr>
     <tr><td><code>asof[x;y]</code></td><td>the scalar as-of lookup</td></tr>
   </tbody>
 </table>
@@ -350,8 +356,7 @@ like["AAPL"; "AA*"]          / 1b</code></pre></div>
 
 <h2>Binary serialization: <code>-8!</code> and <code>-9!</code></h2>
 <p><code>-8!x</code> encodes any K value to a byte vector; <code>-9!y</code> decodes it back,
-byte-exact including attributes, nulls and infinities. <code>peach</code> ships worker results over
-this wire instead of formatting and reparsing text, and <code>amber-tick</code>'s store files are
+byte-exact including attributes, nulls and infinities. <code>amber-tick</code>'s store files are
 literally <code>-8!</code> values. The encoding, and the rest of what turned the language into
 something you can deploy, is in <a href="../blog/05-platform.html">from language to platform</a>.</p>
 
@@ -359,17 +364,27 @@ something you can deploy, is in <a href="../blog/05-platform.html">from language
 (-9!b)~+`a`b!(1 2 3;4 5 6)      / 1b — exact</code></pre></div>
 
 <h2>Parallelism: <code>peach</code></h2>
-<p><code>peach[f;y]</code> is real multi-core: it forks <code>AMBER_THREADS</code> worker processes
-(default the online CPU count, detected via <code>sysconf</code>), so heavy per-item work scales
-across cores with no GIL and it will not oversubscribe a small box or leave a big one idle.</p>
+<p><code>peach[f;y]</code> is real multi-core: it runs on a pool of <code>AMBER_THREADS</code> threads
+(default the online CPU count), so heavy per-item work scales across cores with no GIL. The result is
+identical to <code>f'y</code>.</p>
 
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">peach[{avg x?1.0}; 8#1000000]         / 8 heavy tasks across the pool</code></pre></div>
 
 <div class="note">
   <span class="note-title">Where peach earns its keep</span>
-  <p>Fork and IPC overhead dominates a cheap reduction. <code>peach</code> pays off on per-task-heavy
-  work, not on <code>sum</code>. <code>examples/peach.k</code> shows the crossover, and
-  <code>examples/peach_verify.k</code> checks the binary-wire round trip.</p>
+  <p>Handing out tasks costs more than a cheap reduction. <code>peach</code> pays off on per-task-heavy
+  work, not on <code>sum</code>. <code>examples/peach.k</code> shows the crossover.</p>
+</div>
+
+<h3>Threads inside primitives (since 2.6)</h3>
+<p>You don't ask for these. Once a vector is big, sort and grade, find and <code>in</code>, the
+<code>aj</code> match, gather, distinct, group aggregates, float <code>sum</code>/<code>dot</code>/<code>max</code>/<code>min</code>
+and the fused trees above split over the same <code>AMBER_THREADS</code>. Small vectors never touch the
+pool, and <code>AMBER_THREADS=1</code> turns it off.</p>
+<div class="note">
+  <span class="note-title">One thing to know</span>
+  <p>Float sums of 1M+ items add in fixed 64K blocks, so the last digits can differ from a plain
+  left-to-right sum (and from 2.5). They're the same at any thread count.</p>
 </div>
 
 <h2>Terminal charts and grid modes</h2>
