@@ -984,7 +984,7 @@ W.onmessage=function(e){
   if(m.type==="fatal"){status(m.message,"err");return}
   if(m.type==="eval"&&pending[m.id]){var f=pending[m.id];delete pending[m.id];f(m)}
 };
-W.postMessage({type:"boot",runtime:["../notepad/amber.wasm.js?v=2.7.1","../notepad/amber.js?v=5"],src:"../dh/dh.k?v=1"});
+W.postMessage({type:"boot",runtime:["../notepad/amber.wasm.js?v=2.7.2","../notepad/amber.js?v=5"],src:"../dh/dh.k?v=1"});
 })();
 </script>
 <script>
