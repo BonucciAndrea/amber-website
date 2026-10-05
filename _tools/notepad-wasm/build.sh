@@ -22,7 +22,7 @@ O="$(mktemp -d)"; trap 'rm -rf "$O"' EXIT
 python3 "$HERE/genfs.py" "$AMBER_SRC" > "$O/fs.h"
 mkdir -p "$AMBER_SRC/o/w" && cp "$O/fs.h" "$AMBER_SRC/o/w/fs.h"
 
-CFLAGS="--target=wasm32 -Dwasm -O2 -ffreestanding -fno-builtin -w -nostdinc -isystem $RES/include
+CFLAGS="--target=wasm32 -Dwasm -O2 -fwrapv -ffreestanding -fno-builtin -w -nostdinc -isystem $RES/include
         -I$AMBER_SRC/src/wsys -I$HERE/stubs -include $HERE/stubs/compat.h -I$AMBER_SRC/src -I$AMBER_SRC"
 # 2.1.0's peachC calls peachNW(), which walks the host `env`, before its wasm branch (serial
 # each). In the sandbox `env` is not a real environ array and the walk traps, so a patched
