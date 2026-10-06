@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./assets/css/amber.css?v=4">
+<link rel="stylesheet" href="./assets/css/amber.css?v=5">
 <script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 <style>
   /* ---- Notepad: the whole window is the editor. Built on the site's design tokens, without the site around it ---- */
@@ -202,6 +202,23 @@
   .np-tip-name i { font: italic 400 .7rem var(--font-sans); color: var(--text-faint); }
   .np-tip code { display: block; font: .78rem/1.5 var(--font-mono); color: var(--text); white-space: pre-wrap; word-break: break-all; background: none; border: 0; padding: 0; }
 
+  .np-tip-row { font: .76rem/1.55 var(--font-sans); color: var(--text); }
+  .np-tip-row b { font-weight: 600; }
+  .np-tip-row span { font-family: var(--font-mono); font-size: .74rem; color: var(--text-dim); margin-left: 6px; white-space: pre; }
+  .np-tip-row.off { opacity: .55; }
+
+  /* dropping a file */
+  .np-drop {
+    position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; pointer-events: none;
+    background: color-mix(in srgb, var(--code-bg) 72%, transparent); backdrop-filter: blur(2px);
+  }
+  .np-drop[hidden] { display: none; }
+  .np-drop > div {
+    padding: 26px 34px; border: 2px dashed var(--accent); border-radius: 14px; text-align: center;
+    background: var(--surface-solid); color: var(--text-dim); font-size: .85rem;
+  }
+  .np-drop strong { display: block; font-size: 1.05rem; color: var(--text); margin-bottom: 4px; }
+
   /* narrow screens: editor above output, and the page scrolls */
   @media (max-width: 900px) {
     body.np-app { overflow: auto; }
@@ -281,8 +298,9 @@
 
 <div class="np-toast" id="np-toast" role="status" aria-live="polite"></div>
 <div class="np-tip" id="np-tip" role="tooltip" hidden></div>
+<div class="np-drop" id="np-drop" hidden><div><strong>Drop a CSV</strong>it loads as a table, right here in your browser</div></div>
 
-<script src="./assets/notepad/amber.js?v=5"></script>
+<script src="./assets/notepad/amber.js?v=6"></script>
 <script>
 (function () {
   "use strict";
@@ -654,7 +672,8 @@
   function emptyState() {
     out.innerHTML = '<div class="np-empty"><div><strong>Nothing run yet</strong>' +
       '<kbd>' + MOD + ' ↵</kbd> runs the file, <kbd>Shift ↵</kbd> the line you are on.<br>' +
-      'Each run starts a fresh Amber engine, right here in your browser.</div></div>';
+      'Each run starts a fresh Amber engine, right here in your browser.<br>' +
+      'Drop a CSV file anywhere here to load it as a table.</div></div>';
   }
   function fmtMs(ms) { return ms < 10 ? ms.toFixed(1) + " ms" : ms < 1000 ? Math.round(ms) + " ms" : (ms / 1000).toFixed(2) + " s"; }
   // Only results are shown: a statement that prints nothing adds no cell. Cells are added to
@@ -695,7 +714,7 @@
   /* ---------------- engine: a fresh interpreter for every run ---------------- */
   // Nothing defined by one run or example leaks into the next: each run gets its own Web
   // Worker, and a spare boots in the background so the next run starts without waiting.
-  var ASSET_V = "2.7.2c";
+  var ASSET_V = "2.7.2d";
   var engine = null, spare = null, used = false, noWorkers = false;
   var busy = false, ready = false, busyTimer = 0, fileWaiters = {}, version = "", pendingRun = null;
   function status(cls, text) { $("np-chip").className = "np-chip " + cls; $("np-chip-text").textContent = text; }
@@ -799,10 +818,10 @@
     runHead.textContent = "run " + runNo + " · " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
     out.appendChild(runHead);
     setBusy(true);
-    var msg = { type: "eval", run: runNo, lines: stmts.map(function (s) { return s.code; }) };
+    var msg = { type: "eval", run: runNo, lines: stmts.map(function (s) { return s.code; }), files: dropFiles() };
     if (noWorkers) {
       var id = runNo;
-      freshVM(function (vm) { msg.lines.forEach(function (code) { onResult(id, vm.eval(code)); }); onDone(id); });
+      freshVM(function (vm) { msg.files.forEach(function (f) { vm.addFile(f.name, f.bytes); }); msg.lines.forEach(function (code) { onResult(id, vm.eval(code)); }); onDone(id); });
       return;
     }
     if (used) freshEngine();
@@ -1031,6 +1050,77 @@
     if (!/^[A-Za-z][A-Za-z0-9.]*$/.test(w) || (a > 0 && line[a - 1] === "`") || KW[w]) return null;   // a symbol, or qSQL
     return w;
   }
+  // The primitives, from repl.k's \+ and \' tables: [one-argument name, example, two-argument name, example]
+  var GLYPH = {
+    "+": ["flip", "+(1 2;3 4)  → (1 3;2 4)", "add", "1 2+3  → 4 5"],
+    "-": ["negate", "- 1 2  → -1 -2", "subtract", "5-1 2  → 4 3"],
+    "*": ["first", "*`a`b  → `a", "multiply", "2 3*4  → 8 12"],
+    "%": ["square root", "%25  → 5.0", "divide", "2 3%4  → 0.5 0.75"],
+    "!": ["til · keys", "!3  → 0 1 2   !`a`b!1 2  → `a`b", "dict · mod", "`a`b!1 2  → a dict   10!17  → 7"],
+    "&": ["where", "&0 1 0 1  → 1 3", "min · and", "2&1 3  → 1 2"],
+    "|": ["reverse", "|\"abc\"  → \"cba\"", "max · or", "2|1 3  → 2 3"],
+    "<": ["grade up (the order that sorts ascending)", "<3 1 2  → 1 2 0", "less than", "1 2<2  → 1 0"],
+    ">": ["grade down", ">3 1 2  → 0 2 1", "greater than", "1 2>1  → 0 1"],
+    "=": ["group", "=\"abab\"  → \"ab\"!(0 2;1 3)", "equal", "1 2=2 2  → 0 1"],
+    "~": ["not", "~0 1  → 1 0", "match (whole values)", "1 2~1 2  → 1"],
+    ",": ["enlist", ",5  → ,5", "join", "1,2 3  → 1 2 3"],
+    "^": ["is null", "^1 0N  → 0 1", "fill", "0^1 0N  → 1 0"],
+    "#": ["count", "#\"abc\"  → 3", "take", "2#\"abc\"  → \"ab\""],
+    "_": ["floor", "_2.7  → 2", "drop", "2_\"abcde\"  → \"cde\""],
+    "$": ["string", "$12  → \"12\"", "cast · pad", "`$\"ab\"  → `ab"],
+    "?": ["distinct", "?1 2 1  → 1 2", "find · random", "\"abc\"?\"c\"  → 2   3?10  → 3 random ints"],
+    "@": ["type", "@1 2  → `I", "index · apply", "\"abc\"@1  → \"b\""],
+    ".": ["value · eval", ".\"1+2\"  → 3", "apply · index deep", "{x+y}. 1 2  → 3"],
+    "'": ["each", "#'(\"ab\";1 2 3)  → 2 3"],
+    "/": ["over (fold)", "+/1 2 3  → 6"],
+    "\\": ["scan", "+\\1 2 3  → 1 3 6"],
+    "':": ["each prior", "-':1 4 9  → 1 3 5"],
+    "/:": ["each right", "1 2+/:10 20  → (11 12;21 22)"],
+    "\\:": ["each left", "1 2+\\:10 20  → (11 21;12 22)"]
+  };
+  // the glyph under the pointer: [glyph, a noun on its left?], or null in a comment, string or number
+  function glyphAt(e) {
+    var cs = getComputedStyle(editor), r = editor.getBoundingClientRect();
+    var lh = parseFloat(cs.lineHeight), cw = charWidth(cs.fontSize + " " + cs.fontFamily);
+    var x = e.clientX - r.left - parseFloat(cs.paddingLeft) + editor.scrollLeft;
+    var y = e.clientY - r.top - parseFloat(cs.paddingTop) + editor.scrollTop;
+    if (x < 0 || y < 0) return null;
+    var line = editor.value.split("\n")[Math.floor(y / lh)], col = Math.floor(x / cw);
+    if (line === undefined || col >= line.length) return null;
+    var c = line[col], q = 0, i;
+    if (!/[-+*%!&|<>=~,^#_$?@.'\/\\:]/.test(c)) return null;
+    for (i = 0; i < col; i++) {
+      if (line[i] === '"') q ^= 1;
+      if (!q && line[i] === "/" && (i === 0 || /\s/.test(line[i - 1]))) return null;   // a comment starts before it
+    }
+    if (q) return null;
+    if (c === "/" && (col === 0 || /\s/.test(line[col - 1]))) return null;   // a comment starts here
+    if (c === "." && (/[0-9]/.test(line[col - 1] || "") || /[0-9]/.test(line[col + 1] || ""))) return null;   // 1.5
+    if (c === "." && /[A-Za-z]/.test(line[col - 1] || "")) return null;   // a dotted name
+    if (c === "-" && /[0-9.]/.test(line[col + 1] || "") && !/[\w)\]"]/.test(line[col - 1] || "")) return null;   // -5
+    if (c === "_" && /\w/.test(line[col - 1] || "") && /\w/.test(line[col + 1] || "")) return null;
+    var g = c, s = col;
+    if (c === ":" && /['\/\\]/.test(line[col - 1] || "")) { g = line[col - 1] + ":"; s = col - 1; }
+    else if (/['\/\\]/.test(c) && line[col + 1] === ":") g = c + ":";
+    else if (c === ":") {   // assignment, or a verb's modify-assign (x+:1)
+      var v = line[col - 1] || "";
+      return [/[-+*%!&|<>=~,^#_$?@.]/.test(v) ? "f:" : ":", false];
+    }
+    var k = s - 1; while (k >= 0 && line[k] === " ") k--;
+    var p = k >= 0 ? line[k] : "";
+    // a noun on the left makes it dyadic; so does an adverb after it: +/ folds with add, +\ scans with add
+    return [g, /[A-Za-z0-9)\]"`}]/.test(p) || (g.length === 1 && GLYPH[g] && GLYPH[g].length === 4 && /[\/\\]/.test(line[s + 1] || ""))];
+  }
+  function glyphTip(g, dyad) {
+    if (g === ":") return '<div class="np-tip-name">:</div><div class="np-tip-row"><b>assign</b> name:value <span>x:1 2 3</span></div>';
+    if (g === "f:") return '<div class="np-tip-name">f:</div><div class="np-tip-row"><b>modify in place</b> <span>x+:1  is x:x+1</span></div>';
+    var d = GLYPH[g]; if (!d) return "";
+    var h = '<div class="np-tip-name">' + esc(g) + (d.length === 2 ? " <i>adverb</i>" : "") + "</div>";
+    function row(name, ex, on) { return '<div class="np-tip-row' + (on ? "" : " off") + '"><b>' + esc(name) + "</b> <span>" + esc(ex) + "</span></div>"; }
+    if (d.length === 2) return h + row(d[0], d[1], true);
+    return dyad ? h + row(d[2] + "  (x" + g + "y)", d[3], true) + row(d[0] + "  (" + g + "x)", d[1], false)
+                : h + row(d[0] + "  (" + g + "x)", d[1], true) + row(d[2] + "  (x" + g + "y)", d[3], false);
+  }
   function ownDef(w) {   // name:{...} in the editor
     var re = new RegExp("^\\s*" + w.replace(/\./g, "\\.") + "\\s*:\\s*(\\{.*)$", "m"), m = re.exec(editor.value);
     return m ? m[1] : null;
@@ -1052,16 +1142,24 @@
     }
   }
   function showTip(word, src, e) {
-    tip.innerHTML = '<div class="np-tip-name">' + esc(word) + (src.own ? " <i>in this file</i>" : "") + '</div><code>' + hlLine(src.text) + "</code>";
+    showTipHTML('<div class="np-tip-name">' + esc(word) + (src.own ? " <i>in this file</i>" : "") + '</div><code>' + hlLine(src.text) + "</code>", e);
+  }
+  function showTipHTML(html, e) {
+    tip.innerHTML = html;
     tip.hidden = false;
     var w = tip.offsetWidth, h = tip.offsetHeight, x = Math.min(e.clientX + 12, innerWidth - w - 8), y = e.clientY + 18;
     if (y + h > innerHeight - 8) y = e.clientY - h - 12;
     tip.style.left = Math.max(8, x) + "px"; tip.style.top = Math.max(8, y) + "px";
   }
   editor.addEventListener("mousemove", function (e) {
-    var w = wordAt(e);
-    if (w === tipWord) return;
+    var w = wordAt(e), gl = w ? null : glyphAt(e), key = w || (gl ? "\u0001" + gl[0] + gl[1] : "");
+    if (key === tipWord) return;
     hideTip();
+    if (gl) {
+      tipWord = key;
+      tipTimer = setTimeout(function () { var h = glyphTip(gl[0], gl[1]); if (h) showTipHTML(h, e); }, 350);
+      return;
+    }
     if (!w) return;
     tipWord = w;
     tipTimer = setTimeout(function () {
@@ -1072,6 +1170,42 @@
     }, 350);
   });
   ["mouseleave", "mousedown", "scroll", "keydown"].forEach(function (ev) { editor.addEventListener(ev, hideTip); });
+
+  /* ---------------- drop a CSV: it becomes a table ---------------- */
+  // The file is copied into every run's engine (its filesystem takes names under 16 bytes), and a line that reads
+  // it with `csvr goes at the end of the editor. Nothing is uploaded: the file stays in this tab.
+  var files = {}, dropMask = $("np-drop"), dragDepth = 0;
+  function dropFiles() { return Object.keys(files).map(function (n) { return { name: n, bytes: files[n] }; }); }
+  function fileNames(name) {
+    var base = name.replace(/\.[^.]*$/, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (base.length > 11) base = base.replace(/[0-9]+/g, "") || base;   // "Sales Data 2026" -> salesdata, not salesdata20
+    if (!/^[a-z]/.test(base)) base = "data" + base;
+    base = base.slice(0, 11);
+    return { file: base + ".csv", v: base };
+  }
+  function fmtSize(n) { return n < 1024 ? n + " B" : n < 1048576 ? (n / 1024).toFixed(0) + " KB" : (n / 1048576).toFixed(1) + " MB"; }
+  function loadFile(f) {
+    if (f.size > 64 * 1048576) { toastMsg(f.name + " is over 64 MB, too big for the browser engine."); return; }
+    f.arrayBuffer().then(function (buf) {
+      var nm = fileNames(f.name);
+      files[nm.file] = new Uint8Array(buf);
+      var line = nm.v + ":`csvr \"" + nm.file + "\"";
+      var v = editor.value, add = (v && !/\n$/.test(v) ? "\n" : "") + line + "\n" + nm.v + "\n";
+      if (v.indexOf(line) < 0) replaceRange(v.length, v.length, add);
+      toastMsg("Loaded " + f.name + " (" + fmtSize(f.size) + ") as " + nm.v + ". It stays in this tab, links don't carry it.");
+      runAll();
+    }, function () { toastMsg("Could not read " + f.name + "."); });
+  }
+  function hasFiles(e) { var ty = e.dataTransfer && e.dataTransfer.types; return !!ty && Array.prototype.indexOf.call(ty, "Files") >= 0; }
+  bench.addEventListener("dragenter", function (e) { if (!hasFiles(e)) return; e.preventDefault(); dragDepth++; dropMask.hidden = false; });
+  bench.addEventListener("dragover", function (e) { if (!hasFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; });
+  bench.addEventListener("dragleave", function (e) { if (!hasFiles(e)) return; if (--dragDepth <= 0) { dragDepth = 0; dropMask.hidden = true; } });
+  bench.addEventListener("drop", function (e) {
+    if (!hasFiles(e)) return;
+    e.preventDefault(); dragDepth = 0; dropMask.hidden = true;
+    if (!ready) { toastMsg("The engine is still loading, drop it again in a moment."); return; }
+    Array.prototype.forEach.call(e.dataTransfer.files, loadFile);
+  });
 
   /* ---------------- start ---------------- */
   function loadDefault() {
@@ -1092,6 +1226,6 @@
   startEngine();
 })();
 </script>
-<script src="./assets/js/amber.js" defer></script>
+<script src="./assets/js/amber.js?v=2" defer></script>
 </body>
 </html>

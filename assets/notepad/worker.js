@@ -1,6 +1,6 @@
 /* worker.js — hosts the Amber engine off the main thread, so a long computation never
    freezes the page and a runaway expression can be stopped by terminating the worker. */
-importScripts("amber.wasm.js?v=2.7.2b", "amber.js?v=5");
+importScripts("amber.wasm.js?v=2.7.2d", "amber.js?v=6");
 
 const vm = new AmberVM();
 const booted = vm.boot().then(
@@ -13,6 +13,8 @@ onmessage = async (e) => {
   await booted;
   if (!vm.ready) return;
   if (m.type === "eval") {
+    // files dropped on the notepad, into this engine's filesystem before the code runs
+    for (const f of m.files || []) vm.addFile(f.name, f.bytes);
     for (const line of m.lines) {
       const t0 = performance.now();
       const out = vm.eval(line);

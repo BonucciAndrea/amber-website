@@ -110,7 +110,7 @@ class AmberVM {
     };
     const { instance } = await WebAssembly.instantiate(bin, { env });
     this.ex = instance.exports; mem = this.ex.memory; heap = this.ex.__heap_base.value;
-    this._u8 = u8;
+    this._u8 = u8; this._alloc = env.js_alloc;
     this._out = [];
     this.ex.amber_init();
     this.banner = this._out.join("");
@@ -141,6 +141,16 @@ class AmberVM {
     this._out = []; this._writeIn(name);
     try { this.ex.amber_load(); } catch (e) { return "\x1b[31mruntime error: " + e.message + "\x1b[0m\n"; }
     return this._out.join("");
+  }
+
+  // put a file in the engine's filesystem (a CSV dropped on the notepad), so Amber code can read it by name.
+  // The name must be under 16 bytes; bytes is a Uint8Array, copied into the engine's memory. True when it went in
+  addFile(name, bytes) {
+    if (!this.ex.amber_addfile) return false;
+    const p = this._alloc(bytes.length + 1);
+    const u = this._u8(); u.set(bytes, p); u[p + bytes.length] = 0;
+    this._writeIn(name);
+    return this.ex.amber_addfile(p, bytes.length) === 0;
   }
 
   // read an embedded file's source WITHOUT running it

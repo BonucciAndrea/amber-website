@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/css/amber.css?v=4">
+<link rel="stylesheet" href="../assets/css/amber.css?v=5">
 <link rel="stylesheet" href="../assets/dots/dots.css?v=1">
 <script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 <style>
@@ -202,14 +202,14 @@
   </div>
 </footer>
 
-<script src="../assets/js/amber.js" defer></script>
+<script src="../assets/js/amber.js?v=2" defer></script>
 <script>
 /* `worker` is resolved against THIS page; `runtime` is resolved by the worker,
    against its own URL (/assets/dots/), which is why the two prefixes differ.
    The engine bundle is the Notepad's — one copy, served to both pages. */
 window.DOTS_CONFIG = {
   worker: "../assets/dots/worker.js?v=1",
-  runtime: ["../notepad/amber.wasm.js?v=2.7.2b", "../notepad/amber.js?v=5"]
+  runtime: ["../notepad/amber.wasm.js?v=2.7.2d", "../notepad/amber.js?v=6"]
 };
 </script>
 <script src="../assets/dots/dots.js?v=2"></script>

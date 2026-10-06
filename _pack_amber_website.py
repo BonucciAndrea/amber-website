@@ -41,7 +41,7 @@ SKIP_FILES = {".DS_Store", "Thumbs.db", "desktop.ini"}
 SKIP_SUFFIXES = (".pyc", ".pyo", ".swp", ".swo", "~", ".orig", ".rej")
 
 # Files that must exist for the archive to be a working site.
-REQUIRED = ["index.html", "assets/css/amber.css", "assets/js/amber.js"]
+REQUIRED = ["index.html", "assets/css/amber.css", "assets/js/amber.js?v=2"]
 
 
 def find_source(explicit: str | None) -> str:

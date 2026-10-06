@@ -37,7 +37,7 @@ done
 
 "$WLD" --no-entry --allow-undefined --export-dynamic \
   --export=amber_init --export=amber_inbuf --export=amber_eval \
-  --export=amber_load --export=amber_read --export=amber_version \
+  --export=amber_load --export=amber_read --export=amber_addfile --export=amber_version \
   --export=memory --export=__heap_base \
   --initial-memory=67108864 -z stack-size=1048576 \
   -o "$O/amber.wasm" "$O"/*.o
