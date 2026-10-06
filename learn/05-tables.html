@@ -58,7 +58,7 @@
 
 <h2 id="a-dictionary-is-two-vectors">A dictionary is two vectors</h2>
 
-<div class="code"><pre><code class="lang-q">d: `a`b`c ! 1 2 3      / keys ! values
+<div class="code"><pre data-rid="0" data-run="ok"><code class="lang-q">d: `a`b`c ! 1 2 3      / keys ! values
 d`a                    / 1        -- index by key
 d`a`c                  / 1 3
 ! d                    / `a`b`c   -- the keys
@@ -67,14 +67,14 @@ d`a`c                  / 1 3
 
 <h2 id="a-table-is-a-flipped-dictionary-of-columns">A table is a flipped dictionary of columns</h2>
 
-<div class="code"><pre><code class="lang-q">cd: `sym`px ! (`a`b`c; 10 20 30)   / call it cd, NOT cols -- cols is a builtin
+<div class="code"><pre data-rid="1" data-run="ok"><code class="lang-q">cd: `sym`px ! (`a`b`c; 10 20 30)   / call it cd, NOT cols -- cols is a builtin
 t: + cd                / that flip IS the table
 t                      / a 3-row table with columns sym and px
 t: ([] sym: `a`b`c; px: 10 20 30)   / the literal syntax for the same thing</code></pre></div>
 
 <p>Because the columns are the storage, a column is a plain vector and everything you learned in chapters 3 and 4 applies to it directly:</p>
 
-<div class="code"><pre><code class="lang-q">t: ([] sym: `a`b`c; px: 10 20 30)
+<div class="code"><pre data-rid="2" data-run="ok"><code class="lang-q">t: ([] sym: `a`b`c; px: 10 20 30)
 t`px                   / 10 20 30      -- a column is just a vector
 +/ t`px                / 60
 t`px                   / 10 20 30
@@ -89,7 +89,7 @@ t 0                    / a row, as a dictionary</code></pre></div>
 
 <h2 id="inspecting">Inspecting</h2>
 
-<div class="code"><pre><code class="lang-q">t: ([] sym: `a`b`c; px: 10 20 30)
+<div class="code"><pre data-rid="3" data-run="ok"><code class="lang-q">t: ([] sym: `a`b`c; px: 10 20 30)
 meta t                 / column names, types and attributes
 show t                 / grid-print it
 5 # t                  / first 5 rows -- take works on tables
@@ -100,7 +100,7 @@ istable t              / 1</code></pre></div>
 
 <p>A keyed table is a dictionary whose key <em>and</em> value are both tables. That is what <code>select ... by</code> returns, and what joins look up against:</p>
 
-<div class="code"><pre><code class="lang-q">kt: ([sym: `a`b`c] px: 10 20 30)
+<div class="code"><pre data-rid="4" data-run="ctx" data-ctx="3"><code class="lang-q">kt: ([sym: `a`b`c] px: 10 20 30)
 keys kt                / the key column(s)
 value kt               / the value table
 unkey kt               / back to a flat table
@@ -108,7 +108,7 @@ xkey[`sym; t]          / key an existing table by a column</code></pre></div>
 
 <h2 id="restructuring">Restructuring</h2>
 
-<div class="code"><pre><code class="lang-q">t: ([] sym: `a`b`a`b; px: 10 20 30 40)
+<div class="code"><pre data-rid="5" data-run="ok"><code class="lang-q">t: ([] sym: `a`b`a`b; px: 10 20 30 40)
 xgroup[`sym; t]        / one row per sym, px becomes a nested column
 ungroup xgroup[`sym; t]    / and back again
 xasc[`px; t]           / sort the table by a column
@@ -169,6 +169,6 @@ xcols[`px`sym; t]      / reorder columns</code></pre></div>
   </div>
 </footer>
 <script src="../assets/js/amber.js?v=3" defer></script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

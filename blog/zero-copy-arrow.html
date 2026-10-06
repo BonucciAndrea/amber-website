@@ -399,7 +399,7 @@ can hand data to each other without either linking the other.</p>
 <p>The engine implements the export in about ninety lines, in <code>src/ar.c</code>, with
 <strong>no <code>libarrow</code> linkage at all</strong>:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">t:([]sym:`AAPL`MSFT`AAPL; px:187.3 411.2 187.4; sz:100 250 50)
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="0" data-run="ok"><code class="l-q">t:([]sym:`AAPL`MSFT`AAPL; px:187.3 411.2 187.4; sz:100 250 50)
 p:arrow.export t                    / table  -&gt; (schemaAddr; arrayAddr)
 arrow.import p                      / and back</code></pre></div>
 
@@ -710,6 +710,6 @@ if(art&&list){
 } else if(document.getElementById("toc")){document.getElementById("toc").style.display="none"}
 })();
 </script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

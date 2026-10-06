@@ -396,7 +396,7 @@ whole-array and there are enough of them to need short names. It does not run th
 
 <p>Here is a complete intraday VWAP in Amber:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">gentq 5000000                                        / sets the globals: trades, quotes
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="0" data-run="ok" data-code="/ the page makes 5000000 trades; the browser engine runs on one thread, so here it makes a tenth&#10;gentq 500000                                        / sets the globals: trades, quotes&#10;select vwap:wavg[sz;px] by time:minbar[1;time] from trades"><code class="l-q">gentq 5000000                                        / sets the globals: trades, quotes
 select vwap:wavg[sz;px] by time:minbar[1;time] from trades</code></pre></div>
 
 <p>Read it right to left as a pipeline: bucket <code>time</code> onto one-minute boundaries, group by the
@@ -420,7 +420,7 @@ order". It usually does not.</p>
 
 <p>In an array language, it is a primitive:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">m:aj[`sym`time; trades; quotes]</code></pre></div>
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="1" data-run="ctx" data-ctx="0"><code class="l-q">m:aj[`sym`time; trades; quotes]</code></pre></div>
 
 <p>Five million trades against ten million quotes: <strong>704 milliseconds</strong>. The kernel is a
 branch-free <code>lower_bound</code> over each symbol group's sorted nanosecond timestamp slice. It is
@@ -511,7 +511,7 @@ twenty years on element-wise arithmetic, and that is a fair trade.</p>
 
 <p>Here is a complete execution-quality analysis. It is not pseudocode; it runs:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">gentq 5000000                                   / a session
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="2" data-run="ok" data-code="/ the page makes 5000000 trades; the browser engine runs on one thread, so here it makes a tenth&#10;gentq 500000                                   / a session&#10;trades:xasc[`sym`time; trades]                  / sort + stamp attributes&#10;quotes:xasc[`sym`time; quotes]&#10;&#10;m:aj[`sym`time; trades; quotes]                 / TAQ&#10;m:update mid:0.5*bid+ask from m&#10;m:update side:tsign m from m                    / Lee-Ready sign&#10;m:update eff:effspread m from m                 / 2 * |px - mid|&#10;&#10;select n:#px, vol:sum sz, effbps:10000*wavg[sz; eff%mid] by sym from m"><code class="l-q">gentq 5000000                                   / a session
 trades:xasc[`sym`time; trades]                  / sort + stamp attributes
 quotes:xasc[`sym`time; quotes]
 
@@ -688,6 +688,6 @@ if(art&&list){
 } else if(document.getElementById("toc")){document.getElementById("toc").style.display="none"}
 })();
 </script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

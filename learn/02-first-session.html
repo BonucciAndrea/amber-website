@@ -88,7 +88,7 @@ cd amber
 
 <p>An <strong>atom</strong> is a single value. A <strong>vector</strong> is many of one type. They are different things, and the type tag tells you which:</p>
 
-<div class="code"><pre><code class="lang-q">@ 1                    / `i   -- integer atom     (lower case = atom)
+<div class="code"><pre data-rid="0" data-run="ok"><code class="lang-q">@ 1                    / `i   -- integer atom     (lower case = atom)
 @ 1 2 3                / `I   -- integer vector   (upper case = vector)
 @ 1.5                  / `f   -- float atom
 @ 1.5 2.5              / `F   -- float vector
@@ -105,7 +105,7 @@ cd amber
 
 <h2 id="nulls-infinities-and-the-empty-vector">Nulls, infinities and the empty vector</h2>
 
-<div class="code"><pre><code class="lang-q">0N                     / integer null
+<div class="code"><pre data-rid="1" data-run="ok"><code class="lang-q">0N                     / integer null
 0n                     / float null (NaN)
 0w  -0w                / positive and negative infinity
 ^ 1 0N 3               / 0 1 0     -- ^ tests for null
@@ -118,7 +118,7 @@ cd amber
 
 <h2 id="assignment-and-functions">Assignment and functions</h2>
 
-<div class="code"><pre><code class="lang-q">a: 42                  / local assignment
+<div class="code"><pre data-rid="2" data-run="ok"><code class="lang-q">a: 42                  / local assignment
 a:: 42                 / global assignment (from inside a function)
 f: {x + y}             / a lambda; x, y, z are the implicit arguments
 f[1; 2]                / 3        -- bracket call, semicolon separated
@@ -189,6 +189,6 @@ g[10.5; 100]           / 1050.0</code></pre></div>
   </div>
 </footer>
 <script src="../assets/js/amber.js?v=3" defer></script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

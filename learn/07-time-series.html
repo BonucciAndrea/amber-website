@@ -56,7 +56,7 @@
 
 <p>This is what the engine is for. Everything in this chapter assumes two tables: trades and quotes, the shape every tick workload has.</p>
 
-<div class="code"><pre><code class="lang-q">trades: ([] sym: `a`b`a; time: 3 4 9; px: 100 200 300.0; sz: 10 20 30)
+<div class="code"><pre data-rid="0" data-run="ok"><code class="lang-q">trades: ([] sym: `a`b`a; time: 3 4 9; px: 100 200 300.0; sz: 10 20 30)
 quotes: ([] sym: `a`a`b`a; time: 1 5 2 8; bid: 10 11 20 12.0)</code></pre></div>
 
 <h2 id="the-join-family">The join family</h2>
@@ -72,7 +72,7 @@ quotes: ([] sym: `a`a`b`a; time: 1 5 2 8; bid: 10 11 20 12.0)</code></pre></div>
 
 <p><code>aj</code> answers "what was the prevailing quote at the moment of each trade". The last column named is the time key; the ones before it are the matching keys:</p>
 
-<div class="code"><pre><code class="lang-q">trades: ([] sym: `a`b`a; time: 3 4 9; px: 100 200 300.0; sz: 10 20 30)
+<div class="code"><pre data-rid="1" data-run="ok"><code class="lang-q">trades: ([] sym: `a`b`a; time: 3 4 9; px: 100 200 300.0; sz: 10 20 30)
 quotes: ([] sym: `a`a`b`a; time: 1 5 2 8; bid: 10 11 20 12.0)
 aj[`sym`time; trades; quotes]</code></pre></div>
 
@@ -82,7 +82,7 @@ aj[`sym`time; trades; quotes]</code></pre></div>
 
 <p>Where <code>aj</code> takes the single prevailing row, <code>wj</code> aggregates everything inside a window around each row (plus the quote in force when it opens, like q; <code>wj1</code> leaves that one out), for example the average quoted bid in the two seconds before each trade:</p>
 
-<div class="code"><pre><code class="lang-q">trades: ([] sym: `a`b`a; time: 3 4 9; px: 100 200 300.0; sz: 10 20 30)
+<div class="code"><pre data-rid="2" data-run="ok"><code class="lang-q">trades: ([] sym: `a`b`a; time: 3 4 9; px: 100 200 300.0; sz: 10 20 30)
 quotes: ([] sym: `a`a`b`a; time: 1 5 2 8; bid: 10 11 20 12.0)
 w: +(trades`time)-\:2 0        / the window, as (begins;ends)
 wj[w; `sym`time; trades; quotes; ,(`ab; avg; `bid)]</code></pre></div>
@@ -96,7 +96,7 @@ wj[w; `sym`time; trades; quotes; ,(`ab; avg; `bid)]</code></pre></div>
 
 <p>Temporal columns are numeric underneath: a date is an integer count of days, a time is an integer count of milliseconds since midnight. That is what lets sorting and the attributes work on them unchanged:</p>
 
-<div class="code"><pre><code class="lang-q">tm: 09:30:00.000       / a time literal
+<div class="code"><pre data-rid="3" data-run="ok"><code class="lang-q">tm: 09:30:00.000       / a time literal
 hh tm                  / 9   -- hour
 mm tm                  / 30  -- minute of the hour
 sec tm                 / 0   -- second of the minute
@@ -115,13 +115,13 @@ stime tm               / &quot;09:30:00.000&quot;</code></pre></div>
 
 <h2 id="bars">Bars</h2>
 
-<div class="code"><pre><code class="lang-q">times: ptime&#x27;(&quot;09:30:00.000&quot;; &quot;09:30:40.000&quot;; &quot;09:31:10.000&quot;)
+<div class="code"><pre data-rid="4" data-run="ok"><code class="lang-q">times: ptime&#x27;(&quot;09:30:00.000&quot;; &quot;09:30:40.000&quot;; &quot;09:31:10.000&quot;)
 minbar[1; times]       / bucket into 1-minute bars
 xbar[5; 0 3 7 12 18]   / generic bucketing: 0 0 5 10 15</code></pre></div>
 
 <p>Bucketing plus a by-clause is the whole of OHLCV, in one query, at any bar width:</p>
 
-<div class="code"><pre><code class="lang-q">tr: ([] sym: `a`a`b; time: ptime&#x27;(&quot;09:30:00.000&quot;;&quot;09:30:40.000&quot;;&quot;09:31:10.000&quot;); px: 10 11 20.0; sz: 1 2 3)
+<div class="code"><pre data-rid="5" data-run="ok"><code class="lang-q">tr: ([] sym: `a`a`b; time: ptime&#x27;(&quot;09:30:00.000&quot;;&quot;09:30:40.000&quot;;&quot;09:31:10.000&quot;); px: 10 11 20.0; sz: 1 2 3)
 select o: first px, h: max px, l: min px, c: last px, v: sum sz by sym, time: minbar[1; time] from tr</code></pre></div>
 
 <h2 id="attributes">Attributes</h2>
@@ -135,7 +135,7 @@ select o: first px, h: max px, l: min px, c: last px, v: sum sz by sym, time: mi
 </table>
 </div>
 
-<div class="code"><pre><code class="lang-q">v: asc 1 5 3 9 7        / asc sets `s for you
+<div class="code"><pre data-rid="6" data-run="ok"><code class="lang-q">v: asc 1 5 3 9 7        / asc sets `s for you
 attr v                  / `s
 v ? 7                   / binary search, not a scan
 `s#v                    / set sorted explicitly (q's way, since 2.7)
@@ -200,6 +200,6 @@ v ? 7                   / binary search, not a scan
   </div>
 </footer>
 <script src="../assets/js/amber.js?v=3" defer></script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

@@ -574,7 +574,7 @@ gracefully as the tape grows or falls off a cliff on exactly the busy day when i
 and the index is what does the work. In <code>fin.k</code> that is three functions and they are three
 lines:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">fin.k</span></div><pre><code class="l-q">gidx:{=x}                        / index of a vector:  value -&gt; positions
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">fin.k</span></div><pre data-rid="0" data-run="ok"><code class="l-q">gidx:{=x}                        / index of a vector:  value -&gt; positions
 bysym:{[t]=t`sym}                / per-symbol row positions of a table
 symrows:{[t;g;s]atr[t;g s]}      / O(1): the rows of t for symbol s</code></pre></div>
 
@@ -583,7 +583,7 @@ positions where it occurs. Build it once, and every subsequent "give me AAPL's r
 lookup followed by an index: no scan, no comparison, no matter how many symbols there are or how many
 rows each has.</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">gentq 100000
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="1" data-run="ok"><code class="l-q">gentq 100000
 g:bysym trades                   / build the index once
 #symrows[trades;g;`AAPL]         / O(1) thereafter</code></pre></div>
 
@@ -597,7 +597,7 @@ you will slice the same table by the same key many times, and a scan is fine if 
 <p>A promise you cannot inspect is a promise nobody will trust. Attributes are visible from the first
 release, in two places.</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">v:`sa 2000000?1000000000         / any vector, here stamped `s
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="2" data-run="ok" data-setup="gentq 1000"><code class="l-q">v:`sa asc 2000000?1000000000     / sorted first: `s on unsorted data is an error
 `at v                            / read the attribute: `s `u `p `g or `
 meta trades                      / the `a` column of the metadata table</code></pre></div>
 
@@ -624,7 +624,7 @@ matter.</p>
 symbol and ordered by time inside each run. Establishing that from scratch is a pass over the data.
 Instead, <code>ajsorted</code> asks the columns:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber.k</span></div><pre><code class="l-q">ajsorted:{[c;t] … g0:*gc; `ajs(gc; d tc; $[1=#gc; in[`at g0;`s`p]; 0b])}
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber.k</span></div><pre data-rid="3" data-run="ok"><code class="l-q">ajsorted:{[c;t] … g0:*gc; `ajs(gc; d tc; $[1=#gc; in[`at g0;`s`p]; 0b])}
 ajord:{[c;t]$[ajsorted[c;t]; t; xasc[c;t]]}</code></pre></div>
 
 <p>If the grouping column already carries <code>`s</code> or <code>`p</code>, the third argument to the
@@ -722,7 +722,7 @@ built on the fly does not.</p>
 
 <p>In practice it is three habits.</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">/ 1. sort with xasc — it stamps the attributes for you
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="4" data-run="ctx" data-ctx="2 3"><code class="l-q">/ 1. sort with xasc — it stamps the attributes for you
 trades:xasc[`sym`time; trades]
 quotes:xasc[`sym`time; quotes]
 meta trades                        / check: sym -&gt; p, time -&gt; s
@@ -886,6 +886,6 @@ if(art&&list){
 } else if(document.getElementById("toc")){document.getElementById("toc").style.display="none"}
 })();
 </script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

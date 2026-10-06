@@ -330,7 +330,7 @@ completely before the next one starts. The fix is to let the compiler see the sh
 <p>Amber's compiler already recognised one idiom, <code>*|x</code> as <em>last</em>. 2.1 adds a small
 recogniser for a handful of shapes and compiles each to one fused primitive:</p>
 
-<div class="code"><pre><code class="lang-q">+/x*y  +/x=y  +/x&lt;y  +/x&gt;y     / sum of products, count of matches -- no product or mask vector
+<div class="code"><pre data-rid="0" data-run="no"><code class="lang-q">+/x*y  +/x=y  +/x&lt;y  +/x&gt;y     / sum of products, count of matches -- no product or mask vector
 +/x@&amp;m                        / sum of the masked elements -- no compressed vector
 x@&amp;m                          / compress by mask -- no index vector
 a+s*b  a-s*b  (s a literal)   / one pass, no s*b vector
@@ -354,7 +354,7 @@ row mask, and returns the keys in first-appearance order (exactly the order <cod
 aggregates, and the first row of each group. A direct table serves small key ranges; a hash that grows with the
 distinct count serves the rest. Seven library verbs wrap it:</p>
 
-<div class="code"><pre><code class="lang-q">gsum[sym;px]   gavg   gmin   gmax   gcount[sym]   gfirst   glast     / -> keys!values
+<div class="code"><pre data-rid="1" data-run="no"><code class="lang-q">gsum[sym;px]   gavg   gmin   gmax   gcount[sym]   gfirst   glast     / -> keys!values
 
 select sum px, avg sz by sym from t where sz&gt;250   / the same path: the where-clause becomes the mask</code></pre></div>
 
@@ -577,6 +577,6 @@ if(art&&list){
 } else if(document.getElementById("toc")){document.getElementById("toc").style.display="none"}
 })();
 </script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

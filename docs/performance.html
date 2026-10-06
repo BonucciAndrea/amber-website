@@ -91,7 +91,7 @@ eleven times.</p>
 and you want a running maximum across the 12 within every row. The obvious spelling is an
 <code>each</code>:</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">the slow shape</span></div><pre><code class="lang-q">M: (1800; 12) # data     / 1800 rows, 12 columns
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">the slow shape</span></div><pre data-rid="0" data-run="ok" data-setup="data:21600?100.0"><code class="lang-q">M: (1800; 12) # data     / 1800 rows, 12 columns
 r: maxs'M                / running max within each row</code></pre></div>
 
 <p>That is 1,800 separate calls to <code>maxs</code>, each doing twelve elements of work. Measured:
@@ -108,7 +108,7 @@ kernel gets 1.9× slower while doing 10× the work.</p>
 observations becomes a scan over a <em>list of vectors</em>. That is eleven whole-column operations,
 identical element count, 150× fewer calls.</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">the fast shape</span></div><pre><code class="lang-q">C: +M                    / 12 columns of 1800
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">the fast shape</span></div><pre data-rid="1" data-run="ctx" data-ctx="0"><code class="lang-q">C: +M                    / 12 columns of 1800
 r: (|\)C                 / 11 whole-column maxes</code></pre></div>
 
 <p>The same restructuring applies to every adverb. <code>(+/)C</code> sums across observations in
@@ -281,6 +281,6 @@ microseconds. A 400-basket sweep goes 451&nbsp;ms &rarr; 215&nbsp;ms on 14 threa
   </div>
 </footer>
 <script src="../assets/js/amber.js?v=3" defer></script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

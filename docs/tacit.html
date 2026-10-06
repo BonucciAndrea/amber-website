@@ -69,7 +69,7 @@ works in every version.</p>
 vector. That alone removes most of the bookkeeping that forces you to mention data. A verb applied
 to a vector, an adverb applied to a verb, one verb feeding another: each is a value you can name and
 combine without ever writing an index or a loop variable.</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">+/ 1 2 3 4          / 10        sum: the verb + folded by the adverb /
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="0" data-run="ok"><code class="lang-q">+/ 1 2 3 4          / 10        sum: the verb + folded by the adverb /
 #? 3 1 3 2 1        / 3         count of distinct: two verbs, no argument named
 |/ 5 2 9 1          / 9         maximum</code></pre></div>
 <p>Tacit style in Amber rests on three building blocks, <strong>adverbs</strong>,
@@ -97,7 +97,7 @@ and <code>f\:</code> build the outer-product tables. None of them mention an ind
 them: <code>#?x</code> is <code>#(?x)</code>, "count of the distinct of <code>x</code>". Wrapping a run
 of verbs in <em>space-separated</em> parentheses makes that composition a value you can name and
 pass around.</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">(,|) 1 2 3          / ,3 2 1     enlist of the reverse: ,(|x)
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="1" data-run="ok"><code class="lang-q">(,|) 1 2 3          / ,3 2 1     enlist of the reverse: ,(|x)
 last:(*|:)          / first of the reverse = last element
 last 1 2 3 4        / 4</code></pre></div>
 <p><strong>One catch:</strong> kept in a name, <code>(*|)</code> grabs the two-argument <code>|</code>
@@ -112,7 +112,7 @@ They are different constructs; the semicolon is the switch.</p>
 <p>Supplying <em>some</em> of a verb's arguments returns a new verb waiting for the rest, a
 <strong>projection</strong>. This is how you turn a dyadic verb into a one-argument transform without
 naming anything.</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">(10*) 1 2 3         / 10 20 30   multiply-by-ten
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="2" data-run="no"><code class="lang-q">(10*) 1 2 3         / 10 20 30   multiply-by-ten
 (2+) 1 2 3          / 3 4 5      add-two
 {x*x}' 1 2 3 4      / 1 4 9 16   a lambda under each
 f[x;;z]             / a three-arg verb with the middle slot left open</code></pre></div>
@@ -166,7 +166,7 @@ Two shapes exist: the two-verb <strong>hook</strong> and the three-verb <strong>
 </div>
 
 <p>That single rule gives you a surprising number of everyday functions for free:</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">avg:(+/;%;#)        / mean = sum % count
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="3" data-run="ok"><code class="lang-q">avg:(+/;%;#)        / mean = sum % count
 avg 2 4 6 8 10      / 6.0
 
 (|/;-;&amp;/) 5 2 9 1    / 8          range = max - min
@@ -178,7 +178,7 @@ avg 2 4 6 8 10      / 6.0
 <p>A hook applies <code>g</code> to the argument and then feeds both the original argument and that
 result to <code>f</code>:</p>
 <p style="text-align:center;font-size:1.05em;margin:16px 0"><code>(f;g) y&nbsp;&nbsp;≡&nbsp;&nbsp;y f (g y)</code></p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">(,;|) 1 2 3         / 1 2 3 3 2 1    a vector followed by its own reverse
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="4" data-run="ok"><code class="lang-q">(,;|) 1 2 3         / 1 2 3 3 2 1    a vector followed by its own reverse
 (~;|) 1 2 1         / 1              palindrome test: y ~ (|y)
 (~;|) 1 2 3         / 0
 
@@ -196,7 +196,7 @@ norm 3 1 4 1 5      / 0.214 0.071 0.286 0.071 0.357
 <tr><td><code>(f;g;h)</code> fork</td><td><code>(f y) g (h y)</code></td><td><code>(x f y) g (x h y)</code></td></tr>
 </tbody>
 </table>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">(+;*;-)[10;3]       / 91         (10+3) * (10-3)
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="5" data-run="ok"><code class="lang-q">(+;*;-)[10;3]       / 91         (10+3) * (10-3)
 (+;|)[100;1 2 3]    / 103 102 101    100 + |1 2 3</code></pre></div>
 <p class="small muted">Monadic application also works by plain juxtaposition (<code>t y</code>); the
 bracket form is only required when you are passing two arguments. Infix
@@ -206,7 +206,7 @@ bracket form is only required when you are passing two arguments. Infix
 <p>Because a train is just a value, it composes with everything else. Elements can be primitives,
 derived verbs (<code>+/</code>), projections (<code>10*</code>) or full lambdas, and the whole train can
 be named, stored in a list, or wrapped in a lambda to run under an adverb.</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">(10*;+;{x*x}) 3               / 39        mixes a projection, a primitive and a lambda
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="6" data-run="ok"><code class="lang-q">(10*;+;{x*x}) 3               / 39        mixes a projection, a primitive and a lambda
 
 / to map a train over many rows, wrap it in a lambda -- see the note below
 {(+/;%;#) x}' (1 2 3;4 5 6;10 20 30 40)   / 2.0 5.0 25.0   the mean of each row</code></pre></div>
@@ -294,6 +294,6 @@ for the 2.0.1 implementation notes.</p>
   </div>
 </footer>
 <script src="../assets/js/amber.js?v=3" defer></script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

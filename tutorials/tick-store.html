@@ -56,7 +56,7 @@ AMBER_NATIVE=1 ./a           # build machine-tuned, then open the REPL</code></p
 <p><code>gentq</code> is in <code>fin.k</code>, auto-loaded at startup. It sets two globals:
 <code>trades</code> and <code>quotes</code>, with realistic microstructure: an efficient price, a
 spread state, and prints that sit inside the standing quote.</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">\ts gentq 5000000</code></pre></div>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="0" data-run="ok" data-code="/ the page makes 5000000 trades; the browser engine runs on one thread, so here it makes a tenth&#10;\ts gentq 500000"><code class="lang-q">\ts gentq 5000000</code></pre></div>
 <div class="code"><pre><code class="lang-out">2381                   / milliseconds</code></pre></div>
 <p><code>\ts</code> is accepted as a spelling of <code>\t</code>, Amber's timer, and reports the
 elapsed milliseconds. About 2.4 seconds for five million trades and ten million quotes; use
@@ -65,7 +65,7 @@ elapsed milliseconds. About 2.4 seconds for five million trades and ten million 
 
 <div class="step"><span class="n">2</span>
 <h3>Look at what you got</h3>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">count trades                       / 5000000
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="1" data-run="ctx" data-ctx="0"><code class="lang-q">count trades                       / 5000000
 count quotes                       / 10000000
 meta trades</code></pre></div>
 <div class="code"><pre><code class="lang-out">╭──────┬───┬───╮
@@ -84,25 +84,25 @@ arrived from anywhere else.</p>
 <div class="step"><span class="n">3</span>
 <h3>Sort and stamp the attributes</h3>
 <p>The as-of kernel binary-searches each symbol group's <code>time</code> slice. For that to be legal
-the rows must be sorted by <code>(sym, time)</code>, <code>sym</code> must carry <code>`p</code>
-(parted, so equal values are contiguous) and <code>time</code> must carry <code>`s</code> (sorted
-within each group). That is three steps, not one: <code>xasc</code> orders the rows and stamps only
-the leading column, so <code>partcol</code> and <code>sortcol</code> put the attributes on. This is
-exactly what <code>gentq</code> itself does.</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">trades:sortcol[`time; partcol[`sym; xasc[`sym`time; trades]]]
-quotes:sortcol[`time; partcol[`sym; xasc[`sym`time; quotes]]]
+the rows must be sorted by <code>(sym, time)</code> and <code>sym</code> must carry <code>`p</code>
+(parted, so equal values are contiguous). <code>xasc</code> orders the rows and stamps the leading
+column <code>`s</code>, so <code>partcol</code> turns that into <code>`p</code>. This is exactly what
+<code>gentq</code> itself does. <code>time</code> is now sorted within each symbol but not across the
+whole column, so it carries no attribute: since 2.7 <code>`s</code> means the whole column is sorted,
+as in q, and Amber checks it.</p>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="2" data-run="ctx" data-ctx="0 1"><code class="lang-q">trades:partcol[`sym; xasc[`sym`time; trades]]
+quotes:partcol[`sym; xasc[`sym`time; quotes]]
 meta trades</code></pre></div>
 <div class="code"><pre><code class="lang-out">╭──────┬───┬───╮
 │ c    │ t │ a │
 ├──────┼───┼───┤
 │ sym  │ s │ p │
-│ time │ i │ s │
+│ time │ i │   │
 │ px   │ f │   │
 │ sz   │ i │   │
 ╰──────┴───┴───╯</code></pre></div>
-<p>Together those are what make the join <code>O(log n)</code> per row instead of <code>O(n)</code>.
-<code>xasc</code> on its own is not enough. It leaves <code>sym</code> marked <code>`s</code> and
-<code>time</code> with no attribute at all, and the kernel then falls back to the scan.</p>
+<p>The sort and the <code>`p</code> are what make the join <code>O(log n)</code> per row instead of
+<code>O(n)</code>: each symbol is one contiguous run, and its times are in order inside it.</p>
 <div class="note note-info">
   <span class="note-title">Want <code>O(1)</code> symbol slicing too?</span>
   <p>Add the grouped attribute and the group index: <code>`ga trades`sym</code>, then
@@ -115,7 +115,7 @@ meta trades</code></pre></div>
 <h3>The as-of join</h3>
 <p>Every trade gets the quote that was standing when it printed. This is TAQ, and it is the operation
 the whole layout exists to serve.</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">\ts m:aj[`sym`time; trades; quotes]
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="3" data-run="ctx" data-ctx="0 1 2"><code class="lang-q">\ts m:aj[`sym`time; trades; quotes]
 count m                            / 5000000
 5#m</code></pre></div>
 <div class="code"><pre><code class="lang-out">704
@@ -137,7 +137,7 @@ arena so <code>malloc</code> jitter stays out of the path.</p>
 
 <div class="step"><span class="n">5</span>
 <h3>Microstructure columns</h3>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">m:update mid:0.5*bid+ask from m
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="4" data-run="ctx" data-ctx="0 1 2 3"><code class="lang-q">m:update mid:0.5*bid+ask from m
 m:update side:tsign m from m               / Lee-Ready: +1 buy, -1 sell
 m:update eff:effspread m from m            / 2 * |px - mid|
 select n:#px, eff:avg eff, bps:10000*avg eff%mid by sym from m</code></pre></div>
@@ -154,7 +154,7 @@ select n:#px, eff:avg eff, bps:10000*avg eff%mid by sym from m</code></pre></div
 <div class="step"><span class="n">6</span>
 <h3>One-minute VWAP and OHLCV bars</h3>
 <p>The headline query, bare at the prompt:</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">\ts select vwap:wavg[sz;px] by time:minbar[1;time] from trades</code></pre></div>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="5" data-run="ctx" data-ctx="0 1 2 3 4"><code class="lang-q">\ts select vwap:wavg[sz;px] by time:minbar[1;time] from trades</code></pre></div>
 <div class="code"><pre><code class="lang-out">151
 
 ╭──────────────┬──────────╮
@@ -169,18 +169,18 @@ select n:#px, eff:avg eff, bps:10000*avg eff%mid by sym from m</code></pre></div
 [390 rows x 2 cols]</code></pre></div>
 
 <p>And the full OHLCV, spelled out with <code>qby</code> so you can see the shape:</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">tb: +@[+trades; ,`time; minbar[1]@]        / snap time onto 1-minute buckets
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="6" data-run="ctx" data-ctx="0 1 2 3 4 5"><code class="lang-q">tb: +@[+trades; ,`time; minbar[1]@]        / snap time onto 1-minute buckets
 b: qby[tb; `sym`time;
        `o`h`l`c`v!({first x`px};{max x`px};{min x`px};{last x`px};{sum x`sz})]
 5#b</code></pre></div>
 <p>Or, if you just want the standard bars, <code>fin.k</code> has it in one call:</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">b:bars[1; trades]                          / 1-minute OHLCV
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="7" data-run="ctx" data-ctx="0 1 2 3 4 5 6"><code class="lang-q">b:bars[1; trades]                          / 1-minute OHLCV
 candle b                                   / Unicode candlesticks, in colour</code></pre></div>
 </div>
 
 <div class="step"><span class="n">7</span>
 <h3>Measure the footprint</h3>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">\v</code></pre></div>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="8" data-run="ok"><code class="lang-q">\v</code></pre></div>
 <div class="code"><pre><code class="lang-out">+-------------+---------------+----------------+---------+
 | Name        | Type          | Shape / Length | Memory  |
 +-------------+---------------+----------------+---------+
@@ -198,7 +198,7 @@ namespace.</p>
 
 <div class="step"><span class="n">8</span>
 <h3>Profile a single query</h3>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">\trace aj[`sym`time; 100000#trades; quotes]</code></pre></div>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="9" data-run="ctx" data-ctx="0 1 2 3 4 5 6 7 8"><code class="lang-q">\trace aj[`sym`time; 100000#trades; quotes]</code></pre></div>
 <div class="code"><pre><code class="lang-out">+-------------------------------------------------------+
 | Parse         454ns  [                    ]   0.1%    |
 | Arena          38ns  [                    ]   0.0%    |
@@ -215,7 +215,7 @@ true high-water mark taken from <code>arena_peak()</code>.</p>
 <div class="step"><span class="n">9</span>
 <h3>Persist it</h3>
 <p>Since 2.7 a splayed table is binary and maps straight back into memory; one value can also go in one file.</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">/ splayed: one binary file per column, symbols in /tmp/store/sym, mapped on load
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="10" data-run="no"><code class="lang-q">/ splayed: one binary file per column, symbols in /tmp/store/sym, mapped on load
 `:/tmp/store/trades/ set trades
 t2:get `:/tmp/store/trades
 
@@ -304,6 +304,6 @@ python tests/validate.py --store store       # 21 stylized facts</code></pre></d
   </div>
 </footer>
 <script src="../assets/js/amber.js?v=3" defer></script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

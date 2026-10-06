@@ -452,7 +452,7 @@ triples the column (every colouring gets each of the three colours that differ f
 then keeps the rows that respect the first-use order. The state is three vectors, a base-4 code,
 the last colour and the highest colour so far:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">dh.k</span></div><pre><code class="l-q">step:{c:x 0;l:x 1;m:x 2;nl:(4!l+1),(4!l+2),(4!l+3);m3:m,m,m;k:&amp;~nl&gt;m3+1;(((4*c,c,c)+nl)@k;nl@k;(m3|nl)@k)}
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">dh.k</span></div><pre data-rid="0" data-run="ok"><code class="l-q">step:{c:x 0;l:x 1;m:x 2;nl:(4!l+1),(4!l+2),(4!l+3);m3:m,m,m;k:&amp;~nl&gt;m3+1;(((4*c,c,c)+nl)@k;nl@k;(m3|nl)@k)}
 ess:{[n]s:(n-2) step/(,1;,1;,1);c:s[0]@&amp;~0=s 1;{4!_x%y}[c]'|*\1,(n-1)#4}</code></pre></div>
 
 <p>That builds all 1.79 million ring-16 colourings in 0.12 s. The Python's setup, which builds these
@@ -517,7 +517,7 @@ always be left alone; the code never swaps the first two blocks.</p>
 exactly the colours that differ by XOR <i>q</i>+1. A Kempe interchange is an XOR on a subset of the
 ring:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">X:0 1 2 3 1 0 3 2 2 3 0 1 3 2 1 0          / XOR table, X@(4*a)+b
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="1" data-run="ok"><code class="l-q">X:0 1 2 3 1 0 3 2 2 3 0 1 3 2 1 0          / XOR table, X@(4*a)+b
 c:0 1 2 0 1 3                               / a ring colouring
 chain:0 0 1 0 0 1                           / vertices 2 and 5: two {2,3} sectors
 c+chain*(X@(4*c)+1)-c                       / swap them under q = 0
@@ -626,7 +626,7 @@ its number, ring size, directly extendable count, the count the file expects, th
 
 <details class="src">
   <summary>Show the whole file, <code>dh.k</code> (87 lines)</summary>
-  <div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">dh.k</span></div><pre><code class="l-q">/ ============================================================================
+  <div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">dh.k</span></div><pre data-rid="2" data-run="no"><code class="l-q">/ ============================================================================
 / dh.k  -  Durre-Heesch D-reducibility check of Steinberger's 2822 configurations
 / Amber port of github.com/BonucciAndrea/DurreHeesch (Dreducing_graphs_final.py)
 / .
@@ -1010,6 +1010,6 @@ function show(r){
 });
 })();
 </script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

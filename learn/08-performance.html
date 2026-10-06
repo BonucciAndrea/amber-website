@@ -67,7 +67,7 @@
 </table>
 </div>
 
-<div class="code"><pre><code class="lang-q">x: 1000 ? 100.0
+<div class="code"><pre data-rid="0" data-run="ok"><code class="lang-q">x: 1000 ? 100.0
 y: 1000 ? 100.0
 +/ x * y               / fused dot product
 +/ x @ &amp; x &gt; 50        / fused masked sum
@@ -81,7 +81,7 @@ x @ &lt; x                / fused value sort</code></pre></div>
 
 <p>Single-pass O(<em>n</em>) sliding windows, front-padded to the input length:</p>
 
-<div class="code"><pre><code class="lang-q">x: 1 2 3 4 5 6.0
+<div class="code"><pre data-rid="1" data-run="ok"><code class="lang-q">x: 1 2 3 4 5 6.0
 msum[3; x]             / moving sum over a 3-wide window
 mavg[3; x]
 mmax[3; x]
@@ -98,7 +98,7 @@ mdev[3; x]  /  mvar[3; x]</code></pre></div>
 
 <p><code>select ... by</code> uses these underneath, and you can call them directly when you have the key and value vectors already:</p>
 
-<div class="code"><pre><code class="lang-q">k: `a`b`a`b`a
+<div class="code"><pre data-rid="2" data-run="ok"><code class="lang-q">k: `a`b`a`b`a
 v: 1 2 3 4 5
 gsum[k; v]             / sum of v within each distinct k
 gavg[k; v]
@@ -110,7 +110,7 @@ gfirst[k; v]  /  glast[k; v]</code></pre></div>
 
 <p>No dependencies, no window, no browser. Braille line charts, candles and histograms drawn straight into the REPL:</p>
 
-<div class="code"><pre><code class="lang-q">plot 14*{sin x%7}&#x27;!74
+<div class="code"><pre data-rid="3" data-run="ok"><code class="lang-q">plot 14*{sin x%7}&#x27;!74
 hist 1000?100.0
 spark 1 3 2 5 4 6
 xyplot ({sin x%9}&#x27;!60; {cos x%9}&#x27;!60)</code></pre></div>
@@ -122,7 +122,7 @@ xyplot ({sin x%9}&#x27;!60; {cos x%9}&#x27;!60)</code></pre></div>
 
 <p>Temporal axes are labelled as clocks and calendars rather than as the integers underneath:</p>
 
-<div class="code"><pre><code class="lang-q">tm: ptime&#x27;(&quot;09:30:00.000&quot;; &quot;09:31:00.000&quot;; &quot;09:32:00.000&quot;)
+<div class="code"><pre data-rid="4" data-run="ok"><code class="lang-q">tm: ptime&#x27;(&quot;09:30:00.000&quot;; &quot;09:31:00.000&quot;; &quot;09:32:00.000&quot;)
 tplot (tm; 10 12 11.0)          / the x axis reads as a clock, not as integers
 chart `x`y`xunit ! (0 1 2; 10 12 11.0; `num)</code></pre></div>
 
@@ -130,7 +130,7 @@ chart `x`y`xunit ! (0 1 2; 10 12 11.0; `num)</code></pre></div>
 
 <p>Since 2.6 you get some of this for free: big vectors (sort, find, <code>in</code>, distinct, group sums, float sums, fused arithmetic inside a lambda) already split over all the cores. For your own per-item work there's <code>peach</code>. It runs on a pool of threads, real parallelism with no interpreter lock, and is worth it when the per-item work is heavy:</p>
 
-<div class="code"><pre><code class="lang-q">peach[{avg x ? 1.0}; 4 # 100000]</code></pre></div>
+<div class="code"><pre data-rid="5" data-run="ok"><code class="lang-q">peach[{avg x ? 1.0}; 4 # 100000]</code></pre></div>
 
 <p>Set <code>AMBER_THREADS</code> to pin the thread count; <code>1</code> makes everything serial, which is the comparison you want when deciding whether it helps.</p>
 
@@ -206,6 +206,6 @@ chart `x`y`xunit ! (0 1 2; 10 12 11.0; `num)</code></pre></div>
   </div>
 </footer>
 <script src="../assets/js/amber.js?v=3" defer></script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

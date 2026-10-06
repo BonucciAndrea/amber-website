@@ -384,7 +384,7 @@ wide add per group. Measured on 10M elements: <code>+/</code> 8.9 &rarr; 6.3 ms,
 <p>This <em>changes results</em> for inexact float data by one or two ulp. Always in the direction of more
 accuracy, since pairwise summation beats a left fold:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;  +/100000#0.1</span></div><pre><code class="l-q">before:  10000.000000018848
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;  +/100000#0.1</span></div><pre data-rid="0" data-run="ok"><code class="l-q">before:  10000.000000018848
 after:    9999.999999995287
 true:    10000.0</code></pre></div>
 
@@ -404,7 +404,7 @@ form does not reparse to itself could not survive the trip at all. Attributes we
 <p><code>src/ser.c</code> is a compact binary encoder: <code>-8!x</code> to bytes, <code>-9!y</code> back,
 byte-exact.</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">b:-8!+`a`b!(1 2 3;4 5 6)        / table -&gt; one contiguous byte vector
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="1" data-run="ok"><code class="l-q">b:-8!+`a`b!(1 2 3;4 5 6)        / table -&gt; one contiguous byte vector
 (-9!b)~+`a`b!(1 2 3;4 5 6)      / 1b — exact, attributes and nulls included</code></pre></div>
 
 <p>The format is four bytes of magic and version, then one recursive node. Packed atoms carry their value
@@ -463,7 +463,7 @@ syntax error and a runtime error look alike rather than coming from two differen
 <code>.[f;args;handler]</code> would still print to stderr. For a test suite or a retry loop that
 provokes errors on purpose, that is noise. So it is switchable at run time:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">prev:`diag 0                    / suppress; returns the previous setting
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="2" data-run="ok"><code class="l-q">prev:`diag 0                    / suppress; returns the previous setting
 .[{1+`a};,0;{&quot;caught&quot;}]         / no output at all
 `diag prev                      / restore</code></pre></div>
 
@@ -870,6 +870,6 @@ if(art&&list){
 } else if(document.getElementById("toc")){document.getElementById("toc").style.display="none"}
 })();
 </script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

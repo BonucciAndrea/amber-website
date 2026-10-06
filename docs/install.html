@@ -93,7 +93,7 @@ multithreaded vector engine) plus the scalar SIMD fallback. For a build that tur
 
 <div class="code"><pre><code class="lang-sh">AMBER_NATIVE=1 ./build.sh         # machine-tuned</code></pre></div>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">`simd 0        / prints which backend was selected: scalar / avx2 / neon</code></pre></div>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="0" data-run="ok"><code class="lang-q">`simd 0        / prints which backend was selected: scalar / avx2 / neon</code></pre></div>
 
 <p>NEON activates unconditionally on Apple Silicon regardless of the flag, since <code>aarch64</code>
 implies it. The tuning flag itself is <strong>probed, not assumed</strong>: <code>-march=native</code>
@@ -206,7 +206,7 @@ incomplete statement, so the editor keeps reading on a <code>...&gt;</code> prom
 brackets balance, then evaluates the joined statement as one. History stores it as
 one entry:</p>
 
-<pre class="code"><code>amber&gt; f:{
+<pre data-rid="1" data-run="ok" class="code"><code>amber&gt; f:{
   ...&gt; x+1
   ...&gt; }
 amber&gt; f 41
@@ -340,6 +340,6 @@ AMBER_SHARED=1 ./build.sh  # same as --shared, for callers that cannot pass a fl
   </div>
 </footer>
 <script src="../assets/js/amber.js?v=3" defer></script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

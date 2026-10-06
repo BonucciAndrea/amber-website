@@ -70,7 +70,7 @@ plausible output, which is the dangerous kind.</p>
 is silently ignored. Definitions never appear, and referencing them later gives an unrelated
 "undefined variable" error somewhere else.</p>
 
-<div class="code"><pre><code class="lang-q">/ ---- section heading -----     OK: text follows the slash
+<div class="code"><pre data-rid="0" data-run="no"><code class="lang-q">/ ---- section heading -----     OK: text follows the slash
 /                                 &lt;- this eats the rest of the file
 f:{x+1}                           &lt;- never defined</code></pre></div>
 
@@ -106,7 +106,7 @@ definition.</p>
 
 <p>This is the worst one on the page, because the output looks completely normal.</p>
 
-<div class="code"><pre><code class="lang-q">{[U] 3#U?U}[U]'til NB     / WRONG: returns the SAME basket NB times
+<div class="code"><pre data-rid="1" data-run="ok" data-setup="U:`AAPL`MSFT`IBM`GOOG`AMZN&#10;NB:4"><code class="lang-q">{[U] 3#U?U}[U]'til NB     / WRONG: returns the SAME basket NB times
 {[i;U] 3#U?U}[;U]'til NB  / RIGHT: leave the iterated slot open</code></pre></div>
 
 <p>In the first form every argument is already supplied, so the expression is evaluated once and the
@@ -131,7 +131,7 @@ the <code>0n</code>s then spread through every downstream scan and reduction. On
 history: the entire tensor filled with nulls and every summary statistic came back plausible.
 Assert your bounds explicitly before the gather:</p>
 
-<div class="code"><pre><code class="lang-q">if[T &lt;= (|/S) + |/off; '"price history too short"];</code></pre></div>
+<div class="code"><pre data-rid="2" data-run="no"><code class="lang-q">if[T &lt;= (|/S) + |/off; '"price history too short"];</code></pre></div>
 
 <h2>8. <code>-0.0</code> and <code>0.0</code>: one value (and now they sort that way too)</h2>
 
@@ -141,7 +141,7 @@ matters: <code>=</code>, <code>~</code>, <code>in</code>, <code>=</code> (group)
 find disagreed with the rest, and worse, <em>which</em> answer you got depended on the
 vector&rsquo;s length, because the short and long generic paths used different comparisons:</p>
 
-<div class="code"><pre><code class="lang-q">#?(-0.0 0.0)          / 2   &lt;- before 2.2
+<div class="code"><pre data-rid="3" data-run="ok"><code class="lang-q">#?(-0.0 0.0)          / 2   &lt;- before 2.2
 #?(300#-0.0 0.0)      / 1   &lt;- the same two values, six hundred times
 #?(-0.0 0.0)          / 1   &lt;- 2.2, at every length</code></pre></div>
 
@@ -219,6 +219,6 @@ all manifest as "the definition is just not there".</li>
   </div>
 </footer>
 <script src="../assets/js/amber.js?v=3" defer></script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

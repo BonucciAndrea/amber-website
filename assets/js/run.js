@@ -1,6 +1,15 @@
-/* run.js - a Run button on every Amber code block of the site: it opens the notepad in a new tab with the code in
-   the link, and the notepad runs it. Works on any page's markup (the main pages' lang-q blocks, the blog's l-q
-   blocks, plain <pre> transcripts), styles itself, and sits to the left of the page's own copy button. */
+/* run.js - a Run button on the site's Amber code blocks: it opens the notepad in a new tab with the code in the
+   link, and the notepad runs it. Styles itself, works with any page's markup, and sits to the left of the page's
+   own copy button.
+
+   Only blocks that are known to run get one. _tools/snippets/snippets.py runs every Amber block in the notepad's
+   engine and marks each <pre>:
+     data-run="ok"                    runs on its own
+     data-run="ctx" data-ctx="0 2"    runs after those blocks of the page (data-rid), which are sent first
+     data-run="no"                    errors whatever it is given: no button
+     data-setup="..."                 data the prose only describes, sent first under a "/ setup" comment
+     data-code="..."                  sent instead of the block's text (a size the browser engine can do)
+   A block that has not been checked has no data-run, and no button: run the checker after editing a page. */
 (function () {
   "use strict";
   if (location.protocol === "file:") return;
@@ -17,8 +26,8 @@
     ".amber-run:hover{color:#ffb020;border-color:rgba(255,176,32,.45)}" +
     "@media (hover:none){.amber-run{opacity:1}}";
 
-  // the code to send: a REPL transcript (amber> prompts, ...> continuations, then output) gives only what was typed.
-  // A continuation line is indented, which is how the notepad knows it carries on the statement above
+  // the code of a block: a REPL transcript (amber> prompts, ...> continuations, then output) gives only what was
+  // typed, a continuation indented so the notepad joins it to the line above
   function runnable(text) {
     var lines = text.replace(/\r/g, "").split("\n"), typed = [];
     if (!lines.some(function (l) { return /^amber>/.test(l); })) return text;
@@ -27,6 +36,18 @@
       if (m) typed.push(m[1]); else if (c) typed.push("  " + c[1]);
     });
     return typed.join("\n");
+  }
+  // a block as it is sent: its setup, then its code (or the stand-in for it)
+  function piece(pre) {
+    var setup = pre.getAttribute("data-setup"), code = pre.getAttribute("data-code") || runnable(pre.innerText);
+    return (setup ? "/ setup, not shown on the page\n" + setup.replace(/\s+$/, "") + "\n/ ----\n" : "") + code.replace(/\s+$/, "");
+  }
+  function source(pre) {
+    var deps = (pre.getAttribute("data-ctx") || "").split(/\s+/).filter(Boolean).map(function (id) {
+      return document.querySelector('pre[data-rid="' + id + '"]');
+    }).filter(Boolean);
+    if (!deps.length) return piece(pre);
+    return "/ setup: the code before this on the page\n" + deps.map(piece).join("\n") + "\n/ ---- this snippet\n" + piece(pre);
   }
   function b64u(u) {
     var s = ""; for (var i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
@@ -43,13 +64,6 @@
     } else go("u" + b64u(bytes));
   }
 
-  // an Amber block: marked as q/k/Amber, or an unmarked block that is an amber> transcript
-  function isAmber(pre) {
-    var code = pre.querySelector("code"), cls = (code && code.className) || "";
-    if (/\b(lang-(q|k|amber)|l-q)\b/.test(cls)) return true;
-    if (cls && !/\bhl\b/.test(cls)) return false;   // another language, or output
-    return /^amber>/m.test(pre.textContent);
-  }
   function add(pre) {
     var host = pre.closest(".code") || pre;
     if (host.querySelector(".amber-run")) return;
@@ -58,7 +72,7 @@
     btn.type = "button"; btn.className = "amber-run";
     btn.title = "Open this code in the notepad and run it";
     btn.innerHTML = ICON + "<span>Run</span>";
-    btn.addEventListener("click", function (e) { e.stopPropagation(); openInNotepad(runnable(pre.innerText)); });
+    btn.addEventListener("click", function (e) { e.stopPropagation(); openInNotepad(source(pre)); });
     host.appendChild(btn);
     // left of the page's own copy button, at its height
     var copy = host.querySelector(".copy-btn, button.copy, .copy");
@@ -69,10 +83,7 @@
   }
   function init() {
     var st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st);
-    Array.prototype.forEach.call(document.querySelectorAll("pre"), function (pre) {
-      if (pre.closest(".np-shell")) return;   // the notepad itself
-      if (isAmber(pre) && pre.textContent.trim()) add(pre);
-    });
+    Array.prototype.forEach.call(document.querySelectorAll('pre[data-run="ok"], pre[data-run="ctx"]'), add);
   }
   // after the page's own scripts have added their copy buttons
   if (document.readyState === "complete") setTimeout(init, 0);

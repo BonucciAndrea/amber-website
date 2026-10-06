@@ -58,11 +58,11 @@
 
 <p>That matters in two ways. You can always drop back down to the array level, and anything you can express as an array operation can go inside a query.</p>
 
-<div class="code"><pre><code class="lang-q">trades: ([] sym: `a`b`a`b`a; px: 10 20 30 40 50.0; sz: 1 2 3 4 5)</code></pre></div>
+<div class="code"><pre data-rid="0" data-run="ok"><code class="lang-q">trades: ([] sym: `a`b`a`b`a; px: 10 20 30 40 50.0; sz: 1 2 3 4 5)</code></pre></div>
 
 <h2 id="select">select</h2>
 
-<div class="code"><pre><code class="lang-q">select from trades
+<div class="code"><pre data-rid="1" data-run="ctx" data-ctx="0"><code class="lang-q">select from trades
 select sym, px from trades
 select from trades where px &gt; 25
 select from trades where px &gt; 25, sz &lt; 5        / comma = AND
@@ -79,7 +79,7 @@ select vwap: wavg[sz; px] by sym from trades</code></pre></div>
 
 <p>Since 2.2 the bracket clause gives you ordering and a row limit, in q's order: <em>where</em>, then <em>by/select</em>, then <em>sort</em>, then <em>limit</em>.</p>
 
-<div class="code"><pre><code class="lang-q">select[3] from trades             / first 3 rows
+<div class="code"><pre data-rid="2" data-run="ctx" data-ctx="0 1"><code class="lang-q">select[3] from trades             / first 3 rows
 select[-2] from trades            / last 2 rows
 select[&gt;px] from trades           / sorted by px descending
 select[&lt;px] from trades           / ... ascending
@@ -89,7 +89,7 @@ select[2;&gt;s] s: sum px by sym from trades   / works on a grouped result too</
 
 <h2 id="exec-update-delete">exec, update, delete</h2>
 
-<div class="code"><pre><code class="lang-q">exec px from trades where sym = `a      / a plain vector, not a table
+<div class="code"><pre data-rid="3" data-run="ctx" data-ctx="0 1 2"><code class="lang-q">exec px from trades where sym = `a      / a plain vector, not a table
 exec px, sz from trades                 / several columns -&gt; a dict of vectors
 update px: px * 1.01 from trades where sym = `a
 update z: px * sz from trades           / add a computed column
@@ -102,14 +102,14 @@ delete sz from trades                   / drop a column</code></pre></div>
 
 <p><code>fby</code> computes an aggregate per group and aligns it back to every row of that group, which is what you want for "rows above their group's average":</p>
 
-<div class="code"><pre><code class="lang-q">select from trades where px = (max; px) fby sym     / each sym&#x27;s top-priced rows
+<div class="code"><pre data-rid="4" data-run="ctx" data-ctx="0 1 2 3"><code class="lang-q">select from trades where px = (max; px) fby sym     / each sym&#x27;s top-priced rows
 select from trades where px &gt; (avg; px) fby sym
 select sym, m: (max; px) fby sym from trades        / ... or as a column
 fby[(sum; trades`sz); trades`sym]                   / the functional form</code></pre></div>
 
 <p>The group specification may be several columns, written as a list or as a table:</p>
 
-<div class="code"><pre><code class="lang-q">trades: ([] sym: `a`b`a`b`a; ex: `X`X`Y`Y`X; px: 10 20 30 40 50.0; sz: 1 2 3 4 5)
+<div class="code"><pre data-rid="5" data-run="ok"><code class="lang-q">trades: ([] sym: `a`b`a`b`a; ex: `X`X`Y`Y`X; px: 10 20 30 40 50.0; sz: 1 2 3 4 5)
 fby[(max; trades`px); (trades`sym; trades`ex)]
 select from trades where px = (max; px) fby (sym; ex)</code></pre></div>
 
@@ -117,7 +117,7 @@ select from trades where px = (max; px) fby (sym; ex)</code></pre></div>
 
 <p>Every template has a function underneath it. Reach for these when the query itself is computed:</p>
 
-<div class="code"><pre><code class="lang-q">t: ([] sym: `a`b`a; px: 10 20 30.0; sz: 1 2 3)
+<div class="code"><pre data-rid="6" data-run="ok"><code class="lang-q">t: ([] sym: `a`b`a; px: 10 20 30.0; sz: 1 2 3)
 qwhere[t; (t`px) &gt; 15]                       / select rows by a mask
 qselect[t; (,`v) ! ,{x[`px] * x`sz}]         / computed columns
 qby[t; `sym; (,`tot) ! ,{sum x`sz}]          / group aggregate -&gt; keyed table
@@ -190,6 +190,6 @@ select from t where px &gt; 1</code></pre></div>
   </div>
 </footer>
 <script src="../assets/js/amber.js?v=3" defer></script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

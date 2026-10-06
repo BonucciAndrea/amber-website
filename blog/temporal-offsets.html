@@ -556,7 +556,7 @@ is presentational; the bytes on disk are unchanged and still binary-searchable.<
 
 <p>None of the above is visible day to day, because the types do the right thing:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">2026.07.30                          / a date
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="0" data-run="ok"><code class="l-q">2026.07.30                          / a date
 2026.08.15 - 2026.07.30             / 16  (days)
 2026.07.30 + 16                     / 2026.08.15
 10:00:00.000 + 00:00:05.000         / 10:00:05.000
@@ -586,20 +586,20 @@ dow  2026.07.30                     / day of week
 <p>Almost every question about a trading day is a question about buckets. Amber has three functions and
 they compose:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">minbar[w; t]      / w-minute bar, returned as a time (ms)
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="1" data-run="ok" data-setup="w:5; u:60000&#10;t:34200000 34400500 34865250 35939999   / times of day in ms, as a time column holds them&#10;x:0 3 7 12 25"><code class="l-q">minbar[w; t]      / w-minute bar, returned as a time (ms)
 bar[w; u; t]      / generic: w buckets of u ms — bar[5;60000;t] = 5-minute bars
 xbar[w; x]        / plain bucketing of any integer column</code></pre></div>
 
 <p>The classic tickerplant OHLCV query, unchanged from how a q shop would write it:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">gentq 100000                     / sets the globals: trades, quotes
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="2" data-run="ok"><code class="l-q">gentq 100000                     / sets the globals: trades, quotes
 tb: +@[+trades; ,`time; minbar[1]@]
 qby[tb; `sym`time;
     `open`high`low`close`vol!({first x`px};{max x`px};{min x`px};{last x`px};{sum x`sz})]</code></pre></div>
 
 <p>Or, at the prompt, bare:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">select vwap:wavg[sz;px] by time:minbar[1;time] from trades</code></pre></div>
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="3" data-run="ctx" data-ctx="2"><code class="l-q">select vwap:wavg[sz;px] by time:minbar[1;time] from trades</code></pre></div>
 
 <div class="note info">
   <b>Bucketing does not care about the epoch</b>
@@ -763,6 +763,6 @@ if(art&&list){
 } else if(document.getElementById("toc")){document.getElementById("toc").style.display="none"}
 })();
 </script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

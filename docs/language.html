@@ -117,7 +117,7 @@ whose <code>@</code> reads <code>`I</code>.</p>
 <p>All live in <code>amber.k</code>. Monadic functions apply prefix (<code>sum x</code>); dyadic ones
 use brackets (<code>wavg[x;y]</code>).</p>
 
-<div class="code"><pre><code class="lang-q">/ scalar (element-wise)
+<div class="code"><pre data-rid="0" data-run="no"><code class="lang-q">/ scalar (element-wise)
 neg not null reciprocal sqrt floor ceiling signum abs exp log sin cos
 til enlist string type key value first last reverse distinct group where
 flip count mod div xbar xlog round
@@ -138,7 +138,7 @@ gsum gavg gmin gmax gcount gfirst glast</code></pre></div>
 <p>The compiler recognises a few expression shapes and compiles each to <em>one</em> fused primitive instead
 of a chain that materialises intermediates. The result is identical to the unfused expression in every case;
 <code>\disasm</code> shows the fused call.</p>
-<div class="code"><pre><code class="lang-q">+/x*y  +/x=y  +/x&lt;y  +/x&gt;y    / sum of products / count of matches: no product or mask vector
+<div class="code"><pre data-rid="1" data-run="no"><code class="lang-q">+/x*y  +/x=y  +/x&lt;y  +/x&gt;y    / sum of products / count of matches: no product or mask vector
 +/x@&amp;m                       / sum of the elements selected by a mask: no compressed vector
 x@&amp;m                         / compress by a 0/1 mask: no index vector
 a+s*b  a-s*b   (s a literal)  / one pass, no s*b vector
@@ -151,17 +151,17 @@ h in kr                       / one pass, one byte per element (`memb underneath
 <p>Inside a lambda, a whole tree of <code>+ - * % &amp; |</code> over float or int vectors and numbers (with
 <code>&lt; &gt; =</code> at the top, and <code>+/</code> on top of that) runs as one pass in cache-sized blocks,
 split over the threads, once the vectors have 2048 items or more. Same bits as the unfused code.</p>
-<div class="code"><pre><code class="lang-q">f:{[a;b;c]+/(a*b)-c%2.0}      / one pass, no a*b or c%2.0 vectors</code></pre></div>
+<div class="code"><pre data-rid="2" data-run="ok"><code class="lang-q">f:{[a;b;c]+/(a*b)-c%2.0}      / one pass, no a*b or c%2.0 vectors</code></pre></div>
 
 <h3>The two everyone gets backwards</h3>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">wavg[sz; px]        / WEIGHTS FIRST. wavg[px;sz] is a plausible wrong number.
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="3" data-run="ok" data-setup="sz:100 200 300&#10;px:10.0 11.0 12.5&#10;w:5&#10;x:0 1 2 3 4 5 6 7"><code class="lang-q">wavg[sz; px]        / WEIGHTS FIRST. wavg[px;sz] is a plausible wrong number.
 xbar[w; x]          / bucket width first: xbar[5;0 1 2 3 4 5 6 7] -&gt; 0 0 0 0 0 5 5 5</code></pre></div>
 
 <h2>Tacit trains: hooks and forks</h2>
 <p>A parenthesised, <strong>semicolon-separated</strong> list whose every element is a function is
 applied as a <strong>train</strong> (since 2.0.1): <code>(f;g)</code> is a hook, <code>(f;g;h)</code> a
 fork. It lets you write a whole class of little functions with no argument name at all.</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">avg:(+/;%;#)        / fork: mean = sum % count
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="4" data-run="ok"><code class="lang-q">avg:(+/;%;#)        / fork: mean = sum % count
 avg 2 4 6 8 10      / 6.0
 (|/;-;&amp;/) 5 2 9 1    / 8            range = max - min
 (%;+/) 3 1 4 1 5    / normalise to sum 1
@@ -172,7 +172,7 @@ train. The semicolon is the switch. See the full <a href="../docs/tacit.html">Ta
 guide for hooks, forks, dyadic trains and the exact rules.</p>
 
 <h2>Dictionaries, tables and keyed tables</h2>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">d:`a`b`c!1 2 3                    / dictionary
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="5" data-run="ok"><code class="lang-q">d:`a`b`c!1 2 3                    / dictionary
 d`b                               / 2
 key d                             / `a`b`c
 value d                           / 1 2 3
@@ -202,7 +202,7 @@ first <code>CROWS</code> rows (default 20) then <code>..</code>, and the cap is 
 How this layer was put on top of a K interpreter, tables, the join family and a parser that accepts
 bare qSQL, is in <a href="../blog/02-the-q-layer.html">teaching K to speak q</a>.</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">gentq 100000                               / sets the globals: trades, quotes
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="6" data-run="ok"><code class="lang-q">gentq 100000                               / sets the globals: trades, quotes
 select from trades where px&gt;150
 select sym, px from trades where in[sym;`AAPL`MSFT]   / brackets (infix sym in `AAPL`MSFT works too)
 select last px by sym from trades
@@ -229,7 +229,7 @@ rewriter, so <strong>bare qSQL works in a script with no wrapper</strong>. The s
 functional forms below need the library too, since they are ordinary definitions in
 <code>qsql.k</code>.</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">script.k</span></div><pre><code class="lang-q">\l amber.k
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">script.k</span></div><pre data-rid="7" data-run="ok"><code class="lang-q">\l amber.k
 \l std.k
 \l qsql.k
 
@@ -284,7 +284,7 @@ matches each trade to its most recent quote with a <strong>branch-free <code>low
 binary search over each symbol group's sorted nanosecond timestamp slice. The pure-K reference
 (<code>ajmK</code>) is kept alongside it.</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">trade:([]sym:`a`b`a; time:3 4 9; px:100 200 300)
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="8" data-run="ctx" data-ctx="6 7"><code class="lang-q">trade:([]sym:`a`b`a; time:3 4 9; px:100 200 300)
 quote:([]sym:`a`a`b`a; time:1 5 2 8; bid:10 11 20 12)
 
 aj[`sym`time; trade; quote]
@@ -307,7 +307,7 @@ m:aj[`sym`time; trades; quotes]     / 5M trades against 10M quotes: ~704 ms</cod
 </div>
 
 <h3>Window join</h3>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">/ aggregate quotes inside [-1s, +1s] around every trade
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="9" data-run="ok"><code class="lang-q">/ aggregate quotes inside [-1s, +1s] around every trade
 gentq 100000                / sets the globals: trades, quotes
 w:(-1000000000 1000000000)+\:trades`time
 / each aggregate is a triple: (result-name; function; quote column)
@@ -335,7 +335,7 @@ shows them; every ascending value sort (<code>asc</code>, <code>x@&lt;x</code>, 
 </table>
 </div>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">v:asc 2000000?1000000000      / asc sets `s
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="10" data-run="ok"><code class="lang-q">v:asc 2000000?1000000000      / asc sets `s
 attr v                        / `s
 v ? 12345 67890               / O(log n) — see bench.k</code></pre></div>
 
@@ -353,8 +353,8 @@ v ? 12345 67890               / O(log n) — see bench.k</code></pre></div>
 <p class="small muted">Results are identical; only the time differs.</p>
 
 <h2>Strings</h2>
-<div class="code"><pre><code class="lang-q">lower upper ltrim rtrim trim ss ssr sv vs like lk1</code></pre></div>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">ssr["abcabc"; "b"; "X"]      / "aXcaXc"
+<div class="code"><pre data-rid="11" data-run="ok"><code class="lang-q">lower upper ltrim rtrim trim ss ssr sv vs like lk1</code></pre></div>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="12" data-run="ok"><code class="lang-q">ssr["abcabc"; "b"; "X"]      / "aXcaXc"
 vs[","; "a,b,c"]             / ("a";"b";"c")
 sv[","; ("a";"b";"c")]       / "a,b,c"
 like["AAPL"; "AA*"]          / 1b</code></pre></div>
@@ -364,7 +364,7 @@ like["AAPL"; "AA*"]          / 1b</code></pre></div>
 10M-row table loads in about 6&nbsp;ms and its pages come in as a query reads them. Symbols live in the
 database's <code>sym</code> file, writes go through a temp file and a rename, and changing a loaded vector never
 touches the disk.</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">`:db/t/ set t                                  / splay t: one file per column, db/t/.d, db/sym
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="13" data-run="no"><code class="lang-q">`:db/t/ set t                                  / splay t: one file per column, db/t/.d, db/sym
 t2:get `:db/t                                  / mapped back
 Q.dpft[`:hdb;2026.01.02;`sym;`trade]           / one day of trade, sorted by sym with `p on it
 \l hdb                                         / map a date-partitioned database
@@ -380,7 +380,7 @@ byte-exact including attributes, nulls and infinities. <code>amber-tick</code>'s
 literally <code>-8!</code> values. The encoding, and the rest of what turned the language into
 something you can deploy, is in <a href="../blog/05-platform.html">from language to platform</a>.</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">b:-8!+`a`b!(1 2 3;4 5 6)        / table -&gt; compact byte vector
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="14" data-run="ok"><code class="lang-q">b:-8!+`a`b!(1 2 3;4 5 6)        / table -&gt; compact byte vector
 (-9!b)~+`a`b!(1 2 3;4 5 6)      / 1b — exact</code></pre></div>
 
 <h2>Parallelism: <code>peach</code></h2>
@@ -388,7 +388,7 @@ something you can deploy, is in <a href="../blog/05-platform.html">from language
 (default the online CPU count), so heavy per-item work scales across cores with no GIL. The result is
 identical to <code>f'y</code>.</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">peach[{avg x?1.0}; 8#1000000]         / 8 heavy tasks across the pool</code></pre></div>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="15" data-run="ok"><code class="lang-q">peach[{avg x?1.0}; 8#1000000]         / 8 heavy tasks across the pool</code></pre></div>
 
 <div class="note">
   <span class="note-title">Where peach earns its keep</span>
@@ -408,7 +408,7 @@ pool, and <code>AMBER_THREADS=1</code> turns it off.</p>
 </div>
 
 <h2>Terminal charts and grid modes</h2>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">plot (14*{sin x%7}'!74;60;9)                            / Braille line chart
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="16" data-run="no"><code class="lang-q">plot (14*{sin x%7}'!74;60;9)                            / Braille line chart
 plot (a;b;c)                                            / several series: one labelled line each
 plot exec px,ask from trades taq quotes where sym=`AAPL / a line per column, straight from a query
 xyplot (trades`time; trades`px)                         / a time-of-day x axis -> HH:MM:SS ticks
@@ -482,14 +482,14 @@ Rust-compiler-style report:</p>
 <code>.[f;args;handler]</code> still sees it on stderr. Since 1.9 that is switchable at run time,
 useful for anything that provokes errors on purpose:</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">prev:`diag 0                    / suppress the report; returns the previous setting
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="17" data-run="ok"><code class="lang-q">prev:`diag 0                    / suppress the report; returns the previous setting
 .[{1+`a};,0;{"caught"}]         / no output at all
 `diag prev                      / restore</code></pre></div>
 
 <h2>Finance / HFT module (<code>fin.k</code>)</h2>
 <p>Auto-loaded after <code>amber.k</code>.</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">gentq 100000                       / generate a session: sets globals `trades` and `quotes`
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="18" data-run="ok"><code class="lang-q">gentq 100000                       / generate a session: sets globals `trades` and `quotes`
 genopt 2000                        / random option chain into the global `options`
 m:aj[`sym`time; trades; quotes]    / TAQ: prevailing quote for every trade
 tsign m                            / Lee-Ready trade sign (+1 buy / -1 sell)
@@ -527,7 +527,7 @@ bars[1; trades]                    / 1-minute OHLCV bars</code></pre></div>
 </div>
 
 <h2>Built-in help</h2>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">\            / the menu
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="19" data-run="no"><code class="lang-q">\            / the menu
 \q           / scalars, aggregation, sets, strings
 \j           / tables, keyed tables, joins, qSQL
 \z           / temporal, bars, attributes, display
@@ -589,6 +589,6 @@ bars[1; trades]                    / 1-minute OHLCV bars</code></pre></div>
   </div>
 </footer>
 <script src="../assets/js/amber.js?v=3" defer></script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

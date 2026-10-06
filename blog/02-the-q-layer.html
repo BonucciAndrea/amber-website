@@ -316,7 +316,7 @@ down at your prompt and be productive in the first minute.</p>
 
 <h2>Starting point: a table is a flipped dict</h2>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">d:`sym`px!(`AAPL`MSFT; 187.3 411.2)     / a dictionary of two vectors
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="0" data-run="ok"><code class="l-q">d:`sym`px!(`AAPL`MSFT; 187.3 411.2)     / a dictionary of two vectors
 t:+d                                     / flip it: now it&#x27;s a table
 t`px                                     / 187.3 411.2 — a column IS a vector</code></pre></div>
 
@@ -338,7 +338,7 @@ decides, on whether anything sits between the brackets, whether it is building a
 one; the columns are parsed as ordinary expressions, so anything legal on the right of a colon is legal
 in a column.</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">([]sym:`AAPL`MSFT`AAPL; px:187.3 411.2 187.4; sz:100 250 50)
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="1" data-run="ok"><code class="l-q">([]sym:`AAPL`MSFT`AAPL; px:187.3 411.2 187.4; sz:100 250 50)
 /  sym  px    sz
 /  ----------------
 /  AAPL 187.3 100
@@ -365,7 +365,7 @@ ninety percent of what a research session is.</p>
 <p>q's <code>meta</code> returns a keyed table of column, type and attribute. Mine does the same, and it
 is nine characters:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber.k</span></div><pre><code class="l-q">meta:{d:+unkey x;xkey[`c;+`c`t`a!(!d;{@*x}&#x27;value d;{`at x}&#x27;value d)]}</code></pre></div>
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber.k</span></div><pre data-rid="2" data-run="ok"><code class="l-q">meta:{d:+unkey x;xkey[`c;+`c`t`a!(!d;{@*x}&#x27;value d;{`at x}&#x27;value d)]}</code></pre></div>
 
 <p>Read it right to left: flip the (un-keyed) table into a dictionary of columns; build a new dictionary
 with three fields (the names, the type of each column's first element, and each column's attribute); flip
@@ -411,7 +411,7 @@ nouns. That was a property of the host grammar, and rather than fight it I docum
 <p>Seven of those are ordinary relational operations expressed in array primitives. <code>ej</code>, for
 instance, is one line, because an equi join is an inner join against a table you keyed on the fly:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber.k</span></div><pre><code class="l-q">ej:{[c;x;y]ij[x;xkey[c;y]]}</code></pre></div>
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber.k</span></div><pre data-rid="3" data-run="ok"><code class="l-q">ej:{[c;x;y]ij[x;xkey[c;y]]}</code></pre></div>
 
 <p>The eighth is the one the whole engine ends up being about.</p>
 
@@ -461,7 +461,7 @@ tokenises each expression, and rewrites every bare identifier that <em>is</em> a
 table into an indexing expression. Then it compiles the result into a one-argument lambda and hands that
 to the existing engine.</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">qsql.k</span></div><pre><code class="l-q">qword:{((x&gt;64)&amp;x&lt;91)|((x&gt;96)&amp;x&lt;123)|((x&gt;47)&amp;x&lt;58)|x=95}   / word-char mask
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">qsql.k</span></div><pre data-rid="4" data-run="ok"><code class="l-q">qword:{((x&gt;64)&amp;x&lt;91)|((x&gt;96)&amp;x&lt;123)|((x&gt;47)&amp;x&lt;58)|x=95}   / word-char mask
 qidsub:{[cols;s] … in[`$t;cols] … &quot;(x`&quot;,t,&quot;)&quot; … }          / bare name -&gt; (x`name)
 qfn:{[cols;e]. &quot;{[x]&quot;,qidsub[cols;e],&quot;}&quot;}                  / expr string -&gt; 1-arg fn</code></pre></div>
 
@@ -529,7 +529,7 @@ query is the whole language, with no separate grammar to maintain.</p>
 
 <p>Underneath sit three functions that do the actual work, and they are usable directly:</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">t:([]sym:`AAPL`MSFT`AAPL; px:187.3 411.2 187.4; sz:100 250 50)
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="5" data-run="ok"><code class="l-q">t:([]sym:`AAPL`MSFT`AAPL; px:187.3 411.2 187.4; sz:100 250 50)
 
 qwhere[t; t[`px]&gt;200]                               / filter: table + boolean mask
 qselect[t; (,`v)!,{x[`px]*x`sz}]                    / project: name -&gt; function
@@ -550,7 +550,7 @@ reminder that you are talking to a K interpreter wearing a q costume.</p>
 If the line looks like a query, it becomes the matching <code>sel</code>/<code>exq</code>/<code>upd</code>/<code>del</code>
 call. If it does not, it is passed through untouched.</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">gentq 100000                     / sets the globals: trades, quotes
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="6" data-run="ok"><code class="l-q">gentq 100000                     / sets the globals: trades, quotes
 select from trades where px&gt;150
 select vwap:wavg[sz;px], n:#px by sym from trades
 select vwap:wavg[sz;px] by time:minbar[1;time] from trades
@@ -619,7 +619,7 @@ stamps the attributes on the key columns (<code>`s</code> on <code>time</code>, 
 <code>sym</code>), so the default state of a freshly generated session is the fast one rather than a
 trap.</p>
 
-<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre><code class="l-q">gentq 100000                       / sets global `trades` and `quotes`
+<div class="code"><div class="code-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="nm">amber&gt;</span></div><pre data-rid="7" data-run="ok"><code class="l-q">gentq 100000                       / sets global `trades` and `quotes`
 m:aj[`sym`time; trades; quotes]    / TAQ: prevailing quote for every trade
 tsign m                            / Lee-Ready trade sign (+1 buy / -1 sell)
 effspread m                        / effective spread = 2|px-mid|
@@ -790,6 +790,6 @@ if(art&&list){
 } else if(document.getElementById("toc")){document.getElementById("toc").style.display="none"}
 })();
 </script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

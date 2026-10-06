@@ -304,19 +304,19 @@ everything provisioned.</p>
 <p>The query editor takes the qSQL source, the reply format, the time unit, the time column, a row cap,
 and whether to substitute the panel's time range.</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">Market overview — consolidated notional per minute</span></div><pre><code class="lang-q">select
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">Market overview — consolidated notional per minute</span></div><pre data-rid="0" data-run="no"><code class="lang-q">select
   notional: sum notional
 by time: xbar[$__interval_ms;time]
 from mktminute
 where within[time;($__fromNs;$__toNs)]</code></pre></div>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">Symbol microstructure — 1m bars vs VWAP</span></div><pre><code class="lang-q">select
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">Symbol microstructure — 1m bars vs VWAP</span></div><pre data-rid="1" data-run="no"><code class="lang-q">select
   o, h, l, c, vwap
 by time
 from bars1m
 where sym = `$"$sym", within[time;($__fromNs;$__toNs)]</code></pre></div>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">Execution quality — effective spread by venue</span></div><pre><code class="lang-q">select
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">Execution quality — effective spread by venue</span></div><pre data-rid="2" data-run="no"><code class="lang-q">select
   effbps: 10000 * wavg[notional; eff % mid],
   pibps:  10000 * wavg[notional; pi % mid]
 by venue
@@ -329,7 +329,7 @@ where within[date;($__fromNs;$__toNs)]</code></pre></div>
   <code>./amber</code> with the store loaded and get the same answer. That is why the query surface
   stays in Amber rather than in dashboard JSON.</p>
 </div>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre><code class="lang-q">\l q/amber-tick.k
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="3" data-run="ok"><code class="lang-q">\l q/amber-tick.k
 tk.root:"/path/to/store"
 tk.init[]
 show 5#gd.marketspan[]</code></pre></div>
@@ -440,6 +440,6 @@ three identity colours on screen at once.</p>
   </div>
 </footer>
 <script src="../assets/js/amber.js?v=3" defer></script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>

@@ -62,7 +62,7 @@
 
 <p>In most languages you describe <em>how</em> to visit each element. In Amber you name the operation and the whole array is the operand:</p>
 
-<div class="code"><pre><code class="lang-q">x: 1 2 3 4 5
+<div class="code"><pre data-rid="0" data-run="ok"><code class="lang-q">x: 1 2 3 4 5
 x * 2                  / 2 4 6 8 10   -- no loop, no map, no comprehension
 x + x                  / 2 4 6 8 10
 +/ x                   / 15           -- sum: the verb + folded over x
@@ -70,7 +70,7 @@ x &gt; 2                  / 0 0 1 1 1    -- comparison is elementwise too</code>
 
 <p>That last line matters more than it looks. A comparison does not give you a <code>bool</code>; it gives you a <strong>mask</strong>, one byte per element, and masks are how you select data:</p>
 
-<div class="code"><pre><code class="lang-q">x @ &amp; x &gt; 2            / 3 4 5        -- &amp; turns a mask into indices, @ takes them
+<div class="code"><pre data-rid="1" data-run="ok"><code class="lang-q">x @ &amp; x &gt; 2            / 3 4 5        -- &amp; turns a mask into indices, @ takes them
 +/ x @ &amp; x &gt; 2         / 12           -- sum of the elements above 2</code></pre></div>
 
 <div class="note">
@@ -82,14 +82,14 @@ x &gt; 2                  / 0 0 1 1 1    -- comparison is elementwise too</code>
 
 <p>Amber has <strong>no operator precedence</strong>. Every expression is evaluated right to left. This is the single most common source of early confusion, and it takes ten minutes to internalise:</p>
 
-<div class="code"><pre><code class="lang-q">2 * 3 + 4              / 14, not 10 -- it reads as 2 * (3 + 4)
+<div class="code"><pre data-rid="2" data-run="ok"><code class="lang-q">2 * 3 + 4              / 14, not 10 -- it reads as 2 * (3 + 4)
 (2 * 3) + 4            / 10         -- parenthesise when you mean it</code></pre></div>
 
 <p>The rule is uniform, which is what makes it worth having. There is no table of sixteen precedence levels to remember, and no expression whose meaning depends on knowing whether <code>%</code> binds tighter than <code>&lt;&lt;</code>.</p>
 
 <p>A monadic (one-argument) verb takes everything to its right:</p>
 
-<div class="code"><pre><code class="lang-q"># 1 2 3                / 3      -- # is `count` here
+<div class="code"><pre data-rid="3" data-run="ok"><code class="lang-q"># 1 2 3                / 3      -- # is `count` here
 |  1 2 3               / 3 2 1  -- | is `reverse` here
 # | 1 2 3              / 3      -- count of the reverse of 1 2 3</code></pre></div>
 
@@ -110,7 +110,7 @@ x &gt; 2                  / 0 0 1 1 1    -- comparison is elementwise too</code>
 
 <p>Here is a real expression. Read it right to left and it decomposes cleanly:</p>
 
-<div class="code"><pre><code class="lang-q">+/ (x * x) @ &amp; x &gt; 0
+<div class="code"><pre data-rid="4" data-run="ok"><code class="lang-q">+/ (x * x) @ &amp; x &gt; 0
 /  4. sum them
 /     3. take those positions from x*x
 /        2. positions where the mask is 1
@@ -176,6 +176,6 @@ x &gt; 2                  / 0 0 1 1 1    -- comparison is elementwise too</code>
   </div>
 </footer>
 <script src="../assets/js/amber.js?v=3" defer></script>
-<script src="../assets/js/run.js?v=2" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
 </body>
 </html>
