@@ -19,6 +19,9 @@ onmessage = async (e) => {
       postMessage({ type: "result", run: m.run, line, out, ms: performance.now() - t0 });
     }
     postMessage({ type: "done", run: m.run });
+  } else if (m.type === "def") {
+    // what a name is, for the editor's hover: a function prints its k source
+    postMessage({ type: "def", name: m.name, out: vm.eval(m.name) });
   } else if (m.type === "read") {
     let src = "";
     try { src = vm.readFile(m.name); } catch (_) { src = ""; }
