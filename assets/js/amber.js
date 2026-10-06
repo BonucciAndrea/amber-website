@@ -238,46 +238,9 @@
         } else fallback(text, done);
       });
       block.appendChild(btn);
-      addRun(block, pre);
     });
   }
 
-  /* ---- run a code block in the notepad ----------------------------------- */
-  // Amber blocks (lang-q, lang-k, lang-amber) get a Run button next to Copy. It opens the notepad in a new tab with
-  // the code in the link, and the notepad runs it. A REPL transcript (amber> prompts, then output) sends only what
-  // was typed at the prompts.
-  var ICON_RUN = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z"/></svg>';
-  function runnable(text) {
-    var lines = text.replace(/\r/g, "").split("\n"), typed = [];
-    if (!lines.some(function (l) { return /^amber>/.test(l); })) return text;
-    lines.forEach(function (l) { var m = /^amber>\s?(.*)$/.exec(l) || /^\s*\.\.\.>\s?(.*)$/.exec(l); if (m) typed.push(m[1]); });
-    return typed.join("\n");
-  }
-  function b64u(u) {
-    var s = ""; for (var i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
-    return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  }
-  function openInNotepad(src) {
-    var w = window.open("", "_blank");   // now, while the click still counts, so it is not blocked as a popup
-    var base = location.origin + (location.hostname === "amber-lang.org" ? "/notepad" : "/notepad.html");
-    var bytes = new TextEncoder().encode(src.replace(/\s+$/, "") + "\n");
-    var go = function (code) { var url = base + "#" + code; if (w) w.location = url; else location.href = url; };
-    if (typeof CompressionStream === "function") {
-      new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream("deflate-raw"))).arrayBuffer()
-        .then(function (b) { go("z" + b64u(new Uint8Array(b))); }, function () { go("u" + b64u(bytes)); });
-    } else go("u" + b64u(bytes));
-  }
-  function addRun(block, pre) {
-    var code = pre.querySelector("code");
-    if (!code || !/\blang-(q|k|amber)\b/.test(code.className) || location.protocol === "file:") return;
-    var btn = document.createElement("button");
-    btn.className = "copy-btn run-btn";
-    btn.type = "button";
-    btn.title = "Open this code in the notepad and run it";
-    btn.innerHTML = ICON_RUN + "<span>Run</span>";
-    btn.addEventListener("click", function () { openInNotepad(runnable(pre.innerText)); });
-    block.appendChild(btn);
-  }
   function fallback(text, cb) {
     var ta = document.createElement("textarea");
     ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
