@@ -106,7 +106,8 @@ class AmberVM {
         dv.setInt32(s, (t/1000)|0, true); dv.setInt32(u, (t%1000)*1000, true); },
       js_exit: () => {},
       js_eval: () => 0,
-      sin: Math.sin, cos: Math.cos, log: Math.log, exp: Math.exp
+      sin: Math.sin, cos: Math.cos, log: Math.log, exp: Math.exp,
+      tan: Math.tan, asin: Math.asin, acos: Math.acos, atan: Math.atan
     };
     const { instance } = await WebAssembly.instantiate(bin, { env });
     this.ex = instance.exports; mem = this.ex.memory; heap = this.ex.__heap_base.value;

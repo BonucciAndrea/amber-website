@@ -64,7 +64,7 @@ quotes: ([] sym: `a`a`b`a; time: 1 5 2 8; bid: 10 11 20 12.0)</code></pre></div>
 <div class="table-wrap">
 <table>
 <thead><tr><th>join</th><th>what it does</th></tr></thead>
-<tbody><tr><td><code>lj[t;kt]</code></td><td>left join against a keyed table</td></tr><tr><td><code>ij[t;kt]</code></td><td>inner join</td></tr><tr><td><code>uj[x;y]</code></td><td>union join, the column-wise concatenation</td></tr><tr><td><code>pj[t;kt]</code></td><td>plus join, which adds matching numeric columns</td></tr><tr><td><code>ej[c;x;y]</code></td><td>equi join on named columns</td></tr><tr><td><code>aj[c;x;y]</code></td><td><strong>as-of</strong> join, the important one</td></tr><tr><td><code>wj[w;c;t;q;a]</code></td><td>window join, aggregating over a window per row</td></tr></tbody>
+<tbody><tr><td><code>lj[t;kt]</code></td><td>left join against a keyed table</td></tr><tr><td><code>ij[t;kt]</code></td><td>inner join</td></tr><tr><td><code>uj[x;y]</code></td><td>union join, the column-wise concatenation</td></tr><tr><td><code>pj[t;kt]</code></td><td>plus join, which adds matching numeric columns</td></tr><tr><td><code>ej[c;x;y]</code></td><td>equi join on named columns</td></tr><tr><td><code>aj[c;x;y]</code></td><td><strong>as-of</strong> join, the important one</td></tr><tr><td><code>wj[w;c;t;(q;a..)]</code></td><td>window join, aggregating over a window per row</td></tr></tbody>
 </table>
 </div>
 
@@ -85,7 +85,7 @@ aj[`sym`time; trades; quotes]</code></pre></div>
 <div class="code"><pre data-rid="2" data-run="ok"><code class="lang-q">trades: ([] sym: `a`b`a; time: 3 4 9; px: 100 200 300.0; sz: 10 20 30)
 quotes: ([] sym: `a`a`b`a; time: 1 5 2 8; bid: 10 11 20 12.0)
 w: +(trades`time)-\:2 0        / the window, as (begins;ends)
-wj[w; `sym`time; trades; quotes; ,(`ab; avg; `bid)]</code></pre></div>
+wj[w; `sym`time; trades; (quotes; (avg; `bid))]</code></pre></div>
 
 <div class="note">
   <span class="note-title">The window is two rows, not one pair per row</span>

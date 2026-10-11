@@ -300,7 +300,7 @@
 <div class="np-tip" id="np-tip" role="tooltip" hidden></div>
 <div class="np-drop" id="np-drop" hidden><div><strong>Drop a CSV</strong>it loads as a table, right here in your browser</div></div>
 
-<script src="./assets/notepad/amber.js?v=6"></script>
+<script src="./assets/notepad/amber.js?v=7"></script>
 <script>
 (function () {
   "use strict";
@@ -714,7 +714,7 @@
   /* ---------------- engine: a fresh interpreter for every run ---------------- */
   // Nothing defined by one run or example leaks into the next: each run gets its own Web
   // Worker, and a spare boots in the background so the next run starts without waiting.
-  var ASSET_V = "2.7.2e";
+  var ASSET_V = "2.7.2f";
   var engine = null, spare = null, used = false, noWorkers = false;
   var busy = false, ready = false, busyTimer = 0, fileWaiters = {}, version = "", pendingRun = null;
   function status(cls, text) { $("np-chip").className = "np-chip " + cls; $("np-chip-text").textContent = text; }

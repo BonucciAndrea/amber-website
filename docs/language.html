@@ -66,14 +66,16 @@ grammar shows through, and they are properties of the host, not bugs.</p>
     <em>inline</em> lambda literal between two args: <code>x {x+y} y</code> does not go infix, so assign
     it first (<code>f:{x+y}; x f y</code>). Bracket form always works too:
     <code>lj[t;kt]</code>, <code>in[x;y]</code>, <code>except[a;b]</code>, <code>xasc[`sym;t]</code>.</li>
-    <li><strong>No <code>&gt;=</code> or <code>&lt;=</code>.</strong> Write <code>~a&lt;b</code> for
-    <code>a&gt;=b</code> and <code>~a&gt;b</code> for <code>a&lt;=b</code>.</li>
+    <li><strong><code>&lt;&gt;</code> <code>&gt;=</code> <code>&lt;=</code> work as in q after a name, a number or a
+    closing bracket</strong> (since 2.7.3): <code>x&lt;&gt;y</code>, <code>x&gt;=y</code>. With nothing on the left,
+    <code>&lt;</code> and <code>&gt;</code> keep their k reading, so <code>&lt;&gt;x</code> is the grade of the grade down.</li>
     <li><strong>Symbols cannot contain <code>_</code>.</strong> <code>`a_b</code> is a parse error
     because <code>_</code> is a verb (drop, and floor). Use a quoted symbol <code>`"a_b"</code>, a
     dotted name (<code>my.name</code>) or camel case.</li>
     <li><strong>Nested lambdas are not closures.</strong> An inner <code>{…}</code> sees only its own
     parameters and globals, never the enclosing function's locals. Pass captured values in by
-    projection: <code>f[captured]'list</code>.</li>
+    projection: <code>f[captured]'list</code>. (qSQL in a lambda is the exception: since 2.7.3
+    <code>{[c]select from t where s=c}</code> sees <code>c</code>, as in q.)</li>
     <li><strong><code>.x</code> after a <em>name</em> is dyadic apply; after a <em>verb</em> it is
     monadic "value".</strong> Prefer the <code>value</code> function (<code>value x</code> ≡
     <code>. x</code>) to avoid the ambiguity.</li>
@@ -102,7 +104,7 @@ e.g. <code>x*o x-1</code>, which has to come back to multiply.</p>
   </tbody>
 </table>
 </div>
-<p>There&rsquo;s no separate bool type: a <code>b</code> literal like <code>101b</code> is an int vector, and comparisons give ints. <code>@x</code> returns the type symbol. <code>!n</code> gives <code>0..n-1</code>, a compact range
+<p>There&rsquo;s no separate bool type: a <code>b</code> literal like <code>101b</code> is an int vector, and comparisons give ints. <code>@x</code> returns the type symbol, and <code>type x</code> q&rsquo;s type number (<code>7</code> for an int list, since 2.7.3). <code>!n</code> gives <code>0..n-1</code>, a compact range
 whose <code>@</code> reads <code>`I</code>.</p>
 
 <div class="note note-info">
@@ -180,7 +182,7 @@ value d                           / 1 2 3
 t:([]sym:`AAPL`MSFT`AAPL; px:187.3 411.2 187.4; sz:100 250 50)
 count t                           / 3
 cols t                            / `sym`px`sz
-meta t                            / c | t a   -- column, type, attribute
+meta t                            / c | t f a -- column, type, foreign key, attribute
 t`px                              / 187.3 411.2 187.4  (a column IS a vector)
 t 0                               / the first row, as a dictionary
 
@@ -271,8 +273,8 @@ qexec[t; t[`px]&gt;100; ,`sym; (,`n)!,{#x`px}]         / where + by + aggregate,
     <tr><td><code>pj[t;kt]</code></td><td>plus join: numeric columns are added rather than replaced</td></tr>
     <tr><td><code>ej[c;x;y]</code></td><td>equi join on the named columns</td></tr>
     <tr><td><code>aj[c;x;y]</code> · <code>aj0[c;x;y]</code></td><td><strong>as-of</strong>: for each left row, the most recent right row at or before it</td></tr>
-    <tr><td><code>wj[w;c;x;y;a]</code></td><td><strong>window</strong>: aggregate right rows inside a window around each left row, plus the one in force when it opens (as q)</td></tr>
-    <tr><td><code>wj1[w;c;x;y;a]</code></td><td>The same, only the rows inside the window</td></tr>
+    <tr><td><code>wj[w;c;x;(y;a..)]</code></td><td><strong>window</strong>: aggregate right rows inside a window around each left row, plus the one in force when it opens (as q)</td></tr>
+    <tr><td><code>wj1[w;c;x;(y;a..)]</code></td><td>The same, only the rows inside the window</td></tr>
     <tr><td><code>asof[x;y]</code></td><td>the scalar as-of lookup</td></tr>
   </tbody>
 </table>
@@ -310,8 +312,8 @@ m:aj[`sym`time; trades; quotes]     / 5M trades against 10M quotes: ~704 ms</cod
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="9" data-run="ok"><code class="lang-q">/ aggregate quotes inside [-1s, +1s] around every trade
 gentq 100000                / sets the globals: trades, quotes
 w:(-1000000000 1000000000)+\:trades`time
-/ each aggregate is a triple: (result-name; function; quote column)
-wj[w; `sym`time; trades; quotes; ((`mbid;max;`bid);(`mask;min;`ask))]</code></pre></div>
+/ as q: (quotes; (function; column)..); an aggregate may also name its column, (name; function; column)
+wj[w; `sym`time; trades; (quotes; (`mbid;max;`bid); (`mask;min;`ask))]</code></pre></div>
 <p>See <code>examples/wj.k</code> for a full walkthrough.</p>
 
 <h2>Attributes: the C-level change</h2>
