@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Talking to q: IPC, logs and kdb+ databases</title>
+<meta name="description" content="Amber speaks kdb+'s wire format both ways, replays q's logs and reads and writes the databases q writes, so a q process and an Amber one work side by side, and a kdb+ tickerplant runs on Amber unchanged.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Talking to q: IPC, logs and kdb+ databases">
+<meta property="og:description" content="Amber speaks kdb+'s wire format both ways, replays q's logs and reads and writes the databases q writes, so a q process and an Amber one work side by side, and a kdb+ tickerplant runs on Amber unchanged.">
+<meta property="og:site_name" content="Amber">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/amber.css?v=6">
+<script>document.documentElement.className+=" has-js";(function(){try{var t=localStorage.getItem("amber-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v2.9.0</span></a>
+    <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../learn/index.html">Learn</a><a href="../docs/" class="active">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a><a href="../projects/">Projects</a><a href="../notepad.html">Notepad</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-btn" href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 12c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg></a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle colour theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    </div>
+  </div>
+</header>
+<main id="main">
+<div class="wrap"><div class="docs-layout"><aside class="sidebar" aria-label="Section navigation">
+<div class="grp">Overview</div>
+<a href="../docs/index.html">Introduction</a>
+<a href="../docs/install.html">Install &amp; run</a>
+<div class="grp">Reference</div>
+<a href="../docs/language.html">Language &amp; qSQL</a>
+        <a href="../docs/tacit.html">Tacit programming</a>
+<a href="../docs/temporal.html">Temporal mechanics</a>
+<a href="../docs/q.html" class="active">Talking to q</a>
+<a href="../docs/protocol.html">Wire protocol</a>
+<a href="../docs/capi.html">C API &amp; extensions</a>
+<div class="grp">Performance</div>
+<a href="../docs/benchmarks.html">Benchmarks</a>
+<a href="../docs/performance.html">Writing fast Amber</a>
+<div class="grp">Internals</div>
+<a href="../docs/internals.html">Engine internals</a>
+<a href="../docs/development.html">Development &amp; testing</a>
+<a href="../docs/gotchas.html">Gotchas</a>
+</aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../docs/index.html">Docs</a> / Talking to q</div>
+<h1>Talking to q</h1>
+<p class="lead">Since 2.9.0 Amber speaks kdb+'s wire format, both ways. A q process can query an Amber one and the other way
+round, Amber replays q's logs, and it reads and writes the databases q writes. The test for all of it was a real kdb+
+options tickerplant (feed, tp, rdb, cep, hdb, gateway, monitor), and it runs on Amber with its .q files unchanged.</p>
+
+<h2>Handles</h2>
+<p>Same as q: open a port, open a handle, send text or a function and its args. A negative handle sends async.</p>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="0" data-run="no"><code class="lang-q">\p 5000                   / listen (or start with amber -p 5000)
+h:hopen 5000              / or `:host:5000
+h"1+1"                    / sync: 2
+h(`f;1;2)                 / a function by name and its args
+h({x*y};6;7)              / or the function itself: 42
+neg[h]"x:42"              / async, no answer
+neg[h](`getq;`ibm);r:h[]  / async, then wait for the next message (a deferred reply)
+@[h;"1+`a";{"ERR ",x}]    / a remote error comes back as q's: "ERR type"
+hclose h</code></pre></div>
+<p>On the serving side the handlers are q's, and run when they should:</p>
+<div class="table-wrap"><table>
+<thead><tr><th style="width:22%">Name</th><th>When</th></tr></thead>
+<tbody>
+<tr><td><code>.z.pg</code></td><td>a sync message; its value is the answer (by default q's <code>value</code>, qSQL text too)</td></tr>
+<tr><td><code>.z.ps</code></td><td>an async message</td></tr>
+<tr><td><code>.z.po</code> / <code>.z.pc</code></td><td>a connection opens / closes (its handle as the argument)</td></tr>
+<tr><td><code>.z.w</code></td><td>the handle of the message being handled</td></tr>
+<tr><td><code>.z.ts</code></td><td>the timer: <code>\t 100</code> calls it every 100 ms, <code>\t 0</code> stops it</td></tr>
+</tbody></table></div>
+
+<h2>The bytes</h2>
+<p><code>-8!x</code> gives q's bytes for x and <code>-9!</code> reads them back, so what you get is what q sends. Amber's own
+compact format, the one <code>peach</code> and column files use, is <code>`ser</code> / <code>`des</code> now.</p>
+
+<h2>Logs</h2>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="1" data-run="no"><code class="lang-q">lf:`:tp_logs/log_2026.10.13
+lf set ()                       / a new, empty log (q's header)
+lh:hopen lf
+lh enlist(`upd;`quotes;x)       / append a message, as a q tp does
+-11!lf                          / replay it: upd runs for each, gives the count
+-11!(100;lf)                    / just the first 100
+-11!(-2;lf)                     / count the good ones, run nothing</code></pre></div>
+<p>The format is q's, so a log either side wrote replays on the other.</p>
+
+<h2>kdb+ databases</h2>
+<p><code>\l db</code> loads a database kdb+ wrote: its column files, its enumerated symbols and sym file, partitions
+and all, even one whose <code>.d</code> files went missing (git won't keep dot files unless you ask). When Amber writes into a
+database like that, with <code>.Q.dpft</code> or <code>set</code>, it writes q's own files, so q keeps reading it.
+<code>count</code>, <code>cols</code> and <code>tables</code> see a partitioned table the way q does, and <code>\l dir</code>
+goes into the directory, so <code>\l .</code> reloads after an rdb's end of day.</p>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="2" data-run="ok"><code class="lang-q">\l hdb_data
+count quotes                                  / 2364
+select n:count i, avg bid by sym from quotes where date=2026.04.29</code></pre></div>
+
+<h2>The console of a serving process</h2>
+<p>A script that leaves a port or a timer open keeps running after it loads, as q's does, and reads its console a line at a
+time. So rlwrap works on it, what the handlers print and what you type don't tread on each other, tables show cut to the
+window, and an error in a timer or a handler is one line, <code>'2026.10.13T14:20:00.000 type</code>, not a report.</p>
+
+<div class="note"><span class="note-title">Not there yet</span>
+<p>Compressing messages on the way out (Amber reads q's compressed ones), TLS, websockets, <code>.z.pw</code> and the HTTP
+handlers.</p></div>
+<div class="pager">
+  <a href="../docs/temporal.html"><span class="dir">Previous</span><span class="ttl">Temporal mechanics</span></a>
+  <a class="next" href="../docs/protocol.html"><span class="dir">Next</span><span class="ttl">Wire protocol</span></a>
+</div>
+</article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgf" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgf)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgf)" opacity=".62"/></svg><span>Amber</span></a>
+        <p class="small muted" style="margin-top:12px;max-width:30ch">A low-latency array language: columnar, vectorised, in-memory. C99, portable, self-contained.</p>
+      </div>
+      <div>
+        <h5>Documentation</h5>
+        <a href="../docs/index.html">Introduction</a>
+        <a href="../docs/language.html">Language &amp; qSQL</a>
+        <a href="../docs/tacit.html">Tacit programming</a>
+        <a href="../docs/temporal.html">Temporal mechanics</a>
+        <a href="../docs/q.html">Talking to q</a>
+        <a href="../docs/protocol.html">Wire protocol</a>
+        <a href="../docs/capi.html">C API</a>
+        <a href="../docs/benchmarks.html">Benchmarks</a>
+        <a href="../docs/performance.html">Writing fast Amber</a>
+        <a href="../docs/internals.html">Engine internals</a>
+        <a href="../docs/development.html">Development &amp; testing</a>
+        <a href="../docs/gotchas.html">Gotchas</a>
+      </div>
+      <div>
+        <h5>Ecosystem</h5>
+        <a href="../ecosystem/python-amber.html">python-amber</a>
+        <a href="../ecosystem/amber-arrow.html">amber-arrow</a>
+        <a href="../ecosystem/amber-jupyter.html">amber-jupyter</a>
+        <a href="../ecosystem/amber-tick.html">amber-tick</a>
+        <a href="../ecosystem/grafana.html">Grafana datasource</a>
+        <a href="../ecosystem/vscode-amber.html">vscode-amber</a>
+        <a href="../ecosystem/amber-ai.html">amber-ai</a>
+      </div>
+      <div>
+        <h5>Learn</h5>
+        <a href="../learn/index.html">Amber for Mortals</a>
+        <a href="../tutorials/index.html">Tutorials</a>
+        <a href="../blog/index.html">Blog</a>
+        <a href="../projects/index.html">Projects</a>
+        <a href="../notepad.html">Notepad</a>
+        <a href="https://github.com/BonucciAndrea/amber" target="_blank" rel="noopener">Source on GitHub</a>
+        <a href="https://github.com/BonucciAndrea" target="_blank" rel="noopener">All repositories</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Amber is licensed under the <a href="https://github.com/BonucciAndrea/amber/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPLv3</a>. Interpreter core derives from <a href="https://codeberg.org/ngn/k" target="_blank" rel="noopener">ngn/k</a>.</span>
+    </div>
+  </div>
+</footer>
+<script src="../assets/js/amber.js?v=3" defer></script>
+<script src="../assets/js/run.js?v=3" defer></script>
+</body>
+</html>

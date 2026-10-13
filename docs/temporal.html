@@ -22,7 +22,7 @@
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="nav">
   <div class="nav-inner">
-    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v2.8.0</span></a>
+    <a class="brand" href="../index.html"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span>Amber</span><span class="ver">v2.9.0</span></a>
     <nav class="nav-links" id="nav-links" aria-label="Main"><a href="../learn/index.html">Learn</a><a href="../docs/" class="active">Docs</a><a href="../ecosystem/">Ecosystem</a><a href="../tutorials/">Tutorials</a><a href="../blog/">Blog</a><a href="../projects/">Projects</a><a href="../notepad.html">Notepad</a>
     </nav>
     <div class="nav-right">
@@ -41,6 +41,7 @@
 <a href="../docs/language.html">Language &amp; qSQL</a>
         <a href="../docs/tacit.html">Tacit programming</a>
 <a href="../docs/temporal.html" class="active">Temporal mechanics</a>
+<a href="../docs/q.html">Talking to q</a>
 <a href="../docs/protocol.html">Wire protocol</a>
 <a href="../docs/capi.html">C API &amp; extensions</a>
 <div class="grp">Performance</div>
@@ -102,7 +103,7 @@ this right explicitly, because getting it wrong is a silent thirty-year shift.</
 
 </div>
 
-<h2>The three storage rules</h2>
+<h2>The storage rules</h2>
 <div class="table-wrap">
 <table>
   <thead><tr><th style="width:10%">Type</th><th style="width:22%">Literal</th><th style="width:24%">Stored as</th><th>Zero point</th></tr></thead>
@@ -110,9 +111,15 @@ this right explicitly, because getting it wrong is a silent thirty-year shift.</
     <tr><td><code>d</code> date</td><td><code>2026.07.30</code></td><td>int, <strong>days</strong></td><td>2000-01-01</td></tr>
     <tr><td><code>t</code> time</td><td><code>10:00:00.000</code></td><td>int, <strong>milliseconds</strong></td><td>midnight (same day)</td></tr>
     <tr><td><code>p</code> timestamp</td><td><code>2026.07.30D09:30:00.000000000</code></td><td>int64, <strong>nanoseconds</strong></td><td>2000-01-01T00:00:00</td></tr>
+    <tr><td><code>n</code> timespan</td><td><code>0D01:00:00.000000000</code></td><td>int64, <strong>nanoseconds</strong></td><td>a length of time, no zero point</td></tr>
+    <tr><td><code>u</code> minute</td><td><code>09:30</code></td><td>int, <strong>minutes</strong></td><td>midnight</td></tr>
+    <tr><td><code>v</code> second</td><td><code>09:30:15</code></td><td>int, <strong>seconds</strong></td><td>midnight</td></tr>
+    <tr><td><code>m</code> month</td><td><code>2026.03m</code></td><td>int, <strong>months</strong></td><td>2000.01</td></tr>
   </tbody>
 </table>
 </div>
+
+<p>Since 2.9.0 all of q's temporal kinds are in, each with its typed null (<code>0Nd 0Nt 0Np 0Nn 0Nu 0Nv 0Nm</code>), and a list of any one kind is its own vector type, held as its numbers like q's, so sorting, grouping and comparing them runs at int speed.</p>
 
 <p>A <em>time of day</em> is a count of milliseconds since midnight, the same convention as q's
 <code>time</code>. It carries no date at all. A <em>timestamp</em> is a count of nanoseconds since
@@ -132,7 +139,12 @@ the epoch instant and carries both.</p>
 2026.08.15 - 2026.07.30             / date - date  -&gt; 16   (days)
 2026.07.30 + 16                     / date + int   -&gt; 2026.08.15
 2026.01.01 2026.01.02               / A strand of dates is a list (2.5)
-2026.07.30 * 2                      / Anything else is 'type, and date+0N is 'domain
+2026.07.30 * 2                      / Anything else is 'type; date+0N is 0Nd
+2026.07.30D10:00 - 2026.07.30D09:30 / timestamp - timestamp -&gt; 0D00:30:00.000000000 (a timespan)
+2026.07.30 + 0D09:30                / date + timespan -&gt; a timestamp
+09:30 + 15                          / minute + int -&gt; 09:45
+2026.03m + 1                        / month + int  -&gt; 2026.04m
+09:30:00                            / a second, as q; a time keeps its ms: 09:30:00.000
 2026.07.30D09:30:00.000000000       / timestamp (ns since 2000.01.01)
 
 year 2026.07.30                     / 2026
@@ -311,7 +323,7 @@ from the same arrays, so the two views cannot drift.</p>
 
 <div class="pager">
   <a href="../docs/language.html"><span class="dir">Previous</span><span class="ttl">Language &amp; qSQL</span></a>
-  <a class="next" href="../docs/protocol.html"><span class="dir">Next</span><span class="ttl">Wire protocol</span></a>
+  <a class="next" href="../docs/q.html"><span class="dir">Next</span><span class="ttl">Talking to q</span></a>
 </div>
 </article><nav class="toc" aria-label="On this page"><div class="grp">On this page</div><div id="toc-list"></div></nav></div></div>
 </main>
@@ -328,6 +340,7 @@ from the same arrays, so the two views cannot drift.</p>
         <a href="../docs/language.html">Language &amp; qSQL</a>
         <a href="../docs/tacit.html">Tacit programming</a>
         <a href="../docs/temporal.html">Temporal mechanics</a>
+        <a href="../docs/q.html">Talking to q</a>
         <a href="../docs/protocol.html">Wire protocol</a>
         <a href="../docs/capi.html">C API</a>
         <a href="../docs/benchmarks.html">Benchmarks</a>
