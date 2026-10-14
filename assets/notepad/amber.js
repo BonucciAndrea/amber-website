@@ -22,9 +22,10 @@ const EXAMPLES = [
 
 // ---- script → statements ------------------------------------------------------
 // A script is evaluated statement by statement, the way the native loader reads a file:
-// an indented line continues the statement above it, `/ ...` comments are dropped
-// (a lone `/` opens a comment block that a lone `\` closes), and a `/` inside a string
-// is not a comment. Each statement records the 1-based line it starts on.
+// a line continues the statement above it while that one has a bracket open, or when it
+// is indented; `/ ...` comments are dropped (a lone `/` opens a comment block that a lone
+// `\` closes), and a `/` inside a string is not a comment. Each statement records the
+// 1-based line it starts on.
 function stripComment(line) {
   let inStr = false;
   for (let i = 0; i < line.length; i++) {
@@ -35,9 +36,30 @@ function stripComment(line) {
   }
   return line.replace(/\s+$/, "");
 }
+// How many { ( [ a line leaves open (a line that is already comment-stripped); brackets in a
+// string don't count. The native REPL's sb_depth_delta (ln.c) does the same
+function depth(line) {
+  let d = 0, inStr = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inStr) { if (c === "\\") i++; else if (c === '"') inStr = false; }
+    else if (c === '"') inStr = true;
+    else if (c === "{" || c === "(" || c === "[") d++;
+    else if (c === "}" || c === ")" || c === "]") d--;
+  }
+  return d;
+}
+// A line break inside brackets ends an item, as in a script: b:a+1 then b*2 on the next line
+// are two statements of the body, 1 2 3 one a line are three items. So the break turns into a
+// `;`, except where native drops the empty item it would make: after a ; or an opening
+// bracket or a lambda's [args], or before a ; or a closing bracket
+function joinOpen(a, b) {
+  if (/[;\[({]$/.test(a) || /\{\s*\[[^\]]*\]$/.test(a) || /^[;\])}]/.test(b)) return a + " " + b;
+  return a + ";" + b;
+}
 function statements(src) {
   const out = [], lines = src.replace(/\r\n?/g, "\n").split("\n");
-  let inBlock = false;
+  let inBlock = false, open = 0;          // open: brackets the last statement leaves open
   for (let n = 0; n < lines.length; n++) {
     const raw = lines[n];
     // only a line that is exactly "/" opens a block ("/ " with a trailing space is a plain comment)
@@ -58,8 +80,13 @@ function statements(src) {
     //     f 3      / gave no result at all; now gives 8
     // The native REPL has never had this problem because it joins a continued
     // line into one before evaluating it. This does the same.
-    if (/^\s/.test(code) && prev && !/^\\/.test(prev.code)) prev.code += " " + code.replace(/^\s+/, "");
-    else out.push({ line: n + 1, code: code.replace(/^\s+/, "") });
+    // A statement with a bracket still open takes the next line whatever its indent, so a
+    // function typed with no indent at all works too, as at the native prompt.
+    const body = code.replace(/^\s+/, ""), back = /^\\/.test(raw);
+    if (prev && open > 0 && !back) prev.code = joinOpen(prev.code, body);
+    else if (/^\s/.test(code) && prev && !/^\\/.test(prev.code)) prev.code += " " + body;
+    else { out.push({ line: n + 1, code: body }); open = 0; }
+    if (!back) open = Math.max(0, open + depth(body));
   }
   return out;
 }
