@@ -58,6 +58,20 @@
   .np-name { font: inherit; color: inherit; background: transparent; border: 1px solid transparent; border-radius: 5px; padding: 2px 5px; margin: -3px 0; min-width: 4ch; max-width: 22ch; field-sizing: content; }
   .np-name:hover { border-color: var(--border); }
   .np-name:focus { outline: none; border-color: var(--accent); background: var(--surface-2); }
+
+  /* file tabs */
+  .np-tabs { flex: none; display: flex; align-items: stretch; height: 34px; padding: 0 6px; border-bottom: 1px solid var(--border); background: var(--surface-solid); overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+  .np-tab { display: inline-flex; align-items: center; gap: 4px; padding: 0 4px 0 12px; border-bottom: 2px solid transparent; font: 500 .78rem var(--font-mono); color: var(--text-dim); white-space: nowrap; cursor: pointer; user-select: none; outline: none; }
+  .np-tab:hover { color: var(--text); background: var(--surface-2); }
+  .np-tab:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+  .np-tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); background: var(--code-bg); }
+  .np-tab .np-x { display: inline-grid; place-items: center; width: 20px; height: 20px; border: 0; border-radius: 5px; padding: 0; background: transparent; color: var(--text-faint); font: 500 .95rem/1 var(--font-sans); cursor: pointer; opacity: 0; }
+  .np-tab:hover .np-x, .np-tab[aria-selected="true"] .np-x, .np-tab .np-x:focus-visible { opacity: 1; }
+  .np-tab .np-x:hover { color: var(--text); background: var(--surface-2); }
+  .np-tab .np-x:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .np-tab-add { flex: none; width: 30px; border: 0; background: transparent; color: var(--text-dim); font: 500 1.05rem var(--font-sans); cursor: pointer; border-radius: 6px; margin: 3px 2px; }
+  .np-tab-add:hover { color: var(--text); background: var(--surface-2); }
+  .np-tab-add:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .np-sep { width: 1px; height: 20px; background: var(--border); margin: 0 6px; }
   .np-spacer { flex: 1 1 auto; }
   .np-tb {
@@ -241,7 +255,7 @@
 <main class="np-shell" id="np-bench">
   <header class="np-top">
     <a class="np-brand" href="./index.html" title="Back to the Amber website"><svg class="np-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><defs><linearGradient id="lgn" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD98A"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF7A18"/></linearGradient></defs><path d="M16 2.6 28.4 24a1.4 1.4 0 0 1-1.2 2.1h-4.9L16 14.2 9.7 26.1H4.8A1.4 1.4 0 0 1 3.6 24L16 2.6Z" fill="url(#lgn)"/><path d="M16 18.4l4.1 7.7h-8.2L16 18.4Z" fill="url(#lgn)" opacity=".62"/></svg><span class="np-hide-sm">Amber</span></a>
-    <span class="np-file" title="Kept in this browser as you type. Click the name to rename it"><input class="np-name" id="np-name" type="text" value="scratch.k" size="9" maxlength="60" spellcheck="false" autocomplete="off" aria-label="File name, used when you download"> <span class="np-saved" id="np-saved">saved</span></span>
+    <span class="np-file" title="Kept in this browser as you type. Click the name to rename this file"><input class="np-name" id="np-name" type="text" value="scratch.k" size="9" maxlength="60" spellcheck="false" autocomplete="off" aria-label="File name, used when you download"> <span class="np-saved" id="np-saved">saved</span></span>
     <span class="np-sep"></span>
     <div class="np-menu-wrap">
       <button class="np-tb" id="np-ex-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="np-menu">
@@ -277,6 +291,7 @@
     </button>
   </header>
 
+  <div class="np-tabs" id="np-tabs" role="tablist" aria-label="Open files"></div>
   <div class="np-split" id="np-split">
     <section class="np-pane" aria-label="Editor">
       <div class="np-code">
@@ -659,7 +674,9 @@
   var draftTimer = 0, savedEl = $("np-saved");
   function saveNow() {
     clearTimeout(draftTimer); draftTimer = 0;
-    try { localStorage.setItem(DRAFT_KEY, editor.value); savedEl.textContent = "saved"; }
+    if (tabs[cur]) tabs[cur].code = editor.value;
+    var keep = { cur: cur, tabs: tabs.map(function (t) { return { name: t.name, code: t.code }; }) };
+    try { localStorage.setItem(TABS_KEY, JSON.stringify(keep)); savedEl.textContent = "saved"; }
     catch (_) { savedEl.textContent = "not saved"; }
   }
   function saveDraft() {
@@ -668,26 +685,121 @@
     draftTimer = setTimeout(saveNow, 400);
   }
 
-  // the file's name: click it to rename, kept in this browser, and the name Download saves under. No slashes,
-  // .k added when there is no extension, scratch.k when left empty
-  var NAME_KEY = "amber-notepad-name", nameEl = $("np-name");
+  /* ---------------- files: one tab each ---------------- */
+  // Every tab is a file {name, code}, all kept in this browser under TABS_KEY (the old single draft and its name
+  // are read once, to start the first tab). The name at the top is the open tab's: click it, or double-click the
+  // tab, to rename. Every run gets every tab as a file, so one tab can \l another (names under 16 bytes)
+  var TABS_KEY = "amber-notepad-tabs", NAME_KEY = "amber-notepad-name", nameEl = $("np-name"), tabBar = $("np-tabs");
+  var tabs = [], cur = 0, closed = null;
   function cleanName(s) {
     s = String(s || "").replace(/[\/\\:*?"<>|\x00-\x1f]/g, "").trim();
     if (!s) return "scratch.k";
     return /\.[A-Za-z0-9]+$/.test(s) ? s : s + ".k";
   }
+  // a name no other tab has: tour.k, tour-2.k, tour-3.k ...
+  function freeName(s, skip) {
+    s = cleanName(s);
+    var taken = function (n) { return tabs.some(function (t, i) { return i !== skip && t.name === n; }); };
+    if (!taken(s)) return s;
+    var dot = s.lastIndexOf("."), base = dot > 0 ? s.slice(0, dot) : s, ext = dot > 0 ? s.slice(dot) : "";
+    for (var k = 2; ; k++) if (!taken(base + "-" + k + ext)) return base + "-" + k + ext;
+  }
   function fitName() { nameEl.size = Math.max(4, Math.min(22, nameEl.value.length || 1)); }
-  try { var savedName = localStorage.getItem(NAME_KEY); if (savedName) nameEl.value = cleanName(savedName); } catch (_) {}
-  fitName();
+  function readTabs() {
+    var s = null; try { s = JSON.parse(localStorage.getItem(TABS_KEY) || "null"); } catch (_) {}
+    if (s && Array.isArray(s.tabs) && s.tabs.length) {
+      tabs = s.tabs.map(function (t) { return { name: cleanName(t && t.name), code: String((t && t.code) || "") }; });
+      cur = Math.min(Math.max(0, s.cur | 0), tabs.length - 1);
+      return;
+    }
+    var d = null, n = null; try { d = localStorage.getItem(DRAFT_KEY); n = localStorage.getItem(NAME_KEY); } catch (_) {}
+    tabs = [{ name: cleanName(n), code: d && d.trim() ? d : SNIPPETS[0][1] }]; cur = 0;
+  }
+  function renderTabs() {
+    tabBar.textContent = "";
+    tabs.forEach(function (t, i) {
+      var el = document.createElement("div");
+      el.className = "np-tab"; el.setAttribute("role", "tab"); el.tabIndex = i === cur ? 0 : -1;
+      el.setAttribute("aria-selected", i === cur ? "true" : "false");
+      el.title = t.name + " (double-click to rename" + (t.name.length < 16 ? ", \\l " + t.name + " loads it from another tab)" : ")");
+      var nm = document.createElement("span"); nm.textContent = t.name; el.appendChild(nm);
+      var x = document.createElement("button"); x.type = "button"; x.className = "np-x"; x.textContent = "×";
+      x.setAttribute("aria-label", "Close " + t.name); x.title = "Close " + t.name;
+      x.addEventListener("click", function (e) { e.stopPropagation(); closeTab(i); });
+      el.appendChild(x);
+      el.addEventListener("click", function () { switchTab(i); });
+      el.addEventListener("dblclick", function () { switchTab(i); nameEl.focus(); });
+      el.addEventListener("auxclick", function (e) { if (e.button === 1) { e.preventDefault(); closeTab(i); } });
+      el.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); switchTab(i); editor.focus(); }
+        else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+          e.preventDefault(); var j = (i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
+          switchTab(j); var nx = tabBar.children[j]; if (nx) nx.focus();
+        }
+      });
+      tabBar.appendChild(el);
+    });
+    var add = document.createElement("button");
+    add.type = "button"; add.className = "np-tab-add"; add.textContent = "+"; add.title = "New file"; add.setAttribute("aria-label", "New file");
+    add.addEventListener("click", function () { newTab("", ""); editor.focus(); });
+    tabBar.appendChild(add);
+    var on = tabBar.children[cur]; if (on && on.scrollIntoView) on.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+  // show tab i in the editor; the one being left keeps its code, caret and scroll
+  function showTab(i) {
+    cur = i; var t = tabs[i];
+    editor.value = t.code; paint();
+    var p = Math.min(t.sel || 0, editor.value.length); editor.setSelectionRange(p, p);
+    editor.scrollTop = t.top || 0; editor.scrollLeft = 0; syncScroll(); caret();
+    nameEl.value = t.name; fitName(); renderTabs();
+  }
+  function keepCur() { var t = tabs[cur]; if (!t) return; t.code = editor.value; t.sel = editor.selectionStart; t.top = editor.scrollTop; }
+  function switchTab(i) { if (i === cur || !tabs[i]) return; keepCur(); showTab(i); saveNow(); }
+  function newTab(name, code) {
+    keepCur();
+    tabs.push({ name: freeName(name || "untitled.k"), code: code || "" });
+    showTab(tabs.length - 1); saveNow();
+  }
+  // a new tab for code from elsewhere (an example, a link), or this one when it is empty
+  function openTab(name, code) {
+    if (!editor.value.trim()) { tabs[cur].name = freeName(name, cur); keepCur(); tabs[cur].code = code; tabs[cur].sel = 0; tabs[cur].top = 0; showTab(cur); saveNow(); }
+    else newTab(name, code);
+  }
+  function closeTab(i) {
+    keepCur();
+    closed = { tab: tabs[i], at: i };
+    tabs.splice(i, 1);
+    if (!tabs.length) tabs.push({ name: "scratch.k", code: "" });
+    showTab(Math.min(i < cur ? cur - 1 : i === cur ? i : cur, tabs.length - 1));
+    saveNow();
+    if (closed.tab.code.trim()) {
+      var u = document.createElement("button"); u.type = "button"; u.textContent = "Undo";
+      u.addEventListener("click", function () {
+        if (!closed) return;
+        keepCur(); var at = Math.min(closed.at, tabs.length);
+        if (tabs.length === 1 && !tabs[0].code.trim()) tabs = [];
+        closed.tab.name = freeName(closed.tab.name);
+        tabs.splice(Math.min(at, tabs.length), 0, closed.tab); showTab(Math.min(at, tabs.length - 1)); closed = null; saveNow();
+        toast.classList.remove("show");
+      });
+      toastMsg("Closed " + closed.tab.name + ".", u);
+    }
+  }
+  // the files every run gets: each tab whose name fits the engine's file names
+  function tabFiles() {
+    keepCur(); var enc = new TextEncoder();
+    return tabs.filter(function (t) { return enc.encode(t.name).length < 16; })
+               .map(function (t) { return { name: t.name, bytes: enc.encode(t.code) }; });
+  }
   nameEl.addEventListener("input", fitName);
   nameEl.addEventListener("keydown", function (e) {
     if (e.key === "Enter") { e.preventDefault(); nameEl.blur(); }
-    else if (e.key === "Escape") { e.preventDefault(); try { nameEl.value = cleanName(localStorage.getItem(NAME_KEY)); } catch (_) { nameEl.value = "scratch.k"; } nameEl.blur(); }
+    else if (e.key === "Escape") { e.preventDefault(); nameEl.value = tabs[cur] ? tabs[cur].name : "scratch.k"; fitName(); nameEl.blur(); }
   });
   nameEl.addEventListener("focus", function () { var d = nameEl.value.lastIndexOf("."); nameEl.setSelectionRange(0, d > 0 ? d : nameEl.value.length); });
   nameEl.addEventListener("change", function () {
-    nameEl.value = cleanName(nameEl.value); fitName();
-    try { localStorage.setItem(NAME_KEY, nameEl.value); } catch (_) {}
+    nameEl.value = freeName(nameEl.value, cur); fitName();
+    if (tabs[cur]) { tabs[cur].name = nameEl.value; renderTabs(); saveNow(); }
   });
 
   /* ---------------- output ---------------- */
@@ -847,7 +959,7 @@
     runHead.textContent = "run " + runNo + " · " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
     out.appendChild(runHead);
     setBusy(true);
-    var msg = { type: "eval", run: runNo, lines: stmts.map(function (s) { return s.code; }), files: dropFiles() };
+    var msg = { type: "eval", run: runNo, lines: stmts.map(function (s) { return s.code; }), files: dropFiles().concat(tabFiles()) };
     if (noWorkers) {
       var id = runNo;
       freshVM(function (vm) { msg.files.forEach(function (f) { vm.addFile(f.name, f.bytes); }); msg.lines.forEach(function (code) { onResult(id, vm.eval(code)); }); onDone(id); });
@@ -874,7 +986,7 @@
     var b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "menuitem");
     var about = /^\/ (.*)/.exec(s[1]);
     b.innerHTML = "<b>" + esc(s[0]) + "</b>" + (about ? "<span>" + esc(about[1]) + "</span>" : "");
-    b.addEventListener("click", function () { closeMenu(); setEditor(s[1]); runAll(); });
+    b.addEventListener("click", function () { closeMenu(); openTab(s[0].toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + ".k", s[1]); runAll(); });
     menu.appendChild(b);
   });
   if ((window.AMBER_EXAMPLES || []).length) menuHead("Example files");
@@ -886,8 +998,8 @@
       if (!ready) { toastMsg("The engine is still loading."); return; }
       fileWaiters[ex[0]] = function (src) {
         if (!src) { note("Could not read " + ex[0] + ".", true); return; }
-        setEditor(src.replace(/\s+$/, "") + "\n");
-        toastMsg("Loaded " + ex[0] + " — press Run.");
+        openTab(ex[0], src.replace(/\s+$/, "") + "\n");
+        toastMsg("Opened " + ex[0] + " — press Run.");
       };
       readExample(ex[0]);
     });
@@ -1250,21 +1362,18 @@
   });
 
   /* ---------------- start ---------------- */
-  function loadDefault() {
-    var d = null; try { d = localStorage.getItem(DRAFT_KEY); } catch (_) {}
-    editor.value = d && d.trim() ? d : SNIPPETS[0][1];
-    paint();
-  }
   emptyState();
+  readTabs(); showTab(cur);
+  // a shared link opens in a tab of its own, so it never replaces your files
   var hash = location.hash.replace(/^#/, "");
   var shared = /^code=[zu]\./.test(hash) || /^[hzu][A-Za-z0-9_-]+$/.test(hash) ? hash : null;
   if (shared) {
     decode(shared).then(function (src) {
-      editor.value = src; paint();
-      note("Opened from a shared link — the snippet runs as soon as the engine is ready.");
+      openTab("shared.k", src);
+      note("Opened from a shared link in its own tab — the snippet runs as soon as the engine is ready.");
       run(src);
-    }, function () { note("That share link is damaged, so nothing was loaded.", true); loadDefault(); });
-  } else loadDefault();
+    }, function () { note("That share link is damaged, so nothing was loaded.", true); });
+  }
   startEngine();
 })();
 </script>
