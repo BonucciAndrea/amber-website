@@ -710,6 +710,15 @@
     if (s && Array.isArray(s.tabs) && s.tabs.length) {
       tabs = s.tabs.map(function (t) { return { name: cleanName(t && t.name), code: String((t && t.code) || "") }; });
       cur = Math.min(Math.max(0, s.cur | 0), tabs.length - 1);
+      // a shared link left in the address bar used to open again on every reload, as shared-2.k, shared-3.k, ...:
+      // a shared-N.k with the same code as a tab before it goes
+      var keep = [], code = Object.create(null), on = tabs[cur];
+      tabs.forEach(function (t) {
+        if (/^shared(-\d+)?\.k$/.test(t.name) && code[t.code]) { if (t === on) on = code[t.code]; return; }
+        if (!code[t.code]) code[t.code] = t;
+        keep.push(t);
+      });
+      tabs = keep; cur = Math.max(0, tabs.indexOf(on));
       return;
     }
     var d = null, n = null; try { d = localStorage.getItem(DRAFT_KEY); n = localStorage.getItem(NAME_KEY); } catch (_) {}
@@ -1396,12 +1405,19 @@
   var shared = /^code=[zu]\./.test(hash) || /^[hzuHZU][A-Za-z0-9_-]+$/.test(hash) ? hash : null;
   readTabs(!!shared); showTab(cur);
   if (shared) {
+    // the link leaves the address bar once read, so a reload doesn't open it again (Share puts a fresh one back)
+    history.replaceState(null, "", location.pathname + location.search);
     decode(shared).then(function (text) {
       var src = text, said = "Opened from a shared link in its own tab — the snippet runs as soon as the engine is ready.";
       if (isBundle(shared)) {
         var o = openBundle(text); src = o.code;
         if (o.n > 1) said = "Opened " + o.n + " files from a shared link — " + tabs[cur].name + " runs as soon as the engine is ready.";
-      } else openTab("shared.k", src);
+      } else {
+        // a tab already holding this code is shown instead of a copy
+        var have = -1; keepCur();
+        tabs.forEach(function (t, i) { if (have < 0 && t.code.replace(/\s+$/, "") === src.replace(/\s+$/, "")) have = i; });
+        if (have >= 0) { showTab(have); saveNow(); } else openTab("shared.k", src);
+      }
       note(said);
       run(src);
     }).catch(function () { note("That share link is damaged, so nothing was loaded.", true); });
