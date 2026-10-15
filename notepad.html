@@ -705,7 +705,7 @@
     for (var k = 2; ; k++) if (!taken(base + "-" + k + ext)) return base + "-" + k + ext;
   }
   function fitName() { nameEl.size = Math.max(4, Math.min(22, nameEl.value.length || 1)); }
-  function readTabs() {
+  function readTabs(fromLink) {
     var s = null; try { s = JSON.parse(localStorage.getItem(TABS_KEY) || "null"); } catch (_) {}
     if (s && Array.isArray(s.tabs) && s.tabs.length) {
       tabs = s.tabs.map(function (t) { return { name: cleanName(t && t.name), code: String((t && t.code) || "") }; });
@@ -713,7 +713,8 @@
       return;
     }
     var d = null, n = null; try { d = localStorage.getItem(DRAFT_KEY); n = localStorage.getItem(NAME_KEY); } catch (_) {}
-    tabs = [{ name: cleanName(n), code: d && d.trim() ? d : SNIPPETS[0][1] }]; cur = 0;
+    // a first visit starts on an example, unless it came from a shared link: then only the link's files open
+    tabs = [{ name: cleanName(n), code: d && d.trim() ? d : fromLink ? "" : SNIPPETS[0][1] }]; cur = 0;
   }
   function renderTabs() {
     tabBar.textContent = "";
@@ -1085,13 +1086,38 @@
   }
   function decode(s) {
     try {
-      var old = /^code=([zu])\.(.*)$/.exec(s), kind = old ? old[1] : s[0], data = old ? decodeURIComponent(old[2]) : s.slice(1);
+      var old = /^code=([zu])\.(.*)$/.exec(s), kind = old ? old[1] : s[0].toLowerCase(), data = old ? decodeURIComponent(old[2]) : s.slice(1);
       if (kind === "h") return Promise.resolve(huffDec(data));
       var bytes = unb64u(data);
       if (kind === "z") return pipe(bytes, new DecompressionStream("deflate-raw")).then(function (u) { return new TextDecoder().decode(u); });
       if (kind === "u") return Promise.resolve(new TextDecoder().decode(bytes));
     } catch (err) { return Promise.reject(err); }
     return Promise.reject(new Error("unknown link format"));
+  }
+  // Several files share as one bundle, {"c":open tab,"f":[[name,code],...]} as JSON, coded as above but with the
+  // letter in upper case (H Z U). One file still called scratch.k shares as before, the shortest link
+  function encodeTabs() {
+    keepCur();
+    var fs = tabs.map(function (t) { return [t.name, t.code.replace(/\s+$/, "") + "\n"]; });
+    if (fs.length === 1 && fs[0][0] === "scratch.k") return encode(fs[0][1]);
+    return encode(JSON.stringify({ c: cur, f: fs })).then(function (c) { return c[0].toUpperCase() + c.slice(1); });
+  }
+  function isBundle(s) { return /^[HZU]/.test(s); }
+  // opens a bundle's files as tabs (a tab with the same name and code is reused, so a link opened twice adds
+  // nothing), shows the one that was open and returns its code
+  function openBundle(text) {
+    var b = JSON.parse(text);
+    if (!b || !Array.isArray(b.f) || !b.f.length) throw new Error("damaged link");
+    keepCur();
+    if (tabs.length === 1 && !tabs[0].code.trim()) tabs = [];
+    var at = b.f.map(function (f) {
+      var name = cleanName(f && f[0]), code = String((f && f[1]) || "");
+      for (var i = 0; i < tabs.length; i++) if (tabs[i].name === name && tabs[i].code === code) return i;
+      tabs.push({ name: freeName(name), code: code });
+      return tabs.length - 1;
+    });
+    showTab(at[Math.min(Math.max(0, b.c | 0), at.length - 1)]); saveNow();
+    return { code: editor.value, n: b.f.length };
   }
   // on the site the page is also served as /notepad, five characters fewer
   function pageURL() { return location.origin + (location.hostname === "amber-lang.org" ? location.pathname.replace(/\.html$/, "") : location.pathname); }
@@ -1105,17 +1131,19 @@
     toastTimer = setTimeout(function () { toast.classList.remove("show"); }, extra ? 9000 : 2600);
   }
   $("np-share").addEventListener("click", function () {
-    var src = editor.value.replace(/\s+$/, "");
-    if (!src) { toastMsg("Write some code first, then share it."); return; }
-    encode(src + "\n").then(function (code) {
+    keepCur();
+    if (!tabs.some(function (t) { return t.code.trim(); })) { toastMsg("Write some code first, then share it."); return; }
+    var n = tabs.length, open = tabs[cur].name;
+    encodeTabs().then(function (code) {
       var url = pageURL() + "#" + code;
       history.replaceState(null, "", "#" + code);
       var manual = function () {
         var inp = document.createElement("input"); inp.readOnly = true; inp.value = url;
         toastMsg("Copy this link:", inp); inp.focus(); inp.select();
       };
+      var said = n > 1 ? "Link copied — it opens these " + n + " files and runs " + open + "." : "Link copied — it opens " + open + " and runs it.";
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(function () { toastMsg("Link copied — it opens this snippet and runs it."); }, manual);
+        navigator.clipboard.writeText(url).then(function () { toastMsg(said); }, manual);
       } else manual();
     });
   });
@@ -1363,16 +1391,20 @@
 
   /* ---------------- start ---------------- */
   emptyState();
-  readTabs(); showTab(cur);
-  // a shared link opens in a tab of its own, so it never replaces your files
+  // a shared link opens in tabs of its own, so it never replaces your files
   var hash = location.hash.replace(/^#/, "");
-  var shared = /^code=[zu]\./.test(hash) || /^[hzu][A-Za-z0-9_-]+$/.test(hash) ? hash : null;
+  var shared = /^code=[zu]\./.test(hash) || /^[hzuHZU][A-Za-z0-9_-]+$/.test(hash) ? hash : null;
+  readTabs(!!shared); showTab(cur);
   if (shared) {
-    decode(shared).then(function (src) {
-      openTab("shared.k", src);
-      note("Opened from a shared link in its own tab — the snippet runs as soon as the engine is ready.");
+    decode(shared).then(function (text) {
+      var src = text, said = "Opened from a shared link in its own tab — the snippet runs as soon as the engine is ready.";
+      if (isBundle(shared)) {
+        var o = openBundle(text); src = o.code;
+        if (o.n > 1) said = "Opened " + o.n + " files from a shared link — " + tabs[cur].name + " runs as soon as the engine is ready.";
+      } else openTab("shared.k", src);
+      note(said);
       run(src);
-    }, function () { note("That share link is damaged, so nothing was loaded.", true); });
+    }).catch(function () { note("That share link is damaged, so nothing was loaded.", true); });
   }
   startEngine();
 })();
