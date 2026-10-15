@@ -251,6 +251,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
       <span class="np-hide-sm">Share</span>
     </button>
+    <button class="np-tb" id="np-download" type="button" title="Download this code as a .k file">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+      <span class="np-hide-sm">Download</span>
+    </button>
     <button class="np-tb" id="np-clear" type="button" title="Clear the editor and the output (Ctrl Z brings the code back)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
       <span class="np-hide-sm">Clear</span>
@@ -977,6 +981,18 @@
         navigator.clipboard.writeText(url).then(function () { toastMsg("Link copied — it opens this snippet and runs it."); }, manual);
       } else manual();
     });
+  });
+
+  // Download saves the editor as scratch.k, the name shown at the top, with a newline at the end
+  $("np-download").addEventListener("click", function () {
+    var src = editor.value.replace(/\s+$/, "");
+    if (!src) { toastMsg("Write some code first, then download it."); return; }
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([src + "\n"], { type: "text/plain" }));
+    a.download = "scratch.k";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    toastMsg("Downloaded scratch.k.");
   });
 
   /* ---------------- text zoom ---------------- */
