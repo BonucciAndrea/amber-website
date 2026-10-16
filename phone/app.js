@@ -170,6 +170,7 @@ edBox.addEventListener("pointerup", e => {
   edDown = null; if (moved) return;
   const p = posAt(e.clientX, e.clientY), now = Date.now();
   if (now - lastTap < 330) { selectWord(p); lastTap = 0; } else { E.a = E.b = p; draw(); lastTap = now; }
+  if (!keysOn) showKeys(true);
 });
 edBox.addEventListener("contextmenu", e => e.preventDefault());
 
@@ -204,7 +205,7 @@ function addCell(src, parts, tag) {
   const i = document.createElement("div"); i.className = "in"; i.innerHTML = (tag ? '<span class="tag">' + escH(tag) + "</span>" : "") + hl(src);
   const o = document.createElement("div"); o.className = "out";
   o.innerHTML = parts.map(p => p.ok !== undefined
-    ? '<div class="ok">' + ansiToHtml(p.ok.replace(/\n+$/, "")) + "</div>"
+    ? '<div class="ok' + (/[│╭─┌|]/.test(stripAnsi(p.ok)) ? "" : " wrap") + '">' + ansiToHtml(p.ok.replace(/\n+$/, "")) + "</div>"
     : '<div class="er"><span class="en">\'' + escH(p.err.name) + "</span>" + (p.err.why ? '<span class="ew">' + escH(p.err.why) + "</span>" : "") +
       p.err.frames.map(f => '<span class="ec">' + hl(f[0]) + "\n" + '<span class="ek">' + escH(f[1]) + "</span></span>").join("") + "</div>").join("");
   c._src = src;
@@ -393,10 +394,18 @@ function mk(k) { const b = document.createElement("button"); b.className = "k " 
   b.innerHTML = '<span class="g">' + escH(k.g) + "</span>"; b._k = k; return b; }
 
 // the edit bar
-const TOOLS = [["↑", () => recall(-1)], ["↓", () => recall(1)], ["undo", undo], ["copy", copySel], ["paste", paste], ["⌨", () => nativeEdit()]];
+const TOOLS = [["↑", () => recall(-1)], ["↓", () => recall(1)], ["undo", undo], ["copy", copySel], ["paste", paste], ["⌨", () => nativeEdit()],
+  ["⌄", () => showKeys(false)]];
 const tools = $("#tools");
-TOOLS.forEach(([g, act]) => { const b = document.createElement("button"); b.className = "tb"; b.type = "button"; b.tabIndex = -1;
+TOOLS.forEach(([g, act]) => { const b = document.createElement("button"); b.className = "tb" + (g === "⌄" ? " hide" : ""); b.type = "button"; b.tabIndex = -1;
   b.textContent = g; b._k = { g, act }; tools.append(b); });
+// the keyboard folds away so the log has the whole screen; the same button, or a tap in the editor, brings it back
+let keysOn = true;
+function showKeys(on) {
+  keysOn = on; $("#app").classList.toggle("nokb", !on); hideCard();
+  const b = tools.querySelector(".hide"); b.textContent = on ? "⌄" : "⌃"; b._k = { g: b.textContent, act: () => showKeys(!keysOn) };
+  log.scrollTop = log.scrollHeight;
+}
 
 // presses: act on release on the key that was pressed, hold for the card, hold ⌫ and the moves to repeat.
 // The key is taken from the touch point itself (elementFromPoint), not from event retargeting.

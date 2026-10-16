@@ -136,3 +136,10 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
   color: var(--amberSoft); border: 1px solid #5a4318; padding: 7px 14px; border-radius: 18px; font-size: 13.5px; box-shadow: 0 6px 20px #0008;
   pointer-events: none; }
 .offscreen { position: fixed; left: -9999px; top: 0; opacity: 0; }
+
+/* the keyboard folded away: the log gets the room */
+#app.nokb #kb, #app.nokb #hint { display: none; }
+#app.nokb #tools { padding-bottom: calc(5px + var(--sab)); }
+.tb.hide { flex: 0 0 44px; color: var(--amberSoft); font-size: 18px; }
+/* plain results wrap to the screen; tables (box lines) keep their shape and swipe sideways */
+.out .ok.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
