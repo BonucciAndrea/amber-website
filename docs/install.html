@@ -160,6 +160,7 @@ alias amberx='"$AMBER_HOME/amber"'
   <tbody>
     <tr><td><code>AMBER_THREADS</code></td><td>online CPU count (cap 64)</td><td>Threads for big vectors and <code>peach</code>. <code>=1</code> forces serial.</td></tr>
     <tr><td><code>AMBER_DIAG</code></td><td>on</td><td>The full Rust-style <code>error[…]</code> report. <code>=0</code> gives the terse k form, the message and a <code>^</code> caret.</td></tr>
+    <tr><td><code>AMBER_FSYNC</code></td><td>on</td><td>Sync on-disk writes before they're renamed in, so a crash leaves each table whole. <code>=0</code> skips it.</td></tr>
     <tr><td><code>AMBER_NO_EDIT</code></td><td>off</td><td>Disable the native line editor; Amber reads whole lines instead.</td></tr>
     <tr><td><code>AMBER_NO_RLWRAP</code></td><td>off</td><td>Suppress the rlwrap fallback that <code>AMBER_NO_EDIT=1</code> would otherwise use.</td></tr>
     <tr><td><code>AMBER_HOME</code></td><td>(none)</td><td>Where satellites (python-amber, amberd) load the <code>.k</code> standard library from.</td></tr>
@@ -169,14 +170,16 @@ alias amberx='"$AMBER_HOME/amber"'
 <p class="small muted">There is no <code>AMBER_MEM_MB</code>: the heap is <code>mmap</code>'d with
 <code>MAP_NORESERVE</code> and sized lazily by the OS, so there is nothing to tune.</p>
 
-<h2>Do not use <code>rlwrap</code></h2>
+<h2>Do not put <code>rlwrap</code> on the REPL</h2>
 <div class="note note-warn">
   <span class="note-title">Line editing is built in since 1.9.5</span>
   <p>rlwrap runs the wrapped program on a pty and speaks readline on its behalf, which only works for
   a program that reads whole lines in <em>canonical</em> mode. Amber puts the terminal into raw mode
   and reads single keypresses, so rlwrap is doing nothing useful. It says so, mid-session, while the
   two editors fight over one cursor and garble the redraw. <code>./a</code> execs the interpreter
-  directly.</p>
+  directly. Two places rlwrap does fit: with <code>AMBER_NO_EDIT=1</code> Amber reads whole lines and <code>./a</code>
+  wraps it in rlwrap for you, and a script that serves a port reads its console a line at a time, so rlwrap works
+  on that too (2.9.0).</p>
 </div>
 
 <p>The native editor (<code>src/ln.c</code>, ~700 lines of C99 + POSIX <code>termios</code>, no
@@ -246,7 +249,7 @@ AMBER_NO_RLWRAP=1 AMBER_NO_EDIT=1 ./a    # ... or not even that</code></pre></di
 ./amber examples/tick.k      # trades &amp; quotes: as-of/window joins, VWAP, OHLC
 ./amber examples/hft.k       # the finance module walkthrough
 
-./amber test.k               # core suite (163)
+./amber test.k               # core suite (202)
 tests/run_tests.sh           # build + all K suites + C unit tests + fuzz pass
 tests/run_tests.sh --asan    # ... and again under AddressSanitizer + UBSan</code></pre></div>
 

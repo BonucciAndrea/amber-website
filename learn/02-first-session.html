@@ -114,7 +114,7 @@ cd amber
 !0                     / an empty integer vector
 0#`                    / an empty symbol vector -- 0# takes nothing</code></pre></div>
 
-<p>Float nulls (<code>0n</code>) propagate silently through arithmetic, which is usually what you want in a time series and occasionally a trap. Int nulls don't: <code>0N</code> is just the smallest int, so <code>0N+1</code> is a big negative number, not a null. The q-named <code>sum</code>, <code>avg</code>, <code>min</code> and <code>max</code> skip nulls the way q does, though (since 2.4). <code>^x</code> is how you check.</p>
+<p>Float nulls (<code>0n</code>) propagate silently through arithmetic, which is usually what you want in a time series and occasionally a trap. Int nulls stay null too, as q's do (since 2.9.0): <code>0N+1</code> is <code>0N</code>. The q-named <code>sum</code>, <code>avg</code>, <code>min</code> and <code>max</code> skip nulls the way q does, though (since 2.4). <code>^x</code> is how you check.</p>
 
 <h2 id="assignment-and-functions">Assignment and functions</h2>
 
@@ -126,13 +126,8 @@ g: {[price;size] price * size}    / or name them explicitly
 g[10.5; 100]           / 1050.0</code></pre></div>
 
 <div class="note">
-  <span class="note-title">No space before a parameter name</span>
-  <p><code>{[price;size] ...}</code> parses. <code>{[price; size] ...}</code> does <strong>not</strong>: a space may not precede a parameter name, either after <code>[</code> or after a <code>;</code>. Space <em>before</em> the semicolon, before the body, and anywhere in the call is all fine: <code>{[a ;b] a+b}[1; 2]</code> works. It is the one place in the language where whitespace is load-bearing, and it produces a bare syntax error that points at the whole lambda.</p>
-</div>
-
-<div class="note">
-  <span class="note-title">Two-argument library functions need brackets</span>
-  <p>Built-in <em>verbs</em> like <code>+</code> can be written infix. Library functions are called with brackets: <code>wavg[sz;px]</code>, not <code>sz wavg px</code>. A handful of library dyads do work infix (<code>in</code>, <code>except</code>, <code>xasc</code>, <code>within</code>, <code>fby</code>), and <code>\q</code> lists them.</p>
+  <span class="note-title">Two-argument functions work infix</span>
+  <p>As in q, a named function of two arguments can sit between them: <code>sz wavg px</code> is <code>wavg[sz;px]</code>, and your own work the same way (<code>g:{[a;b] a*b}; 3 g 4</code>). A lambda written in place doesn't: <code>{x+y}[3;4]</code>, not <code>3 {x+y} 4</code>.</p>
 </div>
 
 <div class="pager">

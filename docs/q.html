@@ -105,8 +105,8 @@ lh enlist(`upd;`quotes;x)       / append a message, as a q tp does
 <p>The format is q's, so a log either side wrote replays on the other.</p>
 
 <h2>kdb+ databases</h2>
-<p><code>\l db</code> loads a database kdb+ wrote: its column files, its enumerated symbols and sym file, partitions
-and all, even one whose <code>.d</code> files went missing (git won't keep dot files unless you ask). When Amber writes into a
+<p><code>\l db</code> loads a database kdb+ wrote: its column files, its enumerated symbols and sym file, string and other
+nested columns (2.9.1), partitions and all, and the splayed tables next to them, even one whose <code>.d</code> files went missing (git won't keep dot files unless you ask). When Amber writes into a
 database like that, with <code>.Q.dpft</code> or <code>set</code>, it writes q's own files, so q keeps reading it.
 <code>count</code>, <code>cols</code> and <code>tables</code> see a partitioned table the way q does, and <code>\l dir</code>
 goes into the directory, so <code>\l .</code> reloads after an rdb's end of day.</p>

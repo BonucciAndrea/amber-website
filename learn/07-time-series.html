@@ -104,8 +104,8 @@ minute tm              / 570 -- minutes since midnight
 stime tm               / &quot;09:30:00.000&quot;</code></pre></div>
 
 <div class="note">
-  <span class="note-title">There is no time-vector literal</span>
-  <p>A single <code>09:30:00.000</code> parses, but <code>09:30:00.000 09:30:40.000</code> does not, because there is no space-separated vector form. Build one with <code>ptime</code>, which parses a string to milliseconds: <code>ptime'("09:30:00.000"; "09:30:40.000")</code>. Underneath a time <em>is</em> the millisecond count, so writing the integers directly works too, and the accessors accept either spelling.</p>
+  <span class="note-title">Time lists</span>
+  <p><code>09:30:00.000 09:30:40.000</code> is a time list, as in q, and since 2.9.0 it's a typed vector that prints and reads back as one. <code>ptime</code> parses strings: <code>ptime'("09:30:00.000"; "09:30:40.000")</code>. Underneath a time <em>is</em> the millisecond count, and the accessors accept either.</p>
 </div>
 
 <div class="note">

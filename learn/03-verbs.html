@@ -73,7 +73,7 @@ x @ &amp; x &gt; 25           / 30 40 50  -- mask, where, gather
 <h2 id="searching-and-set-operations">Searching and set operations</h2>
 
 <div class="code"><pre data-rid="1" data-run="ok"><code class="lang-q">x: 10 20 30 40 50
-x ? 30                 / 2         -- find: first index, 0N if absent
+x ? 30                 / 2         -- find: first index, the count of x if absent
 ? 1 2 2 3 1            / 1 2 3     -- distinct, first-appearance order
 1 2 3 in 2 3 4         / 0 1 1     -- membership mask
 except[1 2 3; 2]       / 1 3

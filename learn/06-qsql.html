@@ -96,7 +96,7 @@ update z: px * sz from trades           / add a computed column
 delete from trades where sz &lt; 2         / drop rows
 delete sz from trades                   / drop a column</code></pre></div>
 
-<p>These do not mutate in place. Each returns a new table, so assign it if you want to keep it.</p>
+<p>On a table value these return a new table, so assign it if you want to keep it. On a name, <code>update … from `trades</code> and <code>delete from `trades where …</code> change the table in place, as in q.</p>
 
 <h2 id="fby-an-aggregate-broadcast-back-over-rows">fby — an aggregate broadcast back over rows</h2>
 

@@ -45,7 +45,7 @@
       <div>
         <a class="announce" href="https://github.com/BonucciAndrea/amber/blob/main/CHANGELOG.md" target="_blank" rel="noopener">
           <span class="tag">v2.9.1</span>
-          <span>2.9.1: appends that don't copy anymore, and q's string columns load from disk</span>
+          <span>2.9.1: databases that survive a crash, a port only this machine reaches, appends that don't copy</span>
           <span class="arrow">&rarr;</span>
         </a>
         <h1>The array language<br><span class="grad">markets run on.</span></h1>
@@ -54,7 +54,7 @@
           vectorised, in-memory, with the working vocabulary of <strong>q</strong>: dictionaries,
           tables and keyed tables, the full join family including a native as-of kernel, qSQL
           <code>select</code>/<code>by</code>, and column attributes implemented in C that turn search from
-          <code>O(n)</code> into <code>O(log n)</code>.
+          <code>O(n)</code> into <code>O(log&nbsp;n)</code>.
         </p>
         <div class="row" style="margin-top:26px">
           <a class="btn btn-primary" href="./docs/install.html">
@@ -160,7 +160,7 @@
         <h3>Diagnostics that read like Rust</h3>
         <p class="small">An <code>error[E0104]</code> line, a <code>--&gt;</code> locator, a gutter-aligned
         source line, <code>^^^</code> underlines and a <code>= help:</code> note. One report, never two,
-        and switchable at runtime so a trap loop stays quiet.</p>
+        and a trapped error prints nothing.</p>
       </div>
     </div>
   </div>
@@ -177,10 +177,10 @@
         <code>aj</code>, <code>wj</code>, <code>xbar</code>, <code>wavg</code>, <code>meta</code>,
         <code>([]…)</code> table literals and keyed tables all mean what you expect. Bare qSQL works at the
         prompt with no <code>sel"…"</code> wrapper.</p>
-        <p>The notation underneath is terse array grammar. Any two-argument function can be applied
+        <p>The notation underneath is terse array grammar. Any named two-argument function can be applied
         infix (<code>sz wavg px</code>, <code>2 3 in 2 4 5</code>) or with brackets
         (<code>wavg[sz;px]</code>); three-argument functions like <code>aj[c;x;y]</code> use brackets.
-        There is no <code>&gt;=</code> or <code>&lt;=</code>, and symbols cannot
+        <code>&gt;=</code>, <code>&lt;=</code> and <code>&lt;&gt;</code> are q's, and names and symbols cannot
         contain <code>_</code>, because <code>_</code> is a verb.</p>
         <div class="row" style="margin-top:20px">
           <a class="btn btn-ghost btn-sm" href="./docs/language.html">Language reference &rarr;</a>
@@ -233,7 +233,7 @@ p:arrow.export t            / (schemaAddr; arrayAddr)</code></pre>
           <dt>arrivals</dt><dd>discrete-time Hawkes process, so arrivals burst rather than arriving flat Poisson</dd>
           <dt>quotes first</dt><dd>so a print can never fall outside the NBBO</dd>
           <dt>epoch</dt><dd>nanoseconds since 2000-01-01, Amber's own rather than Unix</dd>
-          <dt>files</dt><dd>each column is one <code>-8!</code> value, byte-identical to the engine's</dd>
+          <dt>files</dt><dd>each column is one value in the engine's own <code>`ser</code> format, byte for byte</dd>
         </dl>
         <a class="btn btn-ghost btn-sm" href="./tutorials/tick-store.html">Build a 5M-row store in 60 seconds &rarr;</a>
       </div>
@@ -290,7 +290,7 @@ p:arrow.export t            / (schemaAddr; arrayAddr)</code></pre>
   <text class="sub" x="48" y="205">a.c b.c  evaluator + VM</text>
   <text class="sub" x="48" y="223">simd.c parallel.c  kernels</text>
   <text class="sub" x="48" y="241">arena.c  16 MB HFT arena</text>
-  <text class="sub" x="48" y="259">ser.c  -8! / -9! binary</text>
+  <text class="sub" x="48" y="259">ser.c  `ser / `des binary</text>
   <text class="sub" x="48" y="277">ar.c  Arrow C Data Interface</text>
   <text class="sub" x="48" y="295">ext.h  the extension seam</text>
 

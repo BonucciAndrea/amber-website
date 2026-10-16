@@ -54,8 +54,7 @@
 </aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../docs/index.html">Docs</a> / Gotchas</div>
 <h1>Gotchas</h1>
 <p class="lead">Every item on this page was found the same way: code that ran, produced numbers, and
-was wrong. None of them raised an error. Seven of the eight are completely silent, and five produced
-plausible output, which is the dangerous kind.</p>
+was wrong, with no error and output that looked like output.</p>
 
 <div class="note note-warn">
   <span class="note-title">Why this page exists</span>
@@ -65,49 +64,26 @@ plausible output, which is the dangerous kind.</p>
   exactly. Several of these were caught that way and no other.</p>
 </div>
 
-<h2>1. A comment line of just <code>/</code> truncates the file</h2>
+<div class="note note-ok">
+  <span class="note-title">Fixed since, kept here so old code makes sense</span>
+  <p>A comment line of just <code>/</code> used to swallow the rest of the file without a word: it opens a block
+  comment that a line of just <code>\</code> closes, and since 2.0.0 one left open is a parse error. Dotted names such as
+  <code>bt.idx:{…}</code> now survive <code>\l</code>, and a <code>/ note</code> at the end of a line inside a multi-line
+  lambda comments out that line only. A lambda with too many locals fails with a limit error
+  (<code>error[E0108]</code>) instead of a vague one; split it into smaller ones.</p>
+</div>
 
-<p>A line containing nothing but <code>/</code> starts a block comment. Everything after it in the file
-is silently ignored. Definitions never appear, and referencing them later gives an unrelated
-"undefined variable" error somewhere else.</p>
-
-<div class="code"><pre data-rid="0" data-run="no"><code class="lang-q">/ ---- section heading -----     OK: text follows the slash
-/                                 &lt;- this eats the rest of the file
-f:{x+1}                           &lt;- never defined</code></pre></div>
-
-<p>Keep at least one character after the slash on every comment line.</p>
-
-<h2>2. <code>\l</code> does not persist dotted names</h2>
-
-<p>Definitions with a dot in the name, such as <code>bt.idx:{…}</code>, do not survive a script load. They
-parse, they appear to work in the file, and they are gone at the prompt. Use camelCase
-(<code>btIdx</code>) for anything a loaded script must define.</p>
-
-<h2>3. Lambdas cap the number of locals</h2>
-
-<p>A lambda has a fixed maximum local count. Exceed it and the definition fails in a way that does not
-point at the cause. A seventeen-local function that refuses to load has no syntax problem. Split it
-into three smaller ones. This is inherited from the K core and is a real structural limit, not a
-tunable.</p>
-
-<h2>4. <code>til #x</code> parses as a train, not a count</h2>
+<h2>1. <code>til #x</code> parses as a train, not a count</h2>
 
 <p><code>til</code> followed by <code>#</code> does not mean "the first <var>n</var> integers where
 <var>n</var> is the count of x". It parses as a composition and gives you something else entirely,
 without complaint. Write <code>!#x</code>.</p>
 
-<h2>5. Comments inside a multi-line lambda eat the rest of it</h2>
-
-<p>The loader joins the lines of a multi-line lambda before parsing, so a trailing <code>/ note</code>
-on any line but the last comments out everything that follows it, including the closing brace and
-whatever came after. Keep multi-line lambda bodies comment-free and put the explanation above the
-definition.</p>
-
-<h2>6. A fully-applied projection under <code>each</code> evaluates once</h2>
+<h2>2. A fully-applied projection under <code>each</code> evaluates once</h2>
 
 <p>This is the worst one on the page, because the output looks completely normal.</p>
 
-<div class="code"><pre data-rid="1" data-run="ok" data-setup="U:`AAPL`MSFT`IBM`GOOG`AMZN&#10;NB:4"><code class="lang-q">{[U] 3#U?U}[U]'til NB     / WRONG: returns the SAME basket NB times
+<div class="code"><pre data-rid="0" data-run="ok" data-setup="U:`AAPL`MSFT`IBM`GOOG`AMZN&#10;NB:4"><code class="lang-q">{[U] 3#U?U}[U]'til NB     / WRONG: returns the SAME basket NB times
 {[i;U] 3#U?U}[;U]'til NB  / RIGHT: leave the iterated slot open</code></pre></div>
 
 <p>In the first form every argument is already supplied, so the expression is evaluated once and the
@@ -121,7 +97,7 @@ noticed the variance was zero.</p>
   results. If it is 1 and you expected <var>n</var>, you have this bug.</p>
 </div>
 
-<h2>7. An out-of-range gather returns nulls, silently</h2>
+<h2>3. An out-of-range gather returns nulls, silently</h2>
 
 <p>Indexing a vector past its end yields nulls where NumPy raises <code>IndexError</code>. On floats
 the <code>0n</code>s then spread through every downstream scan and reduction. On ints it's quieter: since
@@ -132,9 +108,9 @@ the <code>0n</code>s then spread through every downstream scan and reduction. On
 history: the entire tensor filled with nulls and every summary statistic came back plausible.
 Assert your bounds explicitly before the gather:</p>
 
-<div class="code"><pre data-rid="2" data-run="no"><code class="lang-q">if[T &lt;= (|/S) + |/off; '"price history too short"];</code></pre></div>
+<div class="code"><pre data-rid="1" data-run="no"><code class="lang-q">if[T &lt;= (|/S) + |/off; '"price history too short"];</code></pre></div>
 
-<h2>8. <code>-0.0</code> and <code>0.0</code>: one value (and now they sort that way too)</h2>
+<h2>4. <code>-0.0</code> and <code>0.0</code>: one value (and now they sort that way too)</h2>
 
 <p>Since 2.2, <code>-0.0</code> and <code>0.0</code> are <strong>one value</strong> everywhere it
 matters: <code>=</code>, <code>~</code>, <code>in</code>, <code>=</code> (group), <code>?</code>
@@ -142,7 +118,7 @@ matters: <code>=</code>, <code>~</code>, <code>in</code>, <code>=</code> (group)
 find disagreed with the rest, and worse, <em>which</em> answer you got depended on the
 vector&rsquo;s length, because the short and long generic paths used different comparisons:</p>
 
-<div class="code"><pre data-rid="3" data-run="ok"><code class="lang-q">#?(-0.0 0.0)          / 2   &lt;- before 2.2
+<div class="code"><pre data-rid="2" data-run="ok"><code class="lang-q">#?(-0.0 0.0)          / 2   &lt;- before 2.2
 #?(300#-0.0 0.0)      / 1   &lt;- the same two values, six hundred times
 #?(-0.0 0.0)          / 1   &lt;- 2.2, at every length</code></pre></div>
 
@@ -153,7 +129,7 @@ The keys-only sort (<code>asc</code>, <code>x@&lt;x</code>) never changes an ite
 can come out in bit order, which is still ascending by value. Still, don&rsquo;t write code that
 depends on where a signed zero lands.</p>
 
-<h2>9. 2.9.0 changed a few meanings, to q's</h2>
+<h2>5. 2.9.0 changed a few meanings, to q's</h2>
 <p>Code written for 2.8 can read differently now. The ones that bite: find of a missing item is the count
 (<code>1 2 3?4</code> is <code>3</code>, it was <code>0N</code>), <code>0N+1</code> is <code>0N</code>, <code>-8!</code> and
 <code>-9!</code> are q's bytes (Amber's own are <code>`ser</code> and <code>`des</code>), <code>09:30:00</code> is a second

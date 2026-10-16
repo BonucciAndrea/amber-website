@@ -101,7 +101,7 @@ should: through <code>libamber.so</code>, the <code>src/ext.h</code> C API seam,
   <rect class="ba" x="228" y="118" width="268" height="76" rx="12"/>
   <text class="a" x="248" y="145">store/</text>
   <text class="s" x="248" y="163">splayed · one file per column</text>
-  <text class="s" x="248" y="180">-8! binary · ns since 2000-01-01</text>
+  <text class="s" x="248" y="180">`ser binary · ns since 2000-01-01</text>
 
   <!-- marts -->
   <rect class="b" x="600" y="118" width="216" height="76" rx="12"/>
@@ -284,7 +284,8 @@ the trade-quote consistency are all invariant to it, and the generator says so o
   <div class="card">
     <h4 style="margin-top:0;color:var(--text)">Each file is an Amber value</h4>
     <p class="small mb-0">Four bytes of magic, a type tag, an attribute byte, a 64-bit count, then the
-    raw payload in native layout, which is the format <code>-8!</code> emits and <code>-9!</code> reads.
+    raw payload in native layout, which is the format <code>`ser</code> writes and <code>`des</code> reads
+    (it was <code>-8!</code>/<code>-9!</code> before 2.9.0, which are q's bytes now).
     <code>amber_tick/amberbin.py</code> writes it directly from NumPy, and its output is
     <strong>byte-identical to the engine's own</strong> for every type it emits.</p>
   </div>

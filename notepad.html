@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Notepad: run Amber in your browser</title>
-<meta name="description" content="An in-browser Amber notepad: the real Amber 2.2.0 engine compiled to WebAssembly. Write array code and qSQL, run bundled examples, and share a link that runs your snippet. No install, and nothing leaves your browser.">
+<meta name="description" content="An in-browser Amber notepad: the real Amber engine compiled to WebAssembly. Write array code and qSQL, run bundled examples, and share a link that runs your snippet. No install, and nothing leaves your browser.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="./assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Notepad: run Amber in your browser">
-<meta property="og:description" content="The real Amber 2.2.0 engine compiled to WebAssembly. Write array code and qSQL, run it, and share a link that runs your snippet.">
+<meta property="og:description" content="The real Amber engine compiled to WebAssembly. Write array code and qSQL, run it, and share a link that runs your snippet.">
 <meta property="og:site_name" content="Amber">
 <meta property="og:url" content="https://amber-lang.org/notepad">
 <meta name="twitter:card" content="summary">
@@ -869,7 +869,7 @@
   /* ---------------- engine: a fresh interpreter for every run ---------------- */
   // Nothing defined by one run or example leaks into the next: each run gets its own Web
   // Worker, and a spare boots in the background so the next run starts without waiting.
-  var ASSET_V = "2.9.1b";
+  var ASSET_V = "2.9.1c";
   var engine = null, spare = null, used = false, noWorkers = false;
   var busy = false, ready = false, busyTimer = 0, fileWaiters = {}, version = "", pendingRun = null;
   function status(cls, text) { $("np-chip").className = "np-chip " + cls; $("np-chip-text").textContent = text; }
@@ -889,7 +889,7 @@
   }
   function onReady(v) {
     if (ready) return;
-    ready = true; version = v || "2.2.0";
+    ready = true; version = v || "2.9.1";
     runBtn.disabled = false;
     status("ready", readyText());
     if (pendingRun !== null) { var p = pendingRun; pendingRun = null; run(p); }

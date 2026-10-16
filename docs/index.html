@@ -76,8 +76,8 @@ small footprint and layers on:</p>
   <li><strong>column attributes implemented in C</strong>: <code>`s</code> sorted, <code>`u</code> unique,
   <code>`p</code> parted, <code>`g</code> grouped. These turn <code>?</code> (find) from a linear scan
   into a binary search;</li>
-  <li><strong>native temporal types</strong>. Date, time and timestamp with literal syntax, type-aware
-  arithmetic and a nanosecond epoch anchored at 2000-01-01;</li>
+  <li><strong>native temporal types</strong>, q's: date, month, minute, second, time, timespan and timestamp, as
+  literals and as typed lists, with type-aware arithmetic and a nanosecond epoch anchored at 2000-01-01;</li>
   <li>a <strong>tick / HFT toolkit</strong>: a native C as-of-join kernel, a zero-allocation arena,
   market-data generators, OHLCV bars, VWAP, Lee-Ready trade signing and effective spread;</li>
   <li>a <strong>modern REPL</strong> with a native, UTF-8-aware line editor, multi-line input, a
@@ -94,10 +94,10 @@ small footprint and layers on:</p>
     and your kona or ngn/k installs are untouched.</p>
   </div>
   <div class="card">
-    <h4 style="margin-top:0;color:var(--text)">Not a networked runtime</h4>
-    <p class="small mb-0">There is no AI code, no TLS and no listener anywhere in the engine
-    repository. A listener is a policy decision (which port, which framing, which auth) and it lives
-    outside, in <code>amberd</code>.</p>
+    <h4 style="margin-top:0;color:var(--text)">q's wire, nothing more</h4>
+    <p class="small mb-0">There is no AI code and no TLS in the engine. Since 2.9.0 it speaks q's own wire
+    format (<code>\p</code>, <code>hopen</code>, <code>.z.pw</code>), listening on this machine unless told otherwise.
+    A JSON line protocol for dashboards lives outside, in <code>amberd</code>.</p>
   </div>
 </div>
 
@@ -164,11 +164,11 @@ b:-8!+`a`b!(1 2 3;4 5 6)
 peach[{avg x?1.0}; 8#1000000]</code></pre></div>
 
 <div class="note note-info">
-  <span class="note-title">Bare qSQL is a REPL convenience</span>
-  <p>At the interactive prompt, <code>select … by … from … where …</code> works directly on the input
-  line, and a bare table auto-renders as a grid. Inside a <code>.k</code> script run through
-  <code>./amber file.k</code>, wrap a bare table in <code>show</code> and use the <code>sel"…"</code>
-  string form (or <code>qselect</code>/<code>qby</code>/<code>qwhere</code> directly).</p>
+  <span class="note-title">Where bare qSQL works</span>
+  <p>At the interactive prompt, in a <code>.q</code> script and in any file loaded with <code>\l</code>,
+  <code>select … by … from … where …</code> works as it is, and a bare table auto-renders as a grid at the prompt.
+  In the <code>.k</code> script <code>./amber file.k</code> runs, use the <code>sel"…"</code> string form, and
+  <code>show</code> to print a table.</p>
 </div>
 
 <h2>Where to go next</h2>
@@ -176,7 +176,7 @@ peach[{avg x?1.0}; 8#1000000]</code></pre></div>
   <a class="card card-link" href="../docs/install.html">
     <h4 style="margin-top:0;color:var(--text)">Install &amp; run &rarr;</h4>
     <p class="small mb-0">Build from source on Linux, WSL, Cygwin and macOS; the shell block to copy;
-    the three environment variables the engine reads.</p>
+    the environment variables the engine reads.</p>
   </a>
   <a class="card card-link" href="../docs/language.html">
     <h4 style="margin-top:0;color:var(--text)">Language &amp; qSQL &rarr;</h4>

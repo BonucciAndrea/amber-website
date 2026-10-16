@@ -68,14 +68,14 @@ grammar shows through, and they are properties of the host, not bugs.</p>
     it first (<code>f:{x+y}; x f y</code>). Bracket form always works too:
     <code>lj[t;kt]</code>, <code>in[x;y]</code>, <code>except[a;b]</code>, <code>xasc[`sym;t]</code>.</li>
     <li><strong><code>&lt;&gt;</code> <code>&gt;=</code> <code>&lt;=</code> work as in q after a name, a number or a
-    closing bracket</strong> (since 2.7.3): <code>x&lt;&gt;y</code>, <code>x&gt;=y</code>. With nothing on the left,
+    closing bracket</strong> (since 2.8.0): <code>x&lt;&gt;y</code>, <code>x&gt;=y</code>. With nothing on the left,
     <code>&lt;</code> and <code>&gt;</code> keep their k reading, so <code>&lt;&gt;x</code> is the grade of the grade down.</li>
     <li><strong>Symbols cannot contain <code>_</code>.</strong> <code>`a_b</code> is a parse error
     because <code>_</code> is a verb (drop, and floor). Use a quoted symbol <code>`"a_b"</code>, a
     dotted name (<code>my.name</code>) or camel case.</li>
     <li><strong>Nested lambdas are not closures.</strong> An inner <code>{…}</code> sees only its own
     parameters and globals, never the enclosing function's locals. Pass captured values in by
-    projection: <code>f[captured]'list</code>. (qSQL in a lambda is the exception: since 2.7.3
+    projection: <code>f[captured]'list</code>. (qSQL in a lambda is the exception: since 2.8.0
     <code>{[c]select from t where s=c}</code> sees <code>c</code>, as in q.)</li>
     <li><strong><code>.x</code> after a <em>name</em> is dyadic apply; after a <em>verb</em> it is
     monadic "value".</strong> Prefer the <code>value</code> function (<code>value x</code> ≡
@@ -105,7 +105,7 @@ e.g. <code>x*o x-1</code>, which has to come back to multiply.</p>
   </tbody>
 </table>
 </div>
-<p>There&rsquo;s no separate bool type: a <code>b</code> literal like <code>101b</code> is an int vector, and comparisons give ints. <code>@x</code> returns the type symbol, and <code>type x</code> q&rsquo;s type number (<code>7</code> for an int list, since 2.7.3). <code>!n</code> gives <code>0..n-1</code>, a compact range
+<p>There&rsquo;s no separate bool type: a <code>b</code> literal like <code>101b</code> is an int vector, and comparisons give ints. <code>@x</code> returns the type symbol, and <code>type x</code> q&rsquo;s type number (<code>7</code> for an int list, since 2.8.0). <code>!n</code> gives <code>0..n-1</code>, a compact range
 whose <code>@</code> reads <code>`I</code>.</p>
 
 <div class="note note-info">
@@ -330,9 +330,9 @@ shows them; every ascending value sort (<code>asc</code>, <code>x@&lt;x</code>, 
 <table>
   <thead><tr><th style="width:14%">Attribute</th><th style="width:16%">Set with</th><th>Effect</th></tr></thead>
   <tbody>
-    <tr><td><code>`s</code> sorted</td><td><code>`s#v</code> · <code>asc</code> · <code>x@&lt;x</code> · <code>xasc</code></td><td><code>?</code> (find) becomes a kernel binary search, <code>O(log n)</code></td></tr>
+    <tr><td><code>`s</code> sorted</td><td><code>`s#v</code> · <code>asc</code> · <code>x@&lt;x</code> · <code>xasc</code></td><td><code>?</code> (find) becomes a kernel binary search, <code>O(log&nbsp;n)</code></td></tr>
     <tr><td><code>`u</code> unique</td><td><code>`u#v</code></td><td>asserts distinctness; lookups skip duplicate handling</td></tr>
-    <tr><td><code>`p</code> parted</td><td><code>`p#v</code></td><td>equal values are contiguous; <code>O(log n)</code> group slicing</td></tr>
+    <tr><td><code>`p</code> parted</td><td><code>`p#v</code></td><td>equal values are contiguous; <code>O(log&nbsp;n)</code> group slicing</td></tr>
     <tr><td><code>`g</code> grouped</td><td><code>`g#v</code></td><td>a group index, giving <code>O(1)</code> per-symbol slicing</td></tr>
   </tbody>
 </table>
@@ -376,6 +376,10 @@ select sum sz by sym from trade where date=2026.01.02</code></pre></div>
 partition column and maps only the columns it names. Grouped by date, it runs once per partition, so
 <code>select sum sz by date from trade</code> over 10 days of 1M rows takes about 6&nbsp;ms.
 <code>update</code>/<code>delete</code> on one is <code>'par</code>, as in q.</p>
+<p>Since 2.9.1 a write survives a crash: a table goes to disk whole or not at all, even if the process is killed or the
+power goes halfway through. Files are synced before they're renamed in, a new or rewritten table is built under a
+hidden name and swapped in, and two processes adding symbols to one database take turns on its <code>sym</code> file.
+<code>AMBER_FSYNC=0</code> skips the syncs, for scratch data you'd rather write fast.</p>
 
 <h2>Binary serialization: <code>-8!</code> and <code>-9!</code></h2>
 <p><code>-8!x</code> gives q's bytes for any value and <code>-9!y</code> reads them back, the same bytes q sends over
@@ -429,9 +433,8 @@ PREC:4                                                   / float precision</code
 
 <div class="note">
   <span class="note-title">Why an axis unit has to be stated</span>
-  <p>Amber's temporal types keep numeric storage inside a column. A <code>date</code> column is an
-  <code>`I</code> of days and a <code>time</code> column an <code>`I</code> of milliseconds, so a
-  <em>vector</em> cannot carry its own unit; only an atom can. <code>xunit</code>/<code>yunit</code>
+  <p>A plain int or float vector carries no unit, only numbers: a column of milliseconds and a column of prices
+  look the same to a plot. <code>xunit</code>/<code>yunit</code>
   take <code>`num</code> <code>`time</code> <code>`sec</code> <code>`date</code> <code>`stamp</code>
   or <code>`auto</code>. <code>`auto</code> claims a narrow range on purpose: only whole numbers at
   or above <code>1e15</code> (ns timestamps) and whole numbers inside one day and at least an hour in
@@ -469,9 +472,8 @@ kind of detail a disassembler for the <em>real</em> VM surfaces that a from-scra
 would not.</p>
 
 <h2>Error diagnostics</h2>
-<p>By default an error prints the terse core message with a <code>^</code> caret under the failing
-token. Set <code>AMBER_DIAG=1</code> and the same error is additionally rendered as a
-Rust-compiler-style report:</p>
+<p>An error prints as a Rust-compiler-style report. <code>AMBER_DIAG=0</code> gives the terse k form instead, the
+message and a <code>^</code> caret under the failing token:</p>
 
 <div class="code"><pre><code class="lang-out">error[E0104]: Vector length mismatch
   --&gt; test.k:12:8
@@ -481,13 +483,12 @@ Rust-compiler-style report:</p>
    |
    = help: Both vectors must have matching lengths for element-wise `+`.</code></pre></div>
 
-<p>The report is rendered when the error is <em>created</em>, so code that catches an error with
-<code>.[f;args;handler]</code> still sees it on stderr. Since 1.9 that is switchable at run time,
-useful for anything that provokes errors on purpose:</p>
+<p>An error a trap catches (<code>.[f;args;handler]</code>, <code>@[f;x;handler]</code>) prints nothing, as in
+q (since 2.9.0). <code>`diag</code> switches the report at run time:</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="17" data-run="ok"><code class="lang-q">prev:`diag 0                    / suppress the report; returns the previous setting
-.[{1+`a};,0;{"caught"}]         / no output at all
-`diag prev                      / restore</code></pre></div>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="17" data-run="ok"><code class="lang-q">.[{1+`a};,0;{"caught"}]         / "caught", and nothing printed
+prev:`diag 0                    / the terse k form from here on; gives the previous setting
+`diag prev                      / and back</code></pre></div>
 
 <h2>Finance / HFT module (<code>fin.k</code>)</h2>
 <p>Auto-loaded after <code>amber.k</code>.</p>
@@ -523,7 +524,7 @@ bars[1; trades]                    / 1-minute OHLCV bars</code></pre></div>
     <tr><td><code>std.k</code></td><td>vectorised moving aggregates (<code>mcount msum mavg mprd mvar mdev mmin mmax</code>, O(n) prefix sums), <code>dot</code> / <code>mmu</code>, <code>parse</code>/<code>eval</code>/<code>reval</code>, a text <code>ser</code>/<code>deser</code> round-trip, <code>protect</code> (like <code>.Q.trp</code>), typed casts, <code>peach</code>, <code>ts</code></td></tr>
     <tr><td><code>sys.k</code></td><td><code>.z</code> clocks and handlers, <code>.Q</code> utilities, <code>.j</code> JSON (<code>j.j</code>/<code>j.k</code>), a minimal <code>.h</code> HTML renderer, <code>plot</code>/<code>candle</code></td></tr>
     <tr><td><code>hdb.k</code></td><td>on-disk data, binary and memory-mapped since 2.7: <code>set</code>/<code>get</code> (<code>`:db/t/ set t</code> splays), <code>dset</code>/<code>dget</code>, <code>splay</code>/<code>dload</code>, <code>Q.en</code>/<code>Q.dpft</code>, <code>loaddb</code> and <code>\l db</code> for partitioned databases, <code>ptab</code>, and the older <code>partsave</code>/<code>partload</code>/<code>parts</code>. Text files from before 2.7 still read</td></tr>
-    <tr><td><code>ipc.k</code></td><td>raw-socket messaging (<code>hopen hclose hsend hrecv hsync</code>) and an in-process tickerplant (<code>u.def u.sub u.pub u.get u.end</code>)</td></tr>
+    <tr><td><code>ipc.k</code></td><td>an in-process tickerplant (<code>u.def u.sub u.pub u.get u.end</code>). q's IPC (<code>hopen</code>, <code>h x</code>, <code>neg[h]</code>, <code>\p</code>) is in the engine since 2.9.0: <a href="../docs/q.html">talking to q</a></td></tr>
     <tr><td><code>temporal.k</code></td><td>the native date / time / timestamp layer. See <a href="../docs/temporal.html">Temporal mechanics</a></td></tr>
   </tbody>
 </table>

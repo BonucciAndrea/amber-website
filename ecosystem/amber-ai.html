@@ -168,6 +168,12 @@ alias amber-noai='AMBER_AI=0 "$AMBER_HOME/a"'    # agent off for one session</co
 workspace first, so the row counts, types and attributes in their output are measured, not generated.</p>
 
 <h2>Vector execution: Tab is layered so the network is last</h2>
+<div class="note note-warn">
+  <span class="note-title">Tab suggestions wait on an amber-ai update</span>
+  <p>The engine's editor dropped Tab completion at 2.0 and no longer calls the hooks this section relies on
+  (<code>am_ext_hint</code>, <code>am_ext_complete</code>), so on a current engine <code>\ai tab</code> does
+  nothing. Asking with <code>\ai</code> works as described.</p>
+</div>
 <p>And usually never reached at all.</p>
 <div class="step"><span class="n">1</span><h3>Lexical</h3>
 <p class="small">Globals in your workspace, table column names, <code>\</code> commands,
@@ -245,10 +251,9 @@ roughly halves the wait. <code>\ai warm</code> sizes the answer budget from the 
 raising the caps cannot move the timeout to <code>\ai profile</code>.</p>
 
 <div class="note note-ok">
-  <span class="note-title">The engine repository contains no AI code and no network code</span>
-  <p><code>grep -r socket src/</code> in the engine finds only <code>src/0.c</code>'s IPC support, which
-  predates 1.9 and is the same code a q-style <code>hopen</code> uses. Everything on this page lives in
-  <code>ext/</code>, and <code>./uninstall.sh</code> removes it.</p>
+  <span class="note-title">The engine repository contains no AI code</span>
+  <p>Its only network code is q's IPC, <code>src/qipc.c</code> (<code>hopen</code>, <code>\p</code>, since 2.9.0).
+  Everything on this page lives in <code>ext/</code>, and <code>./uninstall.sh</code> removes it.</p>
 </div>
 
 <div class="pager">

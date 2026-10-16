@@ -58,7 +58,7 @@ AMBER_NATIVE=1 ./a           # build machine-tuned, then open the REPL</code></p
 spread state, and prints that sit inside the standing quote.</p>
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="0" data-run="ok" data-code="/ the page makes 5000000 trades; the browser engine runs on one thread, so here it makes a tenth&#10;\ts gentq 500000"><code class="lang-q">\ts gentq 5000000</code></pre></div>
 <div class="code"><pre><code class="lang-out">2381                   / milliseconds</code></pre></div>
-<p><code>\ts</code> is accepted as a spelling of <code>\t</code>, Amber's timer, and reports the
+<p><code>\ts</code> is accepted as a spelling of <code>\t</code>, which times an expression, and reports the
 elapsed milliseconds. About 2.4 seconds for five million trades and ten million quotes; use
 <code>\v</code> if you also want the workspace footprint.</p>
 </div>
@@ -101,7 +101,7 @@ meta trades</code></pre></div>
 │ px   │ f │   │
 │ sz   │ i │   │
 ╰──────┴───┴───╯</code></pre></div>
-<p>The sort and the <code>`p</code> are what make the join <code>O(log n)</code> per row instead of
+<p>The sort and the <code>`p</code> are what make the join <code>O(log&nbsp;n)</code> per row instead of
 <code>O(n)</code>: each symbol is one contiguous run, and its times are in order inside it.</p>
 <div class="note note-info">
   <span class="note-title">Want <code>O(1)</code> symbol slicing too?</span>
@@ -219,9 +219,9 @@ true high-water mark taken from <code>arena_peak()</code>.</p>
 `:/tmp/store/trades/ set trades
 t2:get `:/tmp/store/trades
 
-/ compact binary — byte-exact including attributes, nulls and infinities
-`"/tmp/trades.bin" 1: -8!trades           / x 1: y writes bytes
-t3:-9! 1: `"/tmp/trades.bin"              / 1: x reads them back
+/ Amber's own compact binary, byte-exact including attributes, nulls and infinities
+`"/tmp/trades.bin" 1: `ser trades         / x 1: y writes bytes
+t3:`des 1: `"/tmp/trades.bin"             / 1: x reads them back
 t3~trades                                  / 1b</code></pre></div>
 <p>The binary form is what <a href="../ecosystem/amber-tick.html">amber-tick</a>'s partitioned
 store writes, one file per column, so a query for <code>px</code> and <code>sz</code> reads two files

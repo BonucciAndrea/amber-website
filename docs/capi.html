@@ -69,8 +69,8 @@ flags, linked into the same binary, and register themselves from a constructor.<
   <tbody>
     <tr><td><code>am_ext_verb("xyz", fn)</code></td><td>register a backtick verb (<code>`xyz x</code>) at runtime</td></tr>
     <tr><td><code>am_ext_bs</code></td><td>claim a <code>\</code>-command before the "unknown <code>\cmd</code> is a shell command" fallback</td></tr>
-    <tr><td><code>am_ext_hint</code></td><td>offer inline ghost text in the editor, never inserted until accepted</td></tr>
-    <tr><td><code>am_ext_complete</code></td><td>add Tab candidates ahead of the built-in lexical sources</td></tr>
+    <tr><td><code>am_ext_hint</code></td><td>inline ghost text in the editor. Not called since 2.0's editor; kept so older extensions still link</td></tr>
+    <tr><td><code>am_ext_complete</code></td><td>Tab candidates. Tab completion went in 2.0, so nothing calls it; kept so older extensions still link</td></tr>
     <tr><td><code>am_ext_startup</code></td><td>run once, lazily, when the REPL first reads a line</td></tr>
     <tr><td><code>am_ext_usage</code> / <code>am_ext_banner</code></td><td>append to <code>--help</code> and to the banner</td></tr>
   </tbody>
@@ -177,7 +177,7 @@ shared library rather than the objects. <strong>If it ever needs a second <code>
 wrong.</strong></p>
 
 <div class="note note-ok">
-  <span class="note-title">78 assertions, clean under ASan + UBSan with leak detection</span>
+  <span class="note-title">81 assertions, clean under ASan + UBSan with leak detection</span>
   <p>Because a C API whose ownership rules are only documented is a C API whose ownership rules are
   wrong, and LeakSanitizer is what checks the prose.</p>
 </div>
