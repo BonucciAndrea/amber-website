@@ -82,6 +82,7 @@
   .np-tb:hover { color: var(--text); background: var(--surface-2); }
   .np-tb:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .np-tb svg { width: 15px; height: 15px; flex: none; }
+  .np-phone { text-decoration: none; padding: 0 7px; }
   .np-tb[disabled] { opacity: .45; cursor: not-allowed; }
   .np-run { margin-left: 6px; padding: 0 13px 0 11px; color: var(--accent-ink); font-weight: 600; background: var(--accent); }
   .np-run:hover { color: var(--accent-ink); background: var(--accent); filter: brightness(1.08); }
@@ -279,6 +280,9 @@
     <span class="np-spacer"></span>
     <nav class="np-site np-hide-sm" aria-label="Amber website"><a href="./index.html">Home</a><a href="./learn/index.html">Learn</a><a href="./docs/">Docs</a></nav>
     <span class="np-sep np-hide-sm"></span>
+    <a class="np-tb np-phone" href="./phone/" title="Amber on your phone: an installable app with a keyboard of every primitive" aria-label="Phone version">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>
+    </a>
     <div class="np-zoom" role="group" aria-label="Text size">
       <button type="button" id="np-zoom-out" title="Smaller text (Ctrl −)" aria-label="Smaller text">−</button>
       <button type="button" class="val" id="np-zoom-val" title="Reset text size (Ctrl 0)">100%</button>
