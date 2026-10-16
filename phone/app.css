@@ -140,6 +140,8 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
 /* the keyboard folded away: the log gets the room */
 #app.nokb #kb, #app.nokb #hint { display: none; }
 #app.nokb #tools { padding-bottom: calc(5px + var(--sab)); }
-.tb.hide { flex: 0 0 44px; color: var(--amberSoft); font-size: 18px; }
+.tb.ic { display: flex; align-items: center; justify-content: center; }
+.tb.ic svg { width: 22px; height: 22px; pointer-events: none; }
+.tb.hide { flex: 0 0 48px; color: var(--amber); background: #2a2010; }
 /* plain results wrap to the screen; tables (box lines) keep their shape and swipe sideways */
 .out .ok.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }

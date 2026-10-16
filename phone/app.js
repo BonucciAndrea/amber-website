@@ -394,16 +394,23 @@ function mk(k) { const b = document.createElement("button"); b.className = "k " 
   b.innerHTML = '<span class="g">' + escH(k.g) + "</span>"; b._k = k; return b; }
 
 // the edit bar
-const TOOLS = [["↑", () => recall(-1)], ["↓", () => recall(1)], ["undo", undo], ["copy", copySel], ["paste", paste], ["⌨", () => nativeEdit()],
-  ["⌄", () => showKeys(false)]];
+// icons are drawn (SVG), not characters: an iPhone's fonts have no glyph for some of them
+const SVG = p => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + p + "</svg>";
+const KBD = '<rect x="2.5" y="4" width="19" height="11" rx="2"/><path d="M6 8h.01M9.5 8h.01M13 8h.01M16.5 8h.01M7 11.5h10"/>';
+const ICON = { kbd: SVG(KBD), hide: SVG(KBD + '<path d="M9 18.5l3 2.5 3-2.5"/>'), show: SVG(KBD + '<path d="M9 21l3-2.5 3 2.5"/>') };
+const TOOLS = [["↑", () => recall(-1)], ["↓", () => recall(1)], ["undo", undo], ["copy", copySel], ["paste", paste],
+  ["native", () => nativeEdit(), ICON.kbd], ["keys", () => showKeys(!keysOn), ICON.hide]];
 const tools = $("#tools");
-TOOLS.forEach(([g, act]) => { const b = document.createElement("button"); b.className = "tb" + (g === "⌄" ? " hide" : ""); b.type = "button"; b.tabIndex = -1;
-  b.textContent = g; b._k = { g, act }; tools.append(b); });
+TOOLS.forEach(([g, act, icon]) => { const b = document.createElement("button"); b.type = "button"; b.tabIndex = -1;
+  b.className = "tb" + (icon ? " ic" : "") + (g === "keys" ? " hide" : "");
+  b.setAttribute("aria-label", g === "keys" ? "hide the keyboard" : g === "native" ? "edit with the iPhone keyboard" : g);
+  if (icon) b.innerHTML = icon; else b.textContent = g; b._k = { g, act }; tools.append(b); });
 // the keyboard folds away so the log has the whole screen; the same button, or a tap in the editor, brings it back
 let keysOn = true;
 function showKeys(on) {
   keysOn = on; $("#app").classList.toggle("nokb", !on); hideCard();
-  const b = tools.querySelector(".hide"); b.textContent = on ? "⌄" : "⌃"; b._k = { g: b.textContent, act: () => showKeys(!keysOn) };
+  const b = tools.querySelector(".hide"); b.innerHTML = on ? ICON.hide : ICON.show;
+  b.setAttribute("aria-label", on ? "hide the keyboard" : "show the keyboard");
   log.scrollTop = log.scrollHeight;
 }
 

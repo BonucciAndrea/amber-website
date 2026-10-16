@@ -1,4 +1,4 @@
-/* sw.js - offline support. Network first: online, every file comes fresh (and refreshes the cache),
+/* sw.js - offline support. Network first, revalidated (cache: no-cache): online, every file comes fresh and refreshes the cache,
    so an update needs no version bump; offline, the cached copy is served. The whole app is cached at
    install, so it works offline from the first launch. */
 const CACHE = "amber-phone";
@@ -9,7 +9,7 @@ self.addEventListener("activate", e => e.waitUntil(self.clients.claim()));
 self.addEventListener("fetch", e => {
   const r = e.request;
   if (r.method !== "GET" || new URL(r.url).origin !== location.origin) return;
-  e.respondWith(fetch(r).then(res => {
+  e.respondWith(fetch(r, { cache: "no-cache" }).then(res => {
     if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(r, copy)); }
     return res;
   }).catch(() => caches.match(r, { ignoreSearch: true })));
