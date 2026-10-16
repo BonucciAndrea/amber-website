@@ -113,7 +113,7 @@ small footprint and layers on:</p>
        │  a.c b.c f.c h.c i.c m.c v.c …   ngn/k evaluator core, heap, verbs │
        │  p.c ast.c vm.c                  parser · `\ast` tree · `\disasm`  │
        │  3.c simd.c parallel.c peachpool.c   vector kernels · threads      │
-       │  arena.c ser.c csv.c ar.c        HFT arena · -8!/-9! · CSV · Arrow │
+       │  arena.c ser.c csv.c ar.c        HFT arena · `ser · CSV · Arrow    │
        │  e.c diagnostic.c                the Rust-style error reporter     │
        │  inspect.c trace.c               `\v` · `\trace`                   │
        │  ln.c lnk.c                      the line editor and its `rdl` verb│
@@ -156,9 +156,9 @@ aj[`sym`time; trade; quote]        / last quote at or before each trade
 select last px by sym from trade   / grouped aggregate
 select from trade where px&gt;150     / filter rows
 
-/ binary serialization: -8! encodes any value to bytes, -9! decodes it back
+/ q's bytes: -8! gives them for any value, -9! reads them back
 b:-8!+`a`b!(1 2 3;4 5 6)
-(-9!b)~+`a`b!(1 2 3;4 5 6)         / 1b — exact, attributes and nulls included
+(-9!b)~+`a`b!(1 2 3;4 5 6)         / 1b, exact
 
 / multi-core: peach runs f over items on a pool of threads (no GIL)
 peach[{avg x?1.0}; 8#1000000]</code></pre></div>

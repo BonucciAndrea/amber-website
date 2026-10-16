@@ -59,7 +59,7 @@ options tickerplant (feed, tp, rdb, cep, hdb, gateway, monitor), and it runs on 
 
 <h2>Handles</h2>
 <p>Same as q: open a port, open a handle, send text or a function and its args. A negative handle sends async.</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="0" data-run="no"><code class="lang-q">\p 5000                   / listen (or start with amber -p 5000)
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="0" data-run="no"><code class="lang-q">\p 5000                   / listen on this machine (or start with amber -p 5000)
 h:hopen 5000              / or `:host:5000
 h"1+1"                    / sync: 2
 h(`f;1;2)                 / a function by name and its args
@@ -79,12 +79,23 @@ hclose h</code></pre></div>
 <tr><td><code>.z.ts</code></td><td>the timer: <code>\t 100</code> calls it every 100 ms, <code>\t 0</code> stops it</td></tr>
 </tbody></table></div>
 
+<h2>Who gets in</h2>
+<p>The checks are q's: <code>.z.pw</code> gets the user (a symbol) and the password and says yes or no, and
+<code>-u file</code> / <code>-U file</code> hold <code>user:password</code> lines, the password as text or its md5.
+A no is <code>'access</code> at the client, as in q.</p>
+<p>One thing differs, on purpose. <code>\p 5000</code> listens on this machine only, where q takes every interface. Give a
+host to open it wider, <code>\p 0.0.0.0:5000</code> or <code>-p 0.0.0.0:5000</code>. A port open like that with no
+<code>.z.pw</code>, <code>-u</code> or <code>-U</code> prints one line saying so, since anyone who can reach it can run code.</p>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="1" data-run="no"><code class="lang-q">.z.pw:{[u;p] p~"secret"}  / say yes to the right password
+\p 0.0.0.0:5000           / and open the port to the network
+h:hopen`::5000:bob:secret / a client, as in q</code></pre></div>
+
 <h2>The bytes</h2>
 <p><code>-8!x</code> gives q's bytes for x and <code>-9!</code> reads them back, so what you get is what q sends. Amber's own
 compact format, the one <code>peach</code> and column files use, is <code>`ser</code> / <code>`des</code> now.</p>
 
 <h2>Logs</h2>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="1" data-run="no"><code class="lang-q">lf:`:tp_logs/log_2026.10.13
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="2" data-run="no"><code class="lang-q">lf:`:tp_logs/log_2026.10.13
 lf set ()                       / a new, empty log (q's header)
 lh:hopen lf
 lh enlist(`upd;`quotes;x)       / append a message, as a q tp does
@@ -99,7 +110,7 @@ and all, even one whose <code>.d</code> files went missing (git won't keep dot f
 database like that, with <code>.Q.dpft</code> or <code>set</code>, it writes q's own files, so q keeps reading it.
 <code>count</code>, <code>cols</code> and <code>tables</code> see a partitioned table the way q does, and <code>\l dir</code>
 goes into the directory, so <code>\l .</code> reloads after an rdb's end of day.</p>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="2" data-run="ok"><code class="lang-q">\l hdb_data
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="3" data-run="ok"><code class="lang-q">\l hdb_data
 count quotes                                  / 2364
 select n:count i, avg bid by sym from quotes where date=2026.04.29</code></pre></div>
 
@@ -109,8 +120,8 @@ time. So rlwrap works on it, what the handlers print and what you type don't tre
 window, and an error in a timer or a handler is one line, <code>'2026.10.13T14:20:00.000 type</code>, not a report.</p>
 
 <div class="note"><span class="note-title">Not there yet</span>
-<p>Compressing messages on the way out (Amber reads q's compressed ones), TLS, websockets, <code>.z.pw</code> and the HTTP
-handlers.</p></div>
+<p>Compressing messages on the way out (Amber reads q's compressed ones), TLS, websockets and the HTTP handlers.
+<code>-u</code> doesn't fence clients into the start directory as q's does, and <code>\u</code> doesn't reread the file.</p></div>
 <div class="pager">
   <a href="../docs/temporal.html"><span class="dir">Previous</span><span class="ttl">Temporal mechanics</span></a>
   <a class="next" href="../docs/protocol.html"><span class="dir">Next</span><span class="ttl">Wire protocol</span></a>

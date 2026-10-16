@@ -159,7 +159,7 @@ alias amberx='"$AMBER_HOME/amber"'
   <thead><tr><th>Variable</th><th>Default</th><th>Effect</th></tr></thead>
   <tbody>
     <tr><td><code>AMBER_THREADS</code></td><td>online CPU count (cap 64)</td><td>Threads for big vectors and <code>peach</code>. <code>=1</code> forces serial.</td></tr>
-    <tr><td><code>AMBER_DIAG</code></td><td>off</td><td>Render the full Rust-style <code>error[…]</code> report alongside the terse caret line.</td></tr>
+    <tr><td><code>AMBER_DIAG</code></td><td>on</td><td>The full Rust-style <code>error[…]</code> report. <code>=0</code> gives the terse k form, the message and a <code>^</code> caret.</td></tr>
     <tr><td><code>AMBER_NO_EDIT</code></td><td>off</td><td>Disable the native line editor; Amber reads whole lines instead.</td></tr>
     <tr><td><code>AMBER_NO_RLWRAP</code></td><td>off</td><td>Suppress the rlwrap fallback that <code>AMBER_NO_EDIT=1</code> would otherwise use.</td></tr>
     <tr><td><code>AMBER_HOME</code></td><td>(none)</td><td>Where satellites (python-amber, amberd) load the <code>.k</code> standard library from.</td></tr>

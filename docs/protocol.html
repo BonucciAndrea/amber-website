@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Wire protocol: amberd, IPC framing and JSONC</title>
-<meta name="description" content="The amberd TCP query server: request and reply framing, the four reply encodings including column-oriented JSONC, the concurrency model, streaming sockets and the engine's own ipc.k client.">
+<meta name="description" content="The amberd TCP query server: request and reply framing, the four reply encodings including column-oriented JSONC, the concurrency model and streaming sockets.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Wire protocol: amberd, IPC framing and JSONC">
-<meta property="og:description" content="The amberd TCP query server: request and reply framing, the four reply encodings including column-oriented JSONC, the concurrency model, streaming sockets and the engine's own ipc.k client.">
+<meta property="og:description" content="The amberd TCP query server: request and reply framing, the four reply encodings including column-oriented JSONC, the concurrency model and streaming sockets.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -53,11 +53,10 @@
 <a href="../docs/gotchas.html">Gotchas</a>
 </aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../docs/index.html">Docs</a> / Wire protocol</div>
 <h1>Wire protocol</h1>
-<p class="lead">The engine speaks sockets as a <em>client</em>, through <code>ipc.k</code>'s
-<code>hopen</code>/<code>hsync</code> and the <code>connect()</code> in <code>src/i.c</code>. It has
-no listener, and should not grow one. A listener is a policy decision: which port, which framing,
-which authentication, which concurrency model. The engine's job is to be a runtime. So the listener
-lives outside it, in <code>amberd</code>.</p>
+<p class="lead">This page is <code>amberd</code>: a line protocol for dashboards, editors and anything that wants
+JSON back, with its own framing and concurrency. Since 2.9.0 the engine also speaks q's wire format itself, both ways:
+<code>\p</code>, <code>hopen</code>, the <code>.z</code> handlers, <code>.z.pw</code>. That's on
+<a href="../docs/q.html">talking to q</a>.</p>
 
 <div class="badge-row" style="margin-bottom:26px">
   <span class="pill pill-accent">protocol v1</span>
@@ -161,7 +160,7 @@ Python.</p>
     <tr><td><code>text</code></td><td>rendered as the REPL renders it, ANSI stripped</td></tr>
     <tr><td><code>json</code></td><td>row-oriented: <code>[{"sym":"AAPL","px":187.2}, …]</code></td></tr>
     <tr><td><code>jsonc</code></td><td><strong>column-oriented</strong>: <code>{"sym":["AAPL",…],"px":[187.2,…]}</code> &larr; what dashboards want</td></tr>
-    <tr><td><code>raw</code></td><td><strong>no header</strong>, payload only, for the engine's own <code>ipc.k</code> client</td></tr>
+    <tr><td><code>raw</code></td><td><strong>no header</strong>, payload only</td></tr>
   </tbody>
 </table>
 </div>
@@ -181,8 +180,8 @@ pessimisation.</p>
 
 <div class="note note-warn">
   <span class="note-title"><code>raw</code> is a compatibility mode, not an API</span>
-  <p><code>raw</code> exists for <code>hsync</code>, which writes a bare query and reads until a short
-  read. Do not use it from code: without a length there is no way to tell a complete reply from a
+  <p><code>raw</code> was for the engine's old <code>hsync</code>, gone since 2.9.0, which wrote a bare query and read
+  until a short read. Do not use it from code: without a length there is no way to tell a complete reply from a
   truncated one.</p>
 </div>
 
@@ -234,18 +233,11 @@ def _read(f):
         raise RuntimeError(payload.decode())
     return payload.decode()</code></pre></div>
 
-<h3>Amber itself: <code>ipc.k</code></h3>
-<p>The engine's own client is a raw-socket text protocol, and an in-process tickerplant sits beside
-it in the same module.</p>
+<h3>Amber itself</h3>
+<p>From Amber, talk to another Amber or to q with q's own <code>hopen</code> (<a href="../docs/q.html">talking to q</a>).
+<code>ipc.k</code> also has an in-process pub/sub that needs no server at all:</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="0" data-run="no"><code class="lang-q">h:hopen ":5010"                       / connect — the argument is a STRING,
-                                      / "host:port" or ":port"
-hsync[h; "select from trades where sym=`AAPL"]
-hsend[h; "t:1"]                       / fire and forget
-hclose h
-
-/ in-process pub/sub — runs with no server at all
-u.def[`trade; ([]sym:0#`; px:0#0.0)]  / declare a table by its schema
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="0" data-run="ok"><code class="lang-q">u.def[`trade; ([]sym:0#`; px:0#0.0)]  / declare a table by its schema
 u.sub[`trade; {[nm;d]`0:"got ",($#d)," rows\n"}]   / subscribe: a callback
 u.pub[`trade; ([]sym:`a`b; px:10 20.0)]            / publish a batch
 u.end[`trade]                         / end-of-day snapshot: the accumulated table</code></pre></div>

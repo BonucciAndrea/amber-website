@@ -378,12 +378,12 @@ partition column and maps only the columns it names. Grouped by date, it runs on
 <code>update</code>/<code>delete</code> on one is <code>'par</code>, as in q.</p>
 
 <h2>Binary serialization: <code>-8!</code> and <code>-9!</code></h2>
-<p><code>-8!x</code> encodes any K value to a byte vector; <code>-9!y</code> decodes it back,
-byte-exact including attributes, nulls and infinities. <code>amber-tick</code>'s store files are
-literally <code>-8!</code> values. The encoding, and the rest of what turned the language into
-something you can deploy, is in <a href="../blog/05-platform.html">from language to platform</a>.</p>
+<p><code>-8!x</code> gives q's bytes for any value and <code>-9!y</code> reads them back, the same bytes q sends over
+a socket (since 2.9.0, see <a href="../docs/q.html">talking to q</a>). Amber's own compact format, the one
+<code>peach</code> and column files use, is <code>`ser</code> / <code>`des</code>. How it started is in
+<a href="../blog/05-platform.html">from language to platform</a>.</p>
 
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="14" data-run="ok"><code class="lang-q">b:-8!+`a`b!(1 2 3;4 5 6)        / table -&gt; compact byte vector
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="14" data-run="ok"><code class="lang-q">b:-8!+`a`b!(1 2 3;4 5 6)        / table -&gt; q's bytes
 (-9!b)~+`a`b!(1 2 3;4 5 6)      / 1b — exact</code></pre></div>
 
 <h2>Parallelism: <code>peach</code></h2>
@@ -530,13 +530,13 @@ bars[1; trades]                    / 1-minute OHLCV bars</code></pre></div>
 </div>
 
 <h2>Built-in help</h2>
-<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="19" data-run="no"><code class="lang-q">\            / the menu
-\q           / scalars, aggregation, sets, strings
-\j           / tables, keyed tables, joins, qSQL
-\z           / temporal, bars, attributes, display
-\m           / the finance / HFT module
-\0 \+ \' \`  / the core array language and its cheat-sheet
-\h           / help index</code></pre></div>
+<div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">amber&gt;</span></div><pre data-rid="19" data-run="no"><code class="lang-q">\               / the menu: every page, one key each
+\0 \+ \' \: \`  / the language: types, verbs, adverbs, files, built-in names
+\h              / the whole language on one screen
+\q \j \z \m     / the q layer: functions, tables and qSQL, dates and times, finance
+\o \i           / on disk, and talking to q
+\g \r \e        / charts, speed, errors
+\k              / every REPL command and editing key</code></pre></div>
 
 <div class="pager">
   <a href="../docs/install.html"><span class="dir">Previous</span><span class="ttl">Install &amp; run</span></a>

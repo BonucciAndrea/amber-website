@@ -88,7 +88,8 @@ cache. Here is what lives where.</p>
     <tr><td><code>simd.c</code>, <code>simd.h</code></td><td>The SIMD layer: AVX2, NEON and a scalar fallback behind one interface.</td></tr>
     <tr><td><code>arena.c</code></td><td>The thread-local bump arena for kernel scratch.</td></tr>
     <tr><td><code>parallel.c</code>, <code>peachpool.c</code></td><td>The thread pool (<code>par_run</code>) and the parallel kernels; the pool behind <code>peach</code>.</td></tr>
-    <tr><td><code>ser.c</code></td><td><code>-8!</code> / <code>-9!</code> binary serialisation.</td></tr>
+    <tr><td><code>ser.c</code></td><td>Amber's own binary format, <code>`ser</code> / <code>`des</code>: what <code>peach</code> and column files use.</td></tr>
+    <tr><td><code>qipc.c</code></td><td>q's wire format: <code>-8!</code> / <code>-9!</code>, <code>hopen</code>, <code>\p</code> and who may connect, the <code>.z</code> handlers, logs and <code>-11!</code>.</td></tr>
     <tr><td><code>ar.c</code></td><td>Arrow C Data Interface, zero-dependency interop.</td></tr>
     <tr><td><code>ext.c</code>, <code>ext.h</code></td><td>The extension seam for out-of-tree kernels.</td></tr>
   </tbody>
