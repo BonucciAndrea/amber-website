@@ -1,6 +1,6 @@
 /* worker.js — hosts the Amber engine off the main thread, so a long computation never
    freezes the page and a runaway expression can be stopped by terminating the worker. */
-importScripts("amber.wasm.js?v=2.9.1c", "amber.js?v=8");
+importScripts("amber.wasm.js?v=2.9.1d", "amber.js?v=8");
 
 const vm = new AmberVM();
 const booted = vm.boot().then(

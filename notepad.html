@@ -869,7 +869,7 @@
   /* ---------------- engine: a fresh interpreter for every run ---------------- */
   // Nothing defined by one run or example leaks into the next: each run gets its own Web
   // Worker, and a spare boots in the background so the next run starts without waiting.
-  var ASSET_V = "2.9.1c";
+  var ASSET_V = "2.9.1d";
   var engine = null, spare = null, used = false, noWorkers = false;
   var busy = false, ready = false, busyTimer = 0, fileWaiters = {}, version = "", pendingRun = null;
   function status(cls, text) { $("np-chip").className = "np-chip " + cls; $("np-chip-text").textContent = text; }
