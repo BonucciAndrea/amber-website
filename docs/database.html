@@ -314,25 +314,45 @@ w:dcols["db/trades";`px]     / one
 </code></pre></div>
 
 <p>Measured on a 5,000,000-row table of <code>sym</code> (1,000 distinct), <code>px</code>
-(float64) and <code>sz</code> (int64) — the best of three warm runs, in milliseconds:</p>
+(float64) and <code>sz</code> (int64), against two other engines that read the same layout:
+<strong>PeachQ 0.89</strong> and <strong>l</strong> (an evaluation build, single-threaded).
+Milliseconds; the write and the open happen once per run, the rest are the best of five warm
+runs. Every engine returned the same four answers.</p>
 
 <div class="table-wrap"><table>
-<thead><tr><th>operation</th><th>ms</th><th>what it costs</th></tr></thead>
+<thead><tr><th>operation</th><th>Amber</th><th>PeachQ</th><th>l</th></tr></thead>
 <tbody>
-<tr><td><code>dload</code> — open the whole table</td><td>7.9</td><td>resolving 5M symbol indexes; the numeric columns are only mapped</td></tr>
-<tr><td><code>dcols[…;`px]</code> — open one column</td><td>0.1</td><td>one <code>mmap</code>, nothing else</td></tr>
-<tr><td>sum a float column</td><td>0.70</td><td>one pass, and the pages are already resident</td></tr>
-<tr><td>filter on the symbol column</td><td>1.07</td><td>comparing symbols that are already resolved</td></tr>
-<tr><td>group and sum by symbol (qSQL)</td><td>4.0</td><td>the fused group-aggregate — the key is hashed once</td></tr>
+<tr><td>write the table (5M rows, 3 columns)</td><td>143</td><td>416</td><td><strong>48</strong></td></tr>
+<tr><td>open the table</td><td>13.7</td><td>16.2</td><td><strong>0.15</strong></td></tr>
+<tr><td>sum a float column</td><td>0.67</td><td>38.5</td><td><strong>0.47</strong></td></tr>
+<tr><td>filter on the symbol column</td><td><strong>1.27</strong></td><td>11.7</td><td>7.60</td></tr>
+<tr><td>group and sum by symbol</td><td><strong>4.78</strong></td><td>1724</td><td>35.2</td></tr>
+<tr><td>open the table and sum one column</td><td>8.39</td><td>56.4</td><td><strong>0.57</strong></td></tr>
+</tbody></table></div>
+
+<p>Amber is quickest on the two queries that do real work per row, and slowest to open a table.
+Both have the same cause, and it is worth being precise about where the time goes. The open row
+above is the first open after writing, so it carries some page-cache churn; warm, the same open
+costs 7.7 ms, and that decomposes cleanly:</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>what is opened</th><th>ms</th><th>the difference</th></tr></thead>
+<tbody>
+<tr><td><code>dcols[…;`px]</code></td><td>3.81</td><td>the fixed cost: the directory, <code>.d</code> and the sym file</td></tr>
+<tr><td><code>dcols[…;`px`sz]</code></td><td>4.77</td><td>+0.96 — mapping one more flat column</td></tr>
+<tr><td><code>dcols[…;`px`sym]</code></td><td>6.62</td><td>+2.81 — resolving 5M symbol indexes</td></tr>
+<tr><td><code>dload</code> (all three)</td><td>7.72</td><td>both of the above</td></tr>
 </tbody></table></div>
 
 <div class="note note-info">
   <div class="note-title">The eager-resolve trade</div>
-  <p>Amber pays about <strong>1.6 ms per million rows</strong> at open to turn a symbol column
-  into symbols, and nothing afterwards: every query over that column then compares resolved
-  symbols directly. The cost is front-loaded rather than spread across the queries. So if you
-  open a table and run many queries over it you pay once — and if you open a table to read two
-  numeric columns out of twenty, <code>dcols</code> means you do not pay it at all.</p>
+  <p>So the symbol resolve is about <strong>0.56 ms per million rows</strong>, paid once at
+  open, and nothing afterwards: every query over that column then compares symbols that are
+  already resolved, which is why the filter row above is the fastest of the three. The cost is
+  front-loaded rather than spread across the queries. If you open a table and run many queries
+  over it, you pay it once. If you open a table to read two numeric columns out of twenty,
+  <code>dcols</code> means you never pay it — here it halves the open, and on a wider table it
+  saves proportionally more.</p>
 </div>
 
 <h2 id="writing">Writing atomically</h2>
