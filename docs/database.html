@@ -314,24 +314,25 @@ w:dcols["db/trades";`px]     / one
 </code></pre></div>
 
 <p>Measured on a 5,000,000-row table of <code>sym</code> (1,000 distinct), <code>px</code>
-(float64) and <code>sz</code> (int64), against two other engines that read the same layout:
-<strong>PeachQ 0.89</strong> and <strong>l</strong> (an evaluation build, single-threaded).
-Milliseconds; the write and the open happen once per run, the rest are the best of five warm
-runs. Every engine returned the same four answers.</p>
+(float64) and <code>sz</code> (int64), against <strong>PeachQ 0.89</strong>, which reads the
+same layout. Milliseconds; the write and the open happen once per run, the rest are the best of
+five warm runs. Both engines returned the same four answers.</p>
 
 <div class="table-wrap"><table>
-<thead><tr><th>operation</th><th>Amber</th><th>PeachQ</th><th>l</th></tr></thead>
+<thead><tr><th>operation</th><th>Amber</th><th>PeachQ</th></tr></thead>
 <tbody>
-<tr><td>write the table (5M rows, 3 columns)</td><td>143</td><td>416</td><td><strong>48</strong></td></tr>
-<tr><td>open the table</td><td>13.7</td><td>16.2</td><td><strong>0.15</strong></td></tr>
-<tr><td>sum a float column</td><td>0.67</td><td>38.5</td><td><strong>0.47</strong></td></tr>
-<tr><td>filter on the symbol column</td><td><strong>1.27</strong></td><td>11.7</td><td>7.60</td></tr>
-<tr><td>group and sum by symbol</td><td><strong>4.78</strong></td><td>1724</td><td>35.2</td></tr>
-<tr><td>open the table and sum one column</td><td>8.39</td><td>56.4</td><td><strong>0.57</strong></td></tr>
+<tr><td>write the table (5M rows, 3 columns)</td><td><strong>143</strong></td><td>416</td></tr>
+<tr><td>open the table</td><td><strong>13.7</strong></td><td>16.2</td></tr>
+<tr><td>sum a float column</td><td><strong>0.67</strong></td><td>38.5</td></tr>
+<tr><td>filter on the symbol column</td><td><strong>1.27</strong></td><td>11.7</td></tr>
+<tr><td>group and sum by symbol</td><td><strong>4.78</strong></td><td>1724</td></tr>
+<tr><td>open the table and sum one column</td><td><strong>8.39</strong></td><td>56.4</td></tr>
 </tbody></table></div>
 
-<p>Amber is quickest on the two queries that do real work per row, and slowest to open a table.
-Both have the same cause, and it is worth being precise about where the time goes. The open row
+<p>Amber is ahead on all six here, by a little on the write and the open and by a lot on the
+queries. That is not the interesting part of the table, though — opening a table is still the
+most expensive thing Amber does to this data, and it is worth being precise about where that
+time goes rather than letting a favourable column stand in for an explanation. The open row
 above is the first open after writing, so it carries some page-cache churn; warm, the same open
 costs 7.7 ms, and that decomposes cleanly:</p>
 
