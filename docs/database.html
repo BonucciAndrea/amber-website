@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>On-disk data — splayed tables, partitions and the sym file</title>
-<meta name="description" content="Amber's column store: the AMBC column file, symbol enumeration against a shared sym file, splayed and date-partitioned tables, the atomic write path, append journalling, locking, and reading a kdb+ database unchanged.">
+<title>On-disk data: splayed tables, partitions and the sym file</title>
+<meta name="description" content="How Amber keeps tables on disk: one file per column, a shared sym file, splayed and partitioned databases, writes that survive a crash, and reading a database q wrote.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="On-disk data — splayed tables, partitions and the sym file">
-<meta property="og:description" content="Amber's column store: the AMBC column file, symbol enumeration against a shared sym file, splayed and date-partitioned tables, the atomic write path, append journalling, locking, and reading a kdb+ database unchanged.">
+<meta property="og:title" content="On-disk data: splayed tables, partitions and the sym file">
+<meta property="og:description" content="How Amber keeps tables on disk: one file per column, a shared sym file, splayed and partitioned databases, writes that survive a crash, and reading a database q wrote.">
 <meta property="og:site_name" content="Amber">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -61,11 +61,11 @@
 <a href="../docs/gotchas.html">Gotchas</a>
 </aside><article class="doc-content prose"><div class="breadcrumb"><a href="../index.html">Home</a> / <a href="../docs/index.html">Docs</a> / On-disk data</div>
 <h1>On-disk data</h1>
-<p class="lead">Amber stores a table as one file per column, in a directory, with symbol
-columns kept as integer indexes into a database-wide <code>sym</code> file. The layout is
-kdb+'s, deliberately: Amber reads a database q wrote, and writes one q can read. This page is
-the whole of it — the file format, what a read actually costs, how a write survives a crash,
-and what each of the four column kinds is worth.</p>
+<p class="lead">Amber keeps a table as one file per column in a directory, and symbol columns as numbers that
+index a <code>sym</code> file shared by the whole database. The layout is kdb+'s on purpose, so
+Amber reads a database q wrote and writes one q can read. This page is all of it: what the files
+look like, what a read actually costs, and what is left behind if the power goes out halfway
+through a write.</p>
 
 <div class="badge-row" style="margin-bottom:26px">
   <span class="pill pill-accent">binary format since 2.7</span>
@@ -75,9 +75,9 @@ and what each of the four column kinds is worth.</p>
 </div>
 
 
-<h2 id="shapes">Three storage shapes</h2>
+<h2 id="shapes">Three shapes</h2>
 <p>Everything on disk is one of three things, and the verb you use picks which. There is no
-database-wide catalogue to keep in step: the directory tree <em>is</em> the schema.</p>
+catalogue to keep in step. The directory tree is the schema.</p>
 
 <figure class="diagram">
 <svg viewBox="0 0 860 300" role="img" aria-labelledby="f1t">
@@ -89,7 +89,7 @@ database-wide catalogue to keep in step: the directory tree <em>is</em> the sche
   <line x1="34" y1="70" x2="196" y2="70" stroke="var(--border)"/>
   <text x="34" y="88" font-size="10.5" fill="var(--text-dim)">any value, serialised</text>
   <text x="34" y="105" class="m" font-size="10.5" fill="var(--cyan)">dset · dget</text>
-  <text x="20" y="146" font-size="10.5" fill="var(--text-faint)">a dict, a list, a keyed table —</text>
+  <text x="20" y="146" font-size="10.5" fill="var(--text-faint)">a dict, a list, a keyed table:</text>
   <text x="20" y="161" font-size="10.5" fill="var(--text-faint)">read back whole, not mapped.</text>
 
   <!-- 2: splayed -->
@@ -137,14 +137,16 @@ database-wide catalogue to keep in step: the directory tree <em>is</em> the sche
   <text x="500" y="232" font-size="10.5" fill="var(--text-faint)">a date range maps only the partitions it covers;</text>
   <text x="500" y="247" font-size="10.5" fill="var(--text-faint)">the rest of history is never touched.</text>
 </svg>
-<figcaption><span class="fignum">Figure 1.</span> The three shapes. A splayed table is a directory of column files plus a <code>.d</code> naming their order; a partitioned database is a directory of those, sharing one append-only <code>sym</code> file at the root.</figcaption>
+<figcaption><span class="fignum">Figure 1.</span> The three shapes. A splayed table is a directory of
+column files with a <code>.d</code> listing their order. A partitioned database is a directory of
+those, and they all share one <code>sym</code> file at the root, which only ever grows.</figcaption>
 </figure>
 
 <h2 id="colfile">The column file</h2>
-<p>Since 2.7 a column is a binary file: a fixed header, then the payload with no padding.
-<code>`wcol</code> writes it and <code>`rcol</code> reads it back (both in <code>src/dsk.c</code>).
-The header names one of four <em>kinds</em>, and the kind decides whether reading the column
-is a memory map or real work.</p>
+<p>Since 2.7 a column is a binary file: a small header, then the values with no padding.
+<code>`wcol</code> writes one and <code>`rcol</code> reads it back, both in
+<code>src/dsk.c</code>. The header says which of four kinds the column is, and that is what
+decides whether reading it is free or not.</p>
 
 <figure class="diagram">
 <svg viewBox="0 0 860 330" role="img" aria-labelledby="f2t">
@@ -176,7 +178,7 @@ is a memory map or real work.</p>
   <text x="526" y="48" class="m" font-size="10.5" fill="var(--text)">dom</text>
   <text x="524" y="63" font-size="9" fill="var(--text-dim)">sym n</text>
   <rect x="578" y="30" width="262" height="40" rx="5" fill="var(--surface)" stroke="var(--border)" stroke-dasharray="4 3"/>
-  <text x="640" y="54" class="m" font-size="11" fill="var(--text-dim)">payload — nb bytes, no padding</text>
+  <text x="640" y="54" class="m" font-size="11" fill="var(--text-dim)">payload, nb bytes, no padding</text>
 
   <text x="20" y="100" font-size="10.5" fill="var(--text-faint)">The header is validated before anything is mapped: a wrong magic, version, kind, attribute byte or a</text>
   <text x="20" y="116" font-size="10.5" fill="var(--text-faint)">byte count that disagrees with the row count is <tspan class="m" fill="var(--red)">'format</tspan>, never a partial read.</text>
@@ -219,20 +221,21 @@ is a memory map or real work.</p>
   <text x="658" y="272" font-size="9.5" fill="var(--text-faint)">whole column at once, and</text>
   <text x="658" y="286" font-size="9.5" fill="var(--text-faint)">cannot be appended in place.</text>
 </svg>
-<figcaption><span class="fignum">Figure 2.</span> A column file and the four kinds. Only <code>KFLAT</code> is free to read — the map costs nothing and pages fault in as a query reads them. The kind is what makes one column cheap and another expensive, so it is worth knowing which of your columns is which.</figcaption>
+<figcaption><span class="fignum">Figure 2.</span> A column file and the four kinds. <code>KFLAT</code> is
+the free one: mapping it costs nothing and the pages arrive as a query reads them. The kind is
+what makes one column cheap and another expensive, so it pays to know which of yours is which.</figcaption>
 </figure>
 
-<p>The attribute byte survives the round trip. A column written from a value carrying
-<code>`s</code> (sorted), <code>`u</code> (unique), <code>`p</code> (parted) or <code>`g</code>
-(grouped) comes back carrying it, so a query that could skip a scan still skips it after a
-reload — the point of an attribute is not having to re-derive it.</p>
+<p>Attributes survive the trip to disk. A column written from a value carrying <code>`s</code>
+(sorted), <code>`u</code> (unique), <code>`p</code> (parted) or <code>`g</code> (grouped) comes
+back carrying it, so a query that could skip a scan still skips it after a reload. That is the
+point of an attribute: not having to work it out again.</p>
 
-<h2 id="syms">Symbols and the sym file</h2>
-<p>Symbol columns are not stored as text. Each database has one <code>sym</code> file holding
-every distinct symbol it has ever seen, and a symbol column stores a 4-byte index into it. This
-is kdb+'s enumeration, and it is why a <code>sym</code> column costs 4 bytes a row however long
-the names are, and why two tables in the same database can be compared and joined on symbols
-without any string work.</p>
+<h2 id="syms">The sym file</h2>
+<p>Symbol columns are not text on disk. Each database has one <code>sym</code> file holding every
+distinct name it has ever seen, and a symbol column stores a 4-byte index into it. This is kdb+'s
+enumeration. It is why a symbol column costs 4 bytes a row whatever the names are, and why two
+tables in the same database can be joined on symbols with no string work at all.</p>
 
 <figure class="diagram">
 <svg viewBox="0 0 860 340" role="img" aria-labelledby="f3t">
@@ -269,7 +272,7 @@ without any string work.</p>
   <text x="654" y="48" class="m" font-size="10.5" fill="var(--green)">db/trades/sym</text>
   <line x1="654" y1="56" x2="828" y2="56" stroke="var(--border)"/>
   <text x="654" y="74" class="m" font-size="11" fill="var(--text)">0 1 0 2 1</text>
-  <text x="654" y="94" font-size="9.5" fill="var(--text-dim)">int32 per row — 4 bytes each</text>
+  <text x="654" y="94" font-size="9.5" fill="var(--text-dim)">int32 per row, 4 bytes each</text>
 
   <line x1="20" y1="140" x2="840" y2="140" stroke="var(--border)" stroke-dasharray="4 4"/>
 
@@ -278,7 +281,7 @@ without any string work.</p>
   <rect x="20" y="182" width="198" height="70" rx="6" fill="var(--surface-2)" stroke="var(--green)"/>
   <text x="32" y="200" class="m" font-size="10.5" fill="var(--green)">db/trades/sym</text>
   <text x="32" y="222" class="m" font-size="11" fill="var(--text)">0 1 0 2 1</text>
-  <text x="32" y="241" font-size="9.5" fill="var(--text-dim)">mmap — free</text>
+  <text x="32" y="241" font-size="9.5" fill="var(--text-dim)">mmap, free</text>
 
   <rect x="264" y="182" width="150" height="70" rx="6" fill="var(--surface-2)" stroke="var(--accent)"/>
   <text x="276" y="200" class="m" font-size="10.5" fill="var(--accent)">db/sym</text>
@@ -296,27 +299,30 @@ without any string work.</p>
   <text x="474" y="218" class="m" font-size="11" fill="var(--text)">`msft`aapl`msft`goog`aapl</text>
   <text x="474" y="240" font-size="9.5" fill="var(--text-dim)">one pass, split over AMBER_THREADS workers (2.9.2)</text>
 
-  <text x="20" y="288" font-size="10.5" fill="var(--text-faint)">This resolve is the one part of loading a table that is not free, and Amber does it eagerly, at load — so a query over the</text>
+  <text x="20" y="288" font-size="10.5" fill="var(--text-faint)">This resolve is the one part of loading a table that is not free. Amber does it when the table opens, so a query over the</text>
   <text x="20" y="304" font-size="10.5" fill="var(--text-faint)">column pays nothing later. <tspan fill="var(--accent)">dcols</tspan> skips it for columns you did not ask for. See <tspan fill="var(--accent)">Reading: what it costs</tspan> below.</text>
   <text x="20" y="328" font-size="10.5" fill="var(--text-faint)">The sym file only ever grows, so a column written against it stays readable for ever: index 2 is <tspan class="m" fill="var(--text-dim)">`goog</tspan> permanently.</text>
 </svg>
-<figcaption><span class="fignum">Figure 3.</span> Symbol enumeration. Writing appends only the names the database has not seen, under its lock, so two processes cannot lose each other's additions. Reading maps the 4-byte indexes and gathers the names back through the <code>sym</code> file, which each process caches and re-reads only when its size has changed.</figcaption>
+<figcaption><span class="fignum">Figure 3.</span> How symbols go to disk and come back. Writing adds only
+the names the database has not seen, under its lock, so two processes cannot lose each other's.
+Reading maps the numbers and looks the names up through the <code>sym</code> file, which each
+process keeps and re-reads only when it has grown.</figcaption>
 </figure>
 
-<h2 id="reading">Reading: what it costs</h2>
-<p><code>dload</code> gives you the whole table; <code>dcols</code> gives you named columns only.
-Because the columns are separate files, the ones you leave out cost nothing at all — not a read,
-not a map, and for a symbol column not the resolve either.</p>
+<h2 id="reading">What a read costs</h2>
+<p><code>dload</code> gives you the whole table. <code>dcols</code> gives you only the columns
+you name, and since every column is its own file, the ones you leave out cost nothing: no read,
+no map, and for a symbol column no lookup either.</p>
 
 <div class="code"><pre><code class="lang-k">u:dload "db/trades"          / every column
 v:dcols["db/trades";`px`sz]  / two columns; the sym column is never touched
 w:dcols["db/trades";`px]     / one
 </code></pre></div>
 
-<p>Measured on a 5,000,000-row table of <code>sym</code> (1,000 distinct), <code>px</code>
-(float64) and <code>sz</code> (int64), against <strong>PeachQ 0.89</strong>, which reads the
-same layout. Milliseconds; the write and the open happen once per run, the rest are the best of
-five warm runs. Both engines returned the same four answers.</p>
+<p>Measured on five million rows of <code>sym</code> (1,000 distinct names), <code>px</code> and
+<code>sz</code>, against <strong>PeachQ 0.89</strong>, which reads the same layout.
+Milliseconds. The write and the open happen once per run, the rest are the best of five warm
+runs. Both engines gave the same four answers.</p>
 
 <div class="table-wrap"><table>
 <thead><tr><th>operation</th><th>Amber</th><th>PeachQ</th></tr></thead>
@@ -329,39 +335,37 @@ five warm runs. Both engines returned the same four answers.</p>
 <tr><td>open the table and sum one column</td><td><strong>8.39</strong></td><td>56.4</td></tr>
 </tbody></table></div>
 
-<p>Amber is ahead on all six here, by a little on the write and the open and by a lot on the
-queries. That is not the interesting part of the table, though — opening a table is still the
-most expensive thing Amber does to this data, and it is worth being precise about where that
-time goes rather than letting a favourable column stand in for an explanation. The open row
-above is the first open after writing, so it carries some page-cache churn; warm, the same open
-costs 7.7 ms, and that decomposes cleanly:</p>
+<p>Amber is ahead on all six, a little on the write and the open and a lot on the queries. The
+queries are not the interesting part though. Opening a table is the expensive thing Amber does
+to this data, so here is where that time goes. The open in the table above is the first one after
+writing, so it carries some cache churn. Warm, the same open is 7.7 ms, and it splits up like
+this:</p>
 
 <div class="table-wrap"><table>
 <thead><tr><th>what is opened</th><th>ms</th><th>the difference</th></tr></thead>
 <tbody>
 <tr><td><code>dcols[…;`px]</code></td><td>3.81</td><td>the fixed cost: the directory, <code>.d</code> and the sym file</td></tr>
-<tr><td><code>dcols[…;`px`sz]</code></td><td>4.77</td><td>+0.96 — mapping one more flat column</td></tr>
-<tr><td><code>dcols[…;`px`sym]</code></td><td>6.62</td><td>+2.81 — resolving 5M symbol indexes</td></tr>
+<tr><td><code>dcols[…;`px`sz]</code></td><td>4.77</td><td>+0.96, mapping one more flat column</td></tr>
+<tr><td><code>dcols[…;`px`sym]</code></td><td>6.62</td><td>+2.81, looking up 5M symbols</td></tr>
 <tr><td><code>dload</code> (all three)</td><td>7.72</td><td>both of the above</td></tr>
 </tbody></table></div>
 
 <div class="note note-info">
-  <div class="note-title">The eager-resolve trade</div>
-  <p>So the symbol resolve is about <strong>0.56 ms per million rows</strong>, paid once at
-  open, and nothing afterwards: every query over that column then compares symbols that are
-  already resolved, which is why the filter row above is the fastest of the three. The cost is
-  front-loaded rather than spread across the queries. If you open a table and run many queries
-  over it, you pay it once. If you open a table to read two numeric columns out of twenty,
-  <code>dcols</code> means you never pay it — here it halves the open, and on a wider table it
-  saves proportionally more.</p>
+  <div class="note-title">Why the open costs more</div>
+  <p>So looking the symbols up is about <strong>0.56 ms per million rows</strong>, paid once when
+the table opens and never again. After that, every query on that column compares names that are
+already there, which is why the filter row is the fast one. The cost is paid up front instead of
+spread over the queries. Open a table and run twenty queries and you pay it once. Open a table
+for two numeric columns out of twenty and <code>dcols</code> means you never pay it: here it
+halves the open, and the wider the table the more it saves.</p>
 </div>
 
-<h2 id="writing">Writing atomically</h2>
-<p>A failed write must never leave half a table. <code>splay</code> (and <code>set</code> on a
-path ending in <code>/</code>) writes every column to a temporary file, syncs them, and only then
-renames them into place — the <code>sym</code> file first, so no column can reference a name that
-is not yet durable, and <code>.d</code> last, so a table is only <em>valid</em> once all of its
-columns are.</p>
+<h2 id="writing">Writing without leaving a mess</h2>
+<p>A write that fails must never leave half a table. <code>splay</code>, and <code>set</code> on
+a path ending in <code>/</code>, writes every column to a temporary file, syncs them, and only
+then renames them into place. The <code>sym</code> file goes first, so no column can point at a
+name that is not on disk yet, and <code>.d</code> goes last, so the table only counts as valid
+once all its columns are there.</p>
 
 <figure class="diagram">
 <svg viewBox="0 0 860 300" role="img" aria-labelledby="f4t">
@@ -406,7 +410,10 @@ columns are.</p>
   <text x="34" y="242" font-size="10.5" fill="var(--text-dim)">directory that exists but is incomplete. A directory left mid-write is detected on the next read (<tspan class="m" fill="var(--cyan)">hdb.rc</tspan> / <tspan class="m" fill="var(--cyan)">hdb.rp</tspan>) and</text>
   <text x="34" y="260" font-size="10.5" fill="var(--text-dim)">rolled back under the database lock before anything reads it.</text>
 </svg>
-<figcaption><span class="fignum">Figure 4.</span> The write path. Every column is written and synced to a temporary file before anything is renamed, and the rename order — <code>sym</code> first, <code>.d</code> last — means there is no instant at which a reader can see a table that is missing a name or a column.</figcaption>
+<figcaption><span class="fignum">Figure 4.</span> The write path. Everything is written and synced under a
+temporary name before anything is renamed. Because <code>sym</code> goes first and
+<code>.d</code> last, there is no moment where a reader can see a table missing a name or a
+column.</figcaption>
 </figure>
 
 <div class="code"><pre><code class="lang-k">splay["db/trades";t]          / Amber's name
@@ -416,15 +423,15 @@ columns are.</p>
 
 <div class="note note-ok">
   <div class="note-title">Symbols are enumerated for you</div>
-  <p>Amber's <code>set</code> and <code>splay</code> enumerate symbol columns against
-  <code>db/sym</code> themselves. In kdb+ you must remember <code>.Q.en</code> first, and
-  <code>set</code> on a table with un-enumerated symbols is a <code>'type</code>.</p>
+  <p>Amber's <code>set</code> and <code>splay</code> add the symbols to <code>db/sym</code> for
+you. In kdb+ you have to remember <code>.Q.en</code> first, and <code>set</code> on a table whose
+symbols are not enumerated is a <code>'type</code>.</p>
 </div>
 
-<h2 id="append">Appending, and the journal</h2>
-<p><code>upsert</code> on a path adds rows to the end of the existing column files rather than
-rewriting the table, so appending costs the new rows and not the history. Because that is an
-in-place mutation of several files, it is journalled.</p>
+<h2 id="append">Appending</h2>
+<p><code>upsert</code> on a path puts the new rows on the end of the column files instead of
+rewriting the table, so an append costs the new rows and not the history. That means writing into
+several files in place, so it is journalled.</p>
 
 <figure class="diagram">
 <svg viewBox="0 0 860 236" role="img" aria-labelledby="f5t">
@@ -465,20 +472,22 @@ in-place mutation of several files, it is journalled.</p>
   <text x="690" y="114" font-size="10.5" fill="var(--text)">column back to its</text>
   <text x="690" y="130" font-size="10.5" fill="var(--text)">recorded length</text>
 
-  <text x="20" y="176" font-size="10.5" fill="var(--text-faint)">A column that cannot be extended in place — a <tspan class="m" fill="var(--text-dim)">KSER</tspan> column, which has no fixed row width — makes the append fall back to</text>
+  <text x="20" y="176" font-size="10.5" fill="var(--text-faint)">A column that cannot be extended in place, a <tspan class="m" fill="var(--text-dim)">KSER</tspan> column, which has no fixed row width, makes the append fall back to</text>
   <text x="20" y="192" font-size="10.5" fill="var(--text-faint)">rewriting the table whole, old rows and new, through the atomic path in Figure 4. The result is the same either way.</text>
   <text x="20" y="216" font-size="10.5" fill="var(--text-faint)">The appended table's columns must match the target's (<tspan class="m" fill="var(--red)">'mismatch</tspan> otherwise), and a keyed table is <tspan class="m" fill="var(--red)">'type</tspan>, as in q.</text>
 </svg>
-<figcaption><span class="fignum">Figure 5.</span> Append is journalled. The journal records how long each column was before the write, so recovery is a truncate — there is no redo, and a half-finished append can always be undone exactly.</figcaption>
+<figcaption><span class="fignum">Figure 5.</span> An append is journalled. The journal holds how long each
+column was before the write, so undoing one is a truncate. There is nothing to replay, and a
+half-finished append always comes back to exactly where it started.</figcaption>
 </figure>
 
 <div class="code"><pre><code class="lang-k">`:db/trades/ upsert newrows    / rows onto the end of each column file
 </code></pre></div>
 
-<h2 id="parts">Partitioned databases</h2>
-<p>A partitioned database is a directory of date (or int) directories, each holding splayed
-tables, all sharing the one <code>sym</code> file at the root. <code>loaddb</code> maps the whole
-thing; a query over a date range only ever touches the partitions in that range.</p>
+<h2 id="parts">Partitions</h2>
+<p>A partitioned database is a directory of date directories (or int ones), each holding splayed
+tables, all sharing the one <code>sym</code> file at the root. <code>loaddb</code> maps the lot.
+A query over a date range only ever opens the partitions in that range.</p>
 
 <figure class="diagram">
 <svg viewBox="0 0 860 260" role="img" aria-labelledby="f6t">
@@ -546,7 +555,9 @@ thing; a query over a date range only ever touches the partitions in that range.
 
   <text x="20" y="246" font-size="10.5" fill="var(--text-faint)">Cost scales with the range and the columns named, not with the size of the database. Six years of history next to six days costs the same.</text>
 </svg>
-<figcaption><span class="fignum">Figure 6.</span> A partitioned query. The date constraint picks the directories and the select list picks the files, so the work is proportional to what you asked for. This is the whole reason the layout is one file per column per partition.</figcaption>
+<figcaption><span class="fignum">Figure 6.</span> A partitioned query. The dates pick the directories and
+the select list picks the files, so the work matches what you asked for and not the size of the
+database. This is the whole reason for one file per column per partition.</figcaption>
 </figure>
 
 <div class="code"><pre><code class="lang-k">Q.dpft[`:db;2026.01.03;`sym;`trades]   / save one partition, parted on sym
@@ -554,58 +565,56 @@ loaddb "db"                             / map the database: every table, every p
 t:ptab`trades                           / all partitions of one table, as a single table
 </code></pre></div>
 
-<h2 id="locking">Locking</h2>
-<p>Everything that adds symbols or rewrites a table takes the database's lock first, so two
-processes writing into one database cannot lose each other's symbols or interleave a rename
-with a read. The lock is held for exactly the span that needs it — from reading the
-<code>sym</code> file to writing it back — and an error inside that span releases it on the way
-out rather than leaving the database wedged.</p>
+<h2 id="locking">Locks</h2>
+<p>Anything that adds symbols or rewrites a table takes the database lock first, so two processes
+writing into one database cannot lose each other's symbols or catch a rename halfway. The lock is
+held for just the span that needs it, from reading the <code>sym</code> file to writing it back,
+and an error inside that span lets go of it on the way out instead of leaving the database
+stuck.</p>
 
 <div class="note note-warn">
   <div class="note-title">What the lock does not cover</div>
-  <p>Readers are not blocked, and do not need to be: a reader only ever sees a fully renamed
-  file. The lock serialises <em>writers</em> against each other. A reader that mapped a column
-  before it was replaced keeps reading the bytes it mapped, which is the usual
-  mmap-plus-rename behaviour and not a torn read.</p>
+  <p>Readers are not blocked, and do not need to be, because a reader only ever sees a file that
+has been fully renamed. The lock is there to keep writers out of each other's way. A reader that
+mapped a column before it was replaced carries on reading the bytes it mapped, which is how
+<code>mmap</code> and rename always behave together, and not a torn read.</p>
 </div>
 
-<h2 id="query">Querying on disk</h2>
-<p>A mapped table is an ordinary table — qSQL does not know or care that its columns came from
-files, and the pages fault in as the query reads them. So the on-disk and in-memory stories are
-the same one:</p>
+<h2 id="query">Queries</h2>
+<p>A mapped table is just a table. qSQL has no idea its columns came from files, and the pages
+arrive as the query reads them. So there is nothing separate to learn for data on disk:</p>
 
 <div class="code"><pre><code class="lang-k">u:dload "db/trades"
 sel"select sum px by sym from u"
 sel"select from u where sym=`msft, px&gt;100"
 </code></pre></div>
 
-<p>Two things are worth knowing for query speed. A column carrying <code>`s</code> or
-<code>`p</code> keeps that attribute through the round trip, so a range constraint on a sorted
-column stays a binary search after a reload. And <code>select</code> with a <code>by</code>
-reaches Amber's fused group-aggregate, which hashes the key once and makes one pass per
-aggregate — which is why the group-and-sum row in the table above is 4 ms rather than the
-40 ms a hand-written group-then-sum idiom costs.</p>
+<p>Two things matter for speed. A column carrying <code>`s</code> or <code>`p</code> keeps it
+through the trip to disk, so a range on a sorted column is still a binary search after a reload.
+And <code>select</code> with a <code>by</code> goes through Amber's fused group-aggregate, which
+hashes the key once and makes one pass per aggregate. That is why the group-and-sum row above is
+4.8 ms and not the 40 ms a hand-written group-then-sum costs.</p>
 
 <h2 id="qcompat">Reading a kdb+ database</h2>
-<p>Amber reads q's files directly — <code>\l db</code> on a database kdb+ wrote works, with no
-conversion step. Three on-disk layouts are recognised by their leading bytes: q's flat vector,
-q's enumerated column, and q's serialised-value form used for the <code>sym</code> file and
-<code>.d</code>. q's types map onto Amber's, and the temporals keep the same numbers.</p>
-<p>It also writes back in kind: if a database's <code>sym</code> file is one q wrote, Amber
-writes q-format column files into it, so a database can be shared by both engines rather than
-forked. <a href="../docs/q.html">Talking to q</a> covers the rest of the interop — IPC, log
-replay, and loading a database q wrote. Files Amber wrote before 2.7, when the format was text, still read through
-<code>dget</code> and <code>dload</code>; <code>get</code> reads only the binary format and
-never evaluates a file, as q's <code>get</code> does not.</p>
+<p>Amber reads q's files as they are. <code>\l db</code> on a database kdb+ wrote works, with
+nothing to convert first. Three layouts are recognised by their first bytes: q's flat vector, q's
+enumerated column, and the serialised form it uses for <code>sym</code> and <code>.d</code>. q's
+types land on Amber's, and the temporals keep the same numbers.</p>
+<p>It writes back in kind too. If a database's <code>sym</code> file is one q wrote, Amber writes
+q's format into it, so one database can be shared instead of forked.
+<a href="../docs/q.html">Talking to q</a> has the rest of the interop: IPC, log replay, and
+loading a database q wrote. Files Amber wrote before 2.7, when the format was text, still read
+through <code>dget</code> and <code>dload</code>. <code>get</code> reads only the binary format
+and never runs a file, same as q's.</p>
 
-<h2 id="api">API reference</h2>
+<h2 id="api">The verbs</h2>
 <div class="table-wrap"><table>
 <thead><tr><th>verb</th><th>what it does</th></tr></thead>
 <tbody>
 <tr><td><code>dset[f;x]</code> / <code>dget f</code></td><td>one value to and from one file</td></tr>
 <tr><td><code>splay[dir;t]</code></td><td>write a table as a splayed directory</td></tr>
 <tr><td><code>dload dir</code></td><td>read a splayed table, every column</td></tr>
-<tr><td><code>dcols[dir;cs]</code></td><td>read only the named columns — the rest cost nothing</td></tr>
+<tr><td><code>dcols[dir;cs]</code></td><td>read only the columns you name, the rest cost nothing</td></tr>
 <tr><td><code>`:p set x</code></td><td>q's name: a trailing <code>/</code> splays a table, otherwise one file</td></tr>
 <tr><td><code>get `:p</code></td><td>q's name for reading; binary only, never evaluated</td></tr>
 <tr><td><code>`:dir/ upsert t</code></td><td>append rows to the end of each column file, journalled</td></tr>
@@ -616,16 +625,16 @@ never evaluates a file, as q's <code>get</code> does not.</p>
 <tr><td><code>cols t</code> / <code>`at v</code></td><td>a table's column names; a value's attribute</td></tr>
 </tbody></table></div>
 
-<h2 id="walk">Worked example</h2>
+<h2 id="walk">A small database</h2>
 <p>A tick database from nothing: write two days, append to one, then query across both.</p>
 <div class="note note-info">
   <div class="note-title">Load order</div>
-  <p><code>hdb.k</code> builds on the base library, so load <code>amber.k</code> and
-  <code>sys.k</code> first, and <code>qsql.k</code> too if you want <code>sel</code>. A bare
-  <code>\l hdb.k</code> is resolved against <code>$AMBER_HOME</code>, or the directory holding the
-  <code>amber</code> binary, so it works from any working directory once
-  <code>AMBER_HOME</code> is set. <code>splay</code> creates the directories it needs — you do
-  not have to <code>mkdir</code> a partition first.</p>
+  <p><code>hdb.k</code> sits on top of the base library, so load <code>amber.k</code> and
+<code>sys.k</code> first, and <code>qsql.k</code> as well if you want <code>sel</code>. A bare
+<code>\l hdb.k</code> is looked up in <code>$AMBER_HOME</code>, or next to the
+<code>amber</code> binary, so it works from any directory once <code>AMBER_HOME</code> is set.
+<code>splay</code> makes the directories it needs, so there is no <code>mkdir</code> to
+remember.</p>
 </div>
 
 <div class="code"><div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">tick.k</span></div><pre><code class="lang-k">\l amber.k
@@ -652,9 +661,9 @@ u:dload "db/2026.01.04/trades"
 sel"select vwap:(+/px*sz)%+/sz by sym from u"
 </code></pre></div>
 
-<p>The two <code>splay</code> calls leave nothing behind if the process dies mid-write; the
-<code>upsert</code> either adds all 50,000 rows or none; and the <code>dcols</code> read touches
-two files and ignores the third.</p>
+<p>The two <code>splay</code> calls leave nothing behind if the process dies mid-write. The
+<code>upsert</code> either adds all 50,000 rows or none of them. And the <code>dcols</code> read
+opens two files and ignores the third.</p>
 
 <div class="pager">
   <a href="../docs/language.html">&larr; Language &amp; qSQL</a>
