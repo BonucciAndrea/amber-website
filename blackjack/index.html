@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Blackjack</title>
+<meta name="description" content="Blackjack with a basic-strategy coach, written in Amber and played by the real interpreter, offline.">
+<meta name="theme-color" content="#0b0b0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Blackjack">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preload" href="fonts/JetBrainsMono-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="fonts/JetBrainsMono-Bold.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<main id="app">
+  <pre id="screen" aria-live="polite"><span class="d">  starting the engine…</span></pre>
+  <nav id="pad" aria-label="Moves"></nav>
+</main>
+<script src="rt.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

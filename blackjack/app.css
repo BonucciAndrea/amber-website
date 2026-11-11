@@ -1,0 +1,43 @@
+/* app.css: the terminal, on a phone. The screen is the game's own frame (42 columns of
+   JetBrains Mono, the engine's ANSI colours); the pad under it is the keys, as key caps. */
+@font-face { font-family: "BJ Mono"; src: url(fonts/JetBrainsMono-Regular.ttf) format("truetype"); font-weight: 400; font-display: block; }
+@font-face { font-family: "BJ Mono"; src: url(fonts/JetBrainsMono-Bold.ttf) format("truetype"); font-weight: 700; font-display: block; }
+
+:root {
+  --bg: #0b0b0f; --fg: #d7dae0;
+  --red: #ff6b6b; --green: #8fd46a; --yellow: #ffb020; --blue: #6aaeff; --cyan: #57d6d6;
+  --mono: "BJ Mono", ui-monospace, Menlo, monospace;
+}
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); -webkit-text-size-adjust: 100%; }
+body { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; touch-action: manipulation;
+  -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+#app { box-sizing: border-box; height: 100%; display: flex; flex-direction: column;
+  padding: max(env(safe-area-inset-top), 8px) env(safe-area-inset-right) max(env(safe-area-inset-bottom), 10px) env(safe-area-inset-left); }
+
+/* the screen: one frame of the game. Its font size is set by app.js so 42 columns fill the width */
+#screen { flex: 1; min-height: 0; margin: 0; overflow: hidden; white-space: pre; box-sizing: border-box;
+  font-family: var(--mono); font-size: 15px; line-height: 1.2; font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
+/* a symbol the mono font doesn't have (the suits, the ticks) is pinned to one column (.6em, the mono
+   font's advance: 1ch would be the fallback font's), so a wider
+   fallback glyph can't push a card's border out of line */
+#screen .g { display: inline-block; width: .6em; text-align: center; overflow: visible; vertical-align: top; line-height: inherit;
+  font-family: Menlo, "DejaVu Sans Mono", "Segoe UI Symbol", "Noto Sans Symbols 2", sans-serif; font-weight: 400; }
+#screen .b { font-weight: 700; }
+#screen .d { opacity: .5; }
+#screen .r { color: var(--red); } #screen .gr { color: var(--green); } #screen .y { color: var(--yellow); }
+#screen .bl { color: var(--blue); } #screen .c { color: var(--cyan); }
+
+/* the pad: the key caps of the terminal (inverse, bold, monospace), sized for a thumb */
+#pad { flex: none; display: grid; gap: 8px; padding: 6px 10px 0; width: 100%; max-width: 520px; margin: 0 auto; box-sizing: border-box; }
+#pad .row { display: grid; gap: 8px; grid-auto-flow: column; grid-auto-columns: 1fr; }
+#pad button { font-family: var(--mono); font-weight: 700; font-size: 15px; letter-spacing: .04em;
+  height: 52px; border-radius: 10px; border: 0; padding: 0 4px;
+  background: var(--fg); color: var(--bg); touch-action: manipulation; cursor: pointer; }
+#pad button.ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--fg) 34%, transparent); font-weight: 400; }
+#pad button.on { box-shadow: inset 0 0 0 2px var(--yellow); color: var(--yellow); }
+#pad button.gold { background: var(--yellow); }
+#pad button:disabled { opacity: .22; }
+#pad button:active:not(:disabled) { transform: scale(.97); filter: brightness(1.15); }
+#pad.busy button { pointer-events: none; }
+#pad .row.empty { visibility: hidden; }
