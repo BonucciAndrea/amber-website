@@ -84,7 +84,8 @@ function press(k) { if (!vm || busy) return; play(call("bjwebkey[" + kexpr(k) + 
 
 /* ---- the pad: the terminal's keys for this moment, as buttons ---------------------------------- */
 function buttons(s) {
-  const [mode, cd, cp, rebet, pair, focus, page, even, pp, t3, sa] = (s || "idle").split("|");
+  const [mode, cd, cp, rebet, pair, focus, page, even, pp, t3, sa, cnt] = (s || "idle").split("|");
+  const [drill, q] = (cnt || "menu/-").split("/");
   const B = (label, key, cls, off) => ({ label, key, cls: cls || "", off: !!off });
   const tab = (label, key, p) => B(label, key, "ghost" + (page === p ? " on" : ""));
   const side = (name, key, v) => B(name + (v && v !== "€0" ? " " + v : ""), key, "ghost" + (v && v !== "€0" ? " on" : ""));
@@ -92,7 +93,12 @@ function buttons(s) {
     hand:  [[B("HIT", "h", "", sa === "1"), B("STAND", "s"), B("DOUBLE", "d", "", cd !== "1"), B("SPLIT", "p", "", cp !== "1")],
             [B("HINT", "?", "ghost"), B("CHART", "c", "ghost")]],
     idle:  [[B("REBET " + rebet, "r", "gold"), B("BET", "b")],
-            [side("PAIRS", "x", pp), side("21+3", "z", t3), B("TRAIN", "t", "ghost"), B("CHART", "c", "ghost")]],
+            [side("PAIRS", "x", pp), side("21+3", "z", t3), B("TRAIN", "t", "ghost"), B("COUNT", "k", "ghost"), B("CHART", "c", "ghost")]],
+    // counting practice: the drills, NEXT, or a number pad while a question is open
+    count: q !== "-" ? [["1", "2", "3", "4", "5", "6", "7"].map(d => B(d, d)),
+                        [B("8", "8"), B("9", "9"), B("0", "0"), B("−", "-"), B("⌫", "\x7f", "ghost"), B("OK", "\n", "gold")]]
+         : drill === "menu" ? [[B("DECK", "1"), B("SHOE", "2"), B("TRUE COUNT", "3")], [B("TABLE", "\x1b", "ghost")]]
+         : [[B("NEXT", "n", "gold")], [B("MENU", "\x1b", "ghost")]],
     broke: [[B("NEW €1,000", "n", "gold")], [B("TRAIN", "t", "ghost"), B("CHART", "c", "ghost")]],
     bet:   [[B("+10", "+10"), B("+25", "+25"), B("+50", "+50"), B("+100", "+100")],
             [B("CLEAR", "0c", "ghost"), B("CANCEL", "\x1b", "ghost"), B("DEAL", "\n", "gold")]],

@@ -138,12 +138,14 @@ bjinit:{`prng@0;bjBank::1000;bjStart::1000;bjLast::10;bjSt::0 0 0 0;bjCo::0 0;bj
   bjMode::`table;bjPrev::`table;bjCP::0;bjQuit::0;bjEnt::0;bjBuf::"";bjMsg::""
   bjPK::`none;bjPD::();bjTK::`intro;bjTD::()
   bjDf::`all;bjDk::0 0;bjDs::0;bjQ::();bjDh::();bjDu::0
+  bjCM::`menu;bjCQ::();bjCB::"";bjCK::0 0;bjCbest::0;bjCF::();bjCS::();bjCR::0;bjCN::0;bjCD::();bjCcard::-1;bjCrows::()
+  bjCtc::0f;bjCdl::6f;bjCnext::3;bjCfull::0;bjCT0::0;bjCtime::0;bjCmsg::"";bjCseen::();bjCround::0
   bjW::80;bjN::0;bjsz::24 80;bjFQ::();bjWait::"0";bjDirty::0;bjshuf[];}
 
 / ---- saving: bank (in half chips), last bet, record, by-the-book count, the spots you miss ------
-bjsavetext:{"\n"/($_2*bjBank;$bjLast;" "/$bjSt;" "/$bjCo),bjMs}
+bjsavetext:{"\n"/($_2*bjBank;$bjLast;" "/$bjSt;" "/$bjCo),bjMs,,"c "," "/$(bjCK 0;bjCK 1;bjCbest)}
 bjloadtext:{l:"\n"\x;st:bjint'" "\l 2;co:bjint'" "\l 3
-  $[(3<#l)&(4=#st)&2=#co;[bjBank::0.5*bjint l 0;bjLast::1|bjint l 1;bjSt::st;bjCo::co;bjMs::{x@&0<#'x}4_l;bjBack::1];]
+  $[(3<#l)&(4=#st)&2=#co;[bjBank::0.5*bjint l 0;bjLast::1|bjint l 1;bjSt::st;bjCo::co;m:4_l;bjMs::m@&{|/x="|"}'m;c:m@&{"c "~2#x}'m;$[#c;[v:bjint'" "\2_*c;$[3=#v;[bjCK::2#v;bjCbest::v 2];]];];bjBack::1];]
   bjStart::bjBank;}
 bjFILE:"\"$HOME/.amber_blackjack\""
 bjsave:{$[bjTest;;bjWeb;bjDirty::1;`x(("/bin/sh";"-c";"cat > ",bjFILE);bjsavetext[])];}
@@ -275,11 +277,87 @@ bjtans:{[a]h:bjDh;u:bjDu;b:bjbest[h;u;1;1];ok:a=b;m:bjmkey[h;u;1];bjDk::bjDk+(ok
   bjTK::$[ok;`right;`wrong];bjTD::(h;u;1;1;a);bjdq[];bjsave[]}
 bjFOC:`all`hard`soft`pairs
 
+/ ---- counting practice (Hi-Lo), a section of its own ------------------------------------------
+/ 2 to 6 count +1, 7 8 9 count 0, tens and aces -1. The running count adds them up as the cards
+/ appear (a new shoe starts at 0); the true count divides it by the decks still to come; the bet
+/ follows the true count. Three drills: DECK (51 cards, then the count, which names the 52nd), SHOE
+/ (three boxes and the dealer playing through a 6-deck shoe by the book: the count every few
+/ rounds, and every other time the true count and the bet too), TRUE (running count and decks left
+/ into a true count and a bet).
+bjHLV:-1 1 1 1 1 1 0 0 0 -1 -1 -1 -1                / a card's Hi-Lo value, by rank
+bjhl:{bjHLV 13!x}
+bjramp:{$[x<2;1;x=2;2;x=3;4;x=4;6;8]}               / units to bet at a true count (rounded down)
+bjsgn:{$[x>0;"+",$x;$x]}                            / +4, 0, -3
+bjsint:{$[(*x)="-";-bjint 1_x;bjint x]}             / a typed answer, maybe negative
+bjf1:{a:x|-x;s:_0.5+10*a;($[x>0;"+";x<0;"-";""]),($_s%10),".",$10!s}   / one decimal, signed
+bjdtxt:{$[x=_x;$_x;($_x),".5"]}                     / 2.5 decks
+bjsecs:{t:_0.5+x%100000;($_t%10),".",($10!t)," s"}  / microseconds as 38.2 s
+bjcardt:{t:(bjRK 13!x),bjSU u:_x%13;$[(u=1)|u=2;bjred t;t]}   / a card as text: 10♥
+bjnow:{`t[]}
+
+bjcount:{bjMode::`count;bjCM::`menu;bjCQ::();bjCF::();bjCmsg::"";bjCB::""}
+bjcstart:{[m]bjCM::m;bjCQ::();bjCF::();bjCmsg::"";bjCB::""
+  $[m=`deck;[bjCD::52!-52?52;bjCN::0;bjCR::0;bjCcard::-1];m=`shoe;[bjCS::();bjCround::0;bjCnext::2+*1?3;bjcround[]];bjctrue[]];}
+bjcstep:{$[#bjCQ;;bjCM=`deck;bjcdeck[];bjCM=`shoe;bjcround[];bjCM=`true;bjctrue[];];}
+bjask:{bjCQ::x;bjCB::""}
+/ DECK: a card a tap; the clock runs from the first card to the 51st
+bjcdeck:{$[bjCN>50;bjcstart`deck;[$[0=bjCN;bjCT0::bjnow[];];c:bjCD bjCN;bjCN::bjCN+1;bjCR::bjCR+bjhl c;bjCcard::c;bjCF::()
+  $[bjCN=51;[bjCtime::bjnow[]-bjCT0;bjask[,`rc]];]]];}
+/ SHOE: a round at a table of three, everyone playing by the book, the dealer by Lugano's rules
+bjcdraw:{c:*bjCS;bjCS::1_bjCS;bjCR::bjCR+bjhl c;bjCseen::bjCseen,c;c}
+bjcplay:{[u;h]$["D"=bjbest[h;u;0;1];h,bjcdraw[];[c:{[u;h](21>bjpt h)&"H"=bjbest[h;u;0;0]}[u];g:{[u;h]h,bjcdraw[]}[u];c g/h]]}
+bjcround:{bjCF::();$[78>#bjCS;[bjCS::1_52!-312?312;bjCR::0;bjCmsg::bjdim"a new shoe: the count starts again at 0"];bjCmsg::""]
+  bjCseen::();a:bjcdraw'!3;u:bjcdraw[];b:bjcdraw'!3;h:bjcplay[u]'a,'b
+  d:$[|/{(22>bjpt x)&~(2=#x)&21=bjpt x}'h;[d:u,bjcdraw[];$[21=bjpt d;d;{17>bjpt x}{x,bjcdraw[]}/d]];,u]
+  bjCrows::(("DEALER";d);("BOX 1";h 0);("BOX 2";h 1);("YOU";h 2));bjCround::bjCround+1
+  bjCdl::0.5|0.5*_0.5+2*(#bjCS)%52;bjCnext::bjCnext-1
+  $[bjCnext<1;[bjCnext::2+*1?3;bjCfull::~bjCfull;bjCtc::bjCR%bjCdl;bjask$[bjCfull;`rc`tc`bet;,`rc]];];}
+/ TRUE: a running count and the decks left
+bjctrue:{bjCF::();bjCdl::0.5*1+*1?11;bjCR::-12+*1?25;bjCtc::bjCR%bjCdl;bjask`tc`bet}
+bjcanswer:{$[0=#bjCB;;[a:bjsint bjCB;q:*bjCQ;bjCQ::1_bjCQ;bjCB::""
+  ok:$[q=`rc;a=bjCR;q=`tc;1>(a-bjCtc)|bjCtc-a;a=bjramp(_bjCtc)];bjCK::bjCK+(ok;1);bjCF::(ok;q;a)
+  $[ok&(q=`rc)&bjCM=`deck;$[(0=bjCbest)|bjCtime<bjCbest;bjCbest::bjCtime;];];bjsave[]]];}
+
+/ what the panel says: how to play the drill, or the answer and why
+bjcfeed:{ok:bjCF 0;q:bjCF 1;a:bjCF 2;you:$[ok;"";" (you said ",(bjsgn a),")"]
+  $[(q=`rc)&bjCM=`deck;"The 51 cards count ",(bjsgn bjCR),you,", so the last card counts ",(bjsgn(-bjCR)),": it's ",(bjcardt bjCD 51),". Time: ",(bjsecs bjCtime),$[bjCbest;", best ",bjsecs bjCbest;""],"."
+    q=`rc;"The running count is ",(bjsgn bjCR),you,". This round: ",(", "/{(bjcardt x)," ",bjsgn bjhl x}'bjCseen),"."
+    q=`tc;(bjsgn bjCR)," / ",(bjdtxt bjCdl)," decks left = ",(bjf1 bjCtc),", a true count of ",(bjsgn(_bjCtc)),you,". Rounded down or to the nearest, both count."
+    "True count ",(bjsgn(_bjCtc)),": bet ",($bjramp(_bjCtc)),$[1=bjramp(_bjCtc);" unit";" units"],$[ok;"";" (you said ",($a),")"],". At €10 a unit, that's ",(bjmoney 10*bjramp(_bjCtc)),"."]}
+bjcintro:{$[bjCM=`menu;"Pick a drill. The count is practice for your head: the main table doesn't change."
+  bjCM=`deck;$[bjWeb;"Tap NEXT for each card and keep the count. After 51 cards, say the count: the 52nd card is the one that brings it back to 0.";"Press N (or space) for each card and keep the count. After 51 cards, type the count: the 52nd card is the one that brings it back to 0."]
+  bjCM=`shoe;"Three boxes and the dealer play through a 6-deck shoe by the book. Count every card. Every few rounds you're asked the count, and every other time the true count and the bet too."
+  "Divide the running count by the decks left for the true count, then size the bet: 1 unit up to +1, 2 at +2, 4 at +3, 6 at +4, 8 from +5."]}
+bjcpanL:{[n]ind:bjind[];w:bjW-2+#ind
+  hd:$[#bjCF;$[bjCF 0;bjgrn"✓ RIGHT";bjred"✗ WRONG"];bjdim"COUNT"];bk:$[bjCK 1;bjdim($bjCK 0),"/",($bjCK 1)," right";""]
+  n#(,bjlr["  ",hd;bk,$[#bk;"  ";""]]),(ind,/:bjwrap[w;$[#bjCF;bjcfeed[];bjcintro[]]]),n#,""}
+bjcbodyL:{[n]ind:bjind[];w:bjW-2+#ind
+  L:$[bjCM=`menu;,/(ind,/:)'bjwrap[w]'("Running count: add +1, 0 or -1 for every card you see. A new shoe starts at 0."
+       "True count: the running count divided by the decks still to come.";"Bet: 1 unit up to +1, then 2 at +2, 4 at +3, 6 at +4, 8 from +5. Insurance pays from +3.";""
+       $[bjWeb;"DECK  51 cards, then the count";"1  DECK   51 cards, then the count"]
+       $[bjWeb;"SHOE  a table playing through a shoe";"2  SHOE   a table playing through a shoe"]
+       $[bjWeb;"TRUE  true counts and bets";"3  TRUE   true counts and bets"])
+    bjCM=`deck;("";ind,bjdim$[bjCN;"card ",($bjCN)," of 51";"51 cards to count"];""),ind,/:bjhand[$[bjCcard<0;();(0=#bjCQ)&(#bjCF)&bjCN=51;(bjCcard;bjCD 51);,bjCcard];bjW-4]
+    bjCM=`shoe;(,""),({[ind;r](ind,(bjbold r 0),((9-#r 0)#" "),bjfit[" "/bjcardt'r 1;$[bjN;19;24]]),bjdim bjtot[r 1;0]}[ind]'bjCrows),("";ind,bjdim"round ",($bjCround),"  ·  decks left about ",bjdtxt bjCdl)
+    ("";ind,"Running count   ",bjbold bjsgn bjCR;ind,"Decks left      ",bjbold bjdtxt bjCdl)]
+  n#L,n#,""}
+bjcmsgL:{[n]ind:bjind[];q:$[#bjCQ;*bjCQ;`]
+  t:$[#bjCQ;(bjbold$[q=`rc;"Running count?";q=`tc;"True count?";"Bet, in units?"]),"  ",bjCB,bjyel"_";bjCmsg]
+  n#(ind,/:bjwrap[bjW-2+#ind;t]),n#,""}
+bjcountL:{ind:bjind[];hl:ind,(bjdim"Hi-Lo  "),"2-6 ",(bjgrn"+1"),"   7-9 ",(bjdim"0"),"   10-A ",bjred"-1"
+  r:(bjtitleL[];bjrule[];hl;"")
+  $[bjN;r,(bjcbodyL 14),(,""),(bjcmsgL 2),("";bjrule[]),bjcpanL 8;r,(bjcbodyL 11),(bjcmsgL 1),(,bjrule[]),bjcpanL 6]}
+bjcountkey:{[x;c;esc]$[esc;$[bjCM=`menu;bjMode::`table;bjcount[]]
+  #bjCQ;$[(c="\n")|c="\r";bjcanswer[];(c=`c$127)|c=`c$8;bjCB::-1_bjCB;c="-";bjCB::$["-"=*bjCB;1_bjCB;"-",bjCB];(c>"/")&(c<":")&4>#bjCB;bjCB::bjCB,c;]
+  bjCM=`menu;$[c="1";bjcstart`deck;c="2";bjcstart`shoe;c="3";bjcstart`true;c="q";bjQuit::1;]
+  (c="n")|(c=" ")|(c="\n")|c="\r";bjcstep[];c="q";bjQuit::1;];}
+
 / ---- the screens -----------------------------------------------------------------------------
 bjtot:{[h;d]t:bjpt h;$[0=#h;"";$[d;bjdnat[];bjnat h];bjgold"BLACKJACK";t>21;bjred"BUST ",$t;t=21;bjgrn"21"
   (bjsoft h)&(t<21)&bjOn|bjMode=`train;"soft ",$t;$t]}
 bjtitleL:{l:"  ",(bjgold"BLACKJACK"),"  ",(bjSU 0)," ",(bjred bjSU 1)," ",(bjred bjSU 2)," ",bjSU 3
   r:$[bjMode=`chart;bjdim"basic strategy"
+      bjMode=`count;(bjbold"COUNT"),bjdim"  Hi-Lo"
       bjMode=`train;(bjbold"TRAINING"),$[bjDk 1;bjdim"  ",($bjDk 0),"/",($bjDk 1),$[bjDs>2;"  streak ",$bjDs;""];""]
       [d:bjBank-bjStart;(bjbold bjmoney bjBank),$[d>0;bjgrn" +",bjmoney d;d<0;bjred" -",bjmoney(-d);""]]]
   bjlr[l;r,"  "]}
@@ -321,13 +399,14 @@ bjchartL:{cur:$[bjPrev=`train;(bjrowkey[bjDh;1];bjUC 13!bjDu);bjOn;(bjrowkey[bjH
      (bjtitleL[];bjrule[]),((bjfit[;41]'L),'R)]]}
 
 / the key line at the bottom of a terminal: only the keys that do something now
-bjkeysL:{e:$[bjMode=`chart;$[bjN;(("1";"hard");("2";"soft");("3";"pairs");("Esc";"back"));,("any key";"back")]
+bjkeysL:{e:$[bjMode=`count;$[#bjCQ;(("-0-9";"answer");("Enter";"ok");("Esc";"menu"));bjCM=`menu;(("1";"deck");("2";"shoe");("3";"true count");("Esc";"table"));(("N";"next");("Esc";"menu"))]
+  bjMode=`chart;$[bjN;(("1";"hard");("2";"soft");("3";"pairs");("Esc";"back"));,("any key";"back")]
   bjEnt;(("0-9";"amount");("Enter";"deal");("Esc";"cancel"))
   bjAsk;(("Y";"yes");("N";"no thanks"))
   bjMode=`train;(("H";"hit");("S";"stand");("D";"double")),($[bjdpair[];,("P";"split");()]),(("F";$bjDf);("C";"chart");("Esc";"table"))
   bjOn;(("H";"hit");("S";"stand")),($[bjcandbl[];,("D";"double");()]),($[bjcansp[];,("P";"split");()]),(("?";"hint");("C";"chart"))
   bjBank<bjMIN;(("N";"new €1,000");("T";"train");("C";"chart");("Q";"quit"))
-  (("R";"rebet ",bjmoney(_bjLast&bjBank));("B";"bet");("X";"pairs ",$[bjPP;bjmoney bjPP;"off"]);("Z";"21+3 ",$[bjT3;bjmoney bjT3;"off"]);("T";"train");("C";"chart"))]
+  (("R";"rebet ",bjmoney(_bjLast&bjBank));("B";"bet");("X";"pairs",$[bjPP;" ",bjmoney bjPP;""]);("Z";"21+3",$[bjT3;" ",bjmoney bjT3;""]);("T";"train");("K";"count");("C";"chart"))]
   "  ",("  "/{bjcap[x 0;x 1]}'e)}
 
 / ---- output: a terminal frame, or (on the web) frames queued with the pause before each ---------
@@ -339,7 +418,7 @@ bjkey:{$[bjTest;[k:$[#bjFeed;*bjFeed;""];bjFeed::1_bjFeed;k]
 bjsleep:{$[bjTest;;bjWeb;bjWait::x;bjsh"sleep ",x];}
 bjput:{`1:x;}
 bjFH:{$[bjN;31;23]}                                 / lines in a frame (a terminal adds the key line)
-bjlines:{L:$[bjMode=`chart;bjchartL[];bjtableL[]];L:bjcut[;bjW]'(bjFH[]#L,bjFH[]#,"");$[bjWeb;L;L,,bjcut[bjkeysL[];bjW]]}
+bjlines:{L:$[bjMode=`chart;bjchartL[];bjMode=`count;bjcountL[];bjtableL[]];L:bjcut[;bjW]'(bjFH[]#L,bjFH[]#,"");$[bjWeb;L;L,,bjcut[bjkeysL[];bjW]]}
 bjframe:{$[bjWeb;[bjFQ::bjFQ,,(bjWait;bjlines[]);bjWait::"0"];bjTest;[bjlay[];`0:("@@ frame";""),bjlines[]];bjout[]];}
 bjlay:{r:bjsz 0;c:bjsz 1;$[(c>79)&r>23;[bjW::80;bjN::0];[bjW::42;bjN::1]];(c>79)&r>23}   / wide, or the phone layout
 bjout:{w:bjlay[];r:bjsz 0;c:bjsz 1
@@ -351,6 +430,7 @@ bjstep:{k:bjkey[];$[0=#k;bjQuit::1;bjon1 k];}
 bjon1:{c:bjlow@*x;esc:x~,bjE
   $[c=`c$3;bjQuit::1
     bjMode=`chart;$[bjN&|/c="123";bjCP::-49+`i$c;bjMode::bjPrev]
+    bjMode=`count;bjcountkey[x;c;esc]
     bjEnt;bjbetkey[x;c;esc]
     bjAsk;$[c="y";bjinsure 1;c="n";bjinsure 0;c="q";bjQuit::1;]
     bjMode=`train;bjtrainkey[c;esc]
@@ -362,7 +442,7 @@ bjidlekey:{$[(x="r")|(x=" ")|(x="\n")|x="\r";$[bjBank<bjMIN;;bjbet(_bjLast&bjBan
   x="b";$[bjBank<bjMIN;;[bjEnt::1;bjBuf::"";bjMsg::""]]
   x="x";[bjPP::bjSIDE(#bjSIDE)!1+bjSIDE?bjPP;bjPK::$[bjPP;`side;`none];bjPD::`pp]
   x="z";[bjT3::bjSIDE(#bjSIDE)!1+bjSIDE?bjT3;bjPK::$[bjT3;`side;`none];bjPD::`t3]
-  x="t";bjtrain bjDf;x="c";bjchart[];x="q";bjQuit::1
+  x="t";bjtrain bjDf;x="k";bjcount[];x="c";bjchart[];x="q";bjQuit::1
   x="n";$[bjBank<bjMIN;[bjBank::1000;bjStart::1000;bjH::();bjMsg::bjgrn"a fresh €1,000";bjsave[]];];]}
 / a bet: digits and Backspace in a terminal; on the phone, chips (+25) and a clear (the key "0c")
 bjbetkey:{[x;c;esc]$[esc;bjEnt::0;(c="\n")|c="\r";[bjEnt::0;$[#bjBuf;bjbet bjint bjBuf;]]
@@ -379,8 +459,8 @@ bjchart:{bjPrev::bjMode;bjMode::`chart
 / each returns the frames to show, each after a line \001<pause in seconds>, then \002 and the
 / state the buttons need (mode, may double, may split, rebet, pair, focus, chart page, even money),
 / then \003 and the save text when something changed
-bjwebout:{s:$[bjMode=`chart;"chart";bjEnt;"bet";bjAsk;"ask";bjMode=`train;"train";bjOn;"hand";bjBank<bjMIN;"broke";"idle"]
-  s:"|"/(s;$bjcandbl[];$bjcansp[];bjmoney(_bjLast&bjBank);$[bjMode=`train;$bjdpair[];"0"];$bjDf;$bjCP;$[bjAsk;$bjnat bjH 0;"0"];bjmoney bjPP;bjmoney bjT3;$[bjOn;$bjSA bjI;"0"])
+bjwebout:{s:$[bjMode=`chart;"chart";bjMode=`count;"count";bjEnt;"bet";bjAsk;"ask";bjMode=`train;"train";bjOn;"hand";bjBank<bjMIN;"broke";"idle"]
+  s:"|"/(s;$bjcandbl[];$bjcansp[];bjmoney(_bjLast&bjBank);$[bjMode=`train;$bjdpair[];"0"];$bjDf;$bjCP;$[bjAsk;$bjnat bjH 0;"0"];bjmoney bjPP;bjmoney bjT3;$[bjOn;$bjSA bjI;"0"];$[bjMode=`count;($bjCM),"/",$[#bjCQ;$*bjCQ;"-"];""])
   o:(,/{(,(`c$1),x 0),x 1}'bjFQ),(,(`c$2),s),$[bjDirty;(,,`c$3),"\n"\bjsavetext[];()]
   bjFQ::();bjDirty::0;`0:o;}
 bjwebinit:{[sv]bjWeb::1;bjinit[];bjW::42;bjN::1;$[#sv;.[bjloadtext;,sv;{}];];bjStart::bjBank;bjframe[];bjwebout[]}
