@@ -4,14 +4,16 @@
 / on a phone:     the same file runs in the browser (web/), where buttons send the same keys.
 / keys:  B bet   R rebet   H hit   S stand   D double   P split   ? hint   C chart   T training   Q quit
 / ---
-/ the table plays like a casino 6-deck shoe game: 312 cards dealt without replacement from a
-/ shuffled shoe, one card burned, and a cut card about 75% in (the shoe is reshuffled before the
-/ next hand once it's past it). Cards come out in casino order: you, the dealer, you, the
-/ dealer's hole card. The dealer stands on all 17s and checks for blackjack under an ace or a
-/ ten; with an ace up you're offered insurance (even money with a blackjack). Blackjack pays
-/ 3 to 2, insurance 2 to 1. Double on any first two cards, after a split too. Split pairs of the
-/ same value (K-10 counts) up to 4 hands. Split aces get one card each, and 21 on them isn't a
-/ blackjack. No surrender.
+/ the table plays by the rules of Casino Lugano (its blackjack booklet, casinolugano.ch): a 6-deck
+/ shoe dealt without replacement, one card burned, a cut card about 75% in. You get two cards, the
+/ dealer one: no hole card. The dealer's second card comes after you've played, and a dealer
+/ blackjack then takes every bet, doubles and splits included. The dealer stands on soft 17.
+/ Blackjack pays 3 to 2; with an ace up you're offered insurance (2 to 1), or even money with a
+/ blackjack. Double on any first two cards, after a split too. Split pairs of the same value (K-10
+/ counts) up to 4 hands; split aces get one card each, can be split again, and 21 on them isn't a
+/ blackjack. No surrender. The side bets: Perfect Pairs (6, 12, 26 to 1) and 21+3 (30, 20, 10, 5 to 1).
+/ The deck count and the no-hole-card rule for doubles are what such tables usually do: the booklet
+/ doesn't say.
 / ---
 / the coach grades every move against basic strategy for exactly these rules. Your chips, record
 / and the spots you keep missing are saved (~/.amber_blackjack, or the phone's storage).
@@ -27,13 +29,14 @@ bjsoft:{s:+/bjPT 13!x;(s<12)&|/0=13!x}             / is an ace counting 11?
 bjnat:{(~bjSp)&(2=#x)&21=bjpt x}                   / your natural; 21 on two cards after a split isn't one
 bjdnat:{(2=#bjD)&21=bjpt bjD}                      / the dealer's
 
-/ ---- basic strategy for these rules (6 decks, dealer stands on soft 17, double after split) ----
+/ ---- basic strategy for these rules (6 decks, S17, no hole card, double after split) ------------
 / a row per hand, a column per dealer card: 2 3 4 5 6 7 8 9 10 A.
 / H hit  S stand  D double (hit if you can't)  d double (stand if you can't)  P split
 bjUC:9 0 1 2 3 4 5 6 7 8 8 8 8                     / the dealer card's column, by rank
-bjHARD:(9#,"HHHHHHHHHH"),("HDDDDHHHHH";"DDDDDDDDHH";"DDDDDDDDDH";"HHSSSHHHHH"),(4#,"SSSSSHHHHH"),5#,"SSSSSSSSSS"   / by total 0..21
+bjHARD:(9#,"HHHHHHHHHH"),("HDDDDHHHHH";"DDDDDDDDHH";"DDDDDDDDHH";"HHSSSHHHHH"),(4#,"SSSSSHHHHH"),5#,"SSSSSSSSSS"   / by total 0..21
 bjSOFT:(13#,"HHHHHHHHHH"),("HHHDDHHHHH";"HHHDDHHHHH";"HHDDDHHHHH";"HHDDDHHHHH";"HDDDDHHHHH";"SddddSSHHH"),3#,"SSSSSSSSSS"   / by total 0..21
-bjPAIR:("----------";"PPPPPPPPPP";"PPPPPP----";"PPPPPP----";"---PP-----";"----------";"PPPPP-----";"PPPPPP----";"PPPPPPPPPP";"PPPPP-PP--";"----------")   / split? by card value 1..10; - plays the total
+bjPAIR:("----------";"PPPPPPPPP-";"PPPPPP----";"PPPPPP----";"---PP-----";"----------";"PPPPP-----";"PPPPPP----";"PPPPPPPP--";"PPPPP-PP--";"----------")   / split? by card value 1..10; - plays the total
+/ no hole card (Lugano): 11 vs 10, 8,8 vs 10 or A and A,A vs A are hits, proved by simulation in this game
 
 / the book's letter for hand h against the dealer's card u (cp: may this hand split)
 bjraw:{[h;u;cp]c:bjUC 13!u;t:bjpt h;v:bjPT 13!h;p:cp&(2=#h)&(v 0)=v 1
@@ -54,9 +57,11 @@ bjpage:{$[(#x)>x?",";$["A,"~2#x;$[x~"A,A";2;1];2];0]}   / which part of the char
 
 / why the book says what it says: a rule of thumb for each part of the chart
 bjwhy:{[h;u;cp]c:bjUC 13!u;t:bjpt h;a:bjraw[h;u;cp];v:bjPT 13!h;p:cp&(2=#h)&(v 0)=v 1;n:bjVT v 0
-  $[p&a="P";$[1=v 0;"Always split aces: two hands starting on 11 beat one soft 12."
-              8=v 0;"Always split 8s: 16 is the worst hand there is, and two hands starting on 8 do far better."
+  $[p&a="P";$[1=v 0;"Split aces: two hands starting on 11 beat one soft 12."
+              8=v 0;"Split 8s: 16 is the worst hand there is, and two hands starting on 8 do far better."
               "Split: two hands starting on ",n," do better against this card than one ",(bjkind[h;0]),"."]
+    p&1=v 0;"Don't split aces against an ace here: with no hole card, a dealer blackjack would take both bets. Hit the soft 12."
+    p&8=v 0;"Don't split 8s against a 10 or an ace here: with no hole card, a dealer blackjack would take both bets. Hit the 16."
     p&10=v 0;"Never split tens: 20 already wins most of the time."
     p&5=v 0;"Never split 5s: play them as a hard 10."
     p&9=v 0;$[c=5;"Don't split 9s against a 7: your 18 beats the 17 that dealer most often ends on.";"Don't split 9s against a 10 or an ace: stand on the 18."]
@@ -69,12 +74,14 @@ bjwhy:{[h;u;cp]c:bjUC 13!u;t:bjpt h;a:bjraw[h;u;cp];v:bjPT 13!h;p:cp&(2=#h)&(v 0
                a="D";"Double (hit if you can't): one card can't bust a soft hand, and the dealer's card is weak."
                "Hit: a soft hand can't bust on one card, and it's too weak to double against this card."]
     t<9;"Hit: you can't bust, and it's too weak to double."
-    t<12;$[a="D";"Double (hit if you can't): one card often makes a strong hand, and this dealer card is beatable.";"Hit, don't double: against this card the extra bet doesn't pay."]
+    t<12;$[a="D";"Double (hit if you can't): one card often makes a strong hand, and this dealer card is beatable."
+           (t=11)&c>7;"Hit, don't double: with no hole card, a dealer blackjack under that card would take the doubled bet too."
+           "Hit, don't double: against this card the extra bet doesn't pay."]
     (t=12)&c<2;"Hit 12 against a 2 or 3: only a ten busts you, and those cards bust the dealer less often than 4, 5 or 6."
     (t<17)&c<5;"Stand: the dealer shows a weak card (2 to 6) and must hit to 17, so let them bust."
     t<17;"Hit: the dealer likely makes 17 or more, so a stiff hand loses unless you improve it."
     "Stand: hitting 17 or more busts too often."]}
-bjINSWHY:"Insurance pays 2 to 1, but under an ace the dealer has a ten only about 31% of the time, so it loses about 7% of what you put on it. Never take it, not even as even money."
+bjINSWHY:"Insurance pays 2 to 1, but the dealer's next card is a ten only about 31% of the time, so it loses about 7% of what you put on it. Never take it, not even as even money."
 
 / ---- colour and text: ANSI codes, widths counted on screen (a suit is 3 bytes but 1 column) ----
 bjE:`c$27
@@ -90,7 +97,7 @@ bjup:{`c$(`i$x)-32*(x>"`")&x<"{"}
 bjlow:{$[(x>"@")&x<"[";`c$32+`i$x;x]}
 bjint:{10/-48+`i$x@&(x>"/")&x<":"}
 bjth:{$[x<1000;$x;(bjth(_x%1000)),",",-3#"00",$1000!x]}
-bjmoney:{a:x|-x;i:_a;(("";"-")x<0),(bjth i),$[a=i;"";".5"]}
+bjmoney:{a:x|-x;i:_a;(("";"-")x<0),"€",(bjth i),$[a=i;"";".5"]}
 bjpct:{[a;n]($_0.5+100*a%n),"%"}
 bjwrap:{[w;s]ws:" "\s;{[w;a;x]$[w<(bjvw@*|a)+1+bjvw x;a,,x;(-1_a),,(*|a)," ",x]}[w]/[,*ws;1_ws]}
 bjrule:{"  ",bjdim(,/(bjW-4)#,"─")}
@@ -127,7 +134,7 @@ bjdraw:{c:*bjS;bjS::1_bjS;c}
 
 / ---- state ---------------------------------------------------------------------------------
 bjinit:{`prng@0;bjBank::1000;bjStart::1000;bjLast::10;bjSt::0 0 0 0;bjCo::0 0;bjMs::();bjBack::0
-  bjOn::0;bjHide::0;bjSp::0;bjI::0;bjH::();bjB::();bjF::();bjX::();bjDb::();bjD::();bjAsk::0;bjInsB::0
+  bjOn::0;bjSp::0;bjI::0;bjH::();bjB::();bjF::();bjX::();bjDb::();bjSA::();bjD::();bjAsk::0;bjInsB::0;bjEM::0;bjPP::0;bjT3::0;bjSB::""
   bjMode::`table;bjPrev::`table;bjCP::0;bjQuit::0;bjEnt::0;bjBuf::"";bjMsg::""
   bjPK::`none;bjPD::();bjTK::`intro;bjTD::()
   bjDf::`all;bjDk::0 0;bjDs::0;bjQ::();bjDh::();bjDu::0
@@ -149,41 +156,56 @@ bjunmiss:{i:(bjMs~\:x)?1b;$[i<#bjMs;bjMs::(i#bjMs),(i+1)_bjMs;];}
 / grade move a (one of HSDP) before it's played, against this hand and the dealer's up card.
 / a mistake stays up for the rest of the hand; the next hand clears it
 bjcoach:{[a]h:bjH bjI;u:*bjD;cp:bjcansp[];cd:bjcandbl[];b:bjbest[h;u;cp;cd];m:bjmkey[h;u;cp];bjCo::bjCo+(a=b;1)
-  $[a=b;[bjunmiss m;$[bjPK=`miss;;[bjPK::`ok;bjPD::(h;u;cp;cd;a)]]];[bjMs::bjMs,,m;bjPK::`miss;bjPD::(h;u;cp;cd;a)]];}
+  $[a=b;[bjunmiss m;$[|/bjPK=`miss`ins;;[bjPK::`ok;bjPD::(h;u;cp;cd;a)]]];[bjMs::bjMs,,m;bjPK::`miss;bjPD::(h;u;cp;cd;a)]];}
 
 bjpanL:{[n]tr:bjMode=`train;k:$[tr;bjTK;bjPK];d:$[tr;bjTD;bjPD];ind:bjind[];w:bjW-2+#ind
   hd:$[k=`miss;bjred"✗ MISTAKE";k=`ins;bjred"✗ MISTAKE";k=`wrong;bjred"✗ WRONG";k=`right;bjgrn"✓ RIGHT"
-       k=`hint;bjcyan"? HINT";k=`ok;bjgrn"✓ BY THE BOOK";k=`intro;bjdim"TRAINING";bjdim"COACH"]
+       k=`hint;bjcyan"? HINT";k=`ok;bjgrn"✓ BY THE BOOK";k=`intro;bjdim"TRAINING";k=`side;bjyel"SIDE BET";bjdim"COACH"]
   bk:$[tr;"";bjCo 1;bjdim"book ",bjpct[bjCo 0;bjCo 1];""]
   B:$[|/k=`miss`hint`right`wrong`ok;bjup bjAN bjbest[d 0;d 1;d 2;d 3];""]
   s:$[|/k=`miss`hint`right`wrong`ok;bjsit[d 0;d 1;d 2];""]
   sit:$[k=`miss;s,": you chose to ",(bjAN d 4),", the book says ",B;k=`wrong;s,": you said ",(bjAN d 4),", the play is ",B
         k=`hint;s,": the book says ",B;|/k=`right`ok;s,": ",B
         k=`ins;$[d;"Even money";"Insurance"],": the book says NO"
+        k=`side;$[d=`pp;"Perfect Pairs: ",(bjmoney bjPP)," a hand";"21+3: ",(bjmoney bjT3)," a hand"],". The book says leave it off."
         k=`intro;$[bjWeb;"A hand and the dealer's card: what's the play? Nothing is at stake.";"A hand and the dealer's card: answer H, S, D or P. Nothing is at stake."]
         $[bjWeb;"Every move is checked against basic strategy. HINT asks before you move.";"Every move is checked against basic strategy.  ? hint   C chart   T training"]]
   why:$[|/k=`miss`hint`right`wrong;bjwrap[w;bjwhy[d 0;d 1;d 2]];k=`ins;bjwrap[w;bjINSWHY]
+        k=`side;bjwrap[w;$[d=`pp;"It pays 6, 12 or 26 to 1, but on 6 decks it keeps 4.5% of every bet, nine times what the main game keeps.";"At Lugano it pays 30, 20, 10 or 5 to 1 and keeps 13.4% of every bet: the worst bet on the table."]]
         k=`intro;bjwrap[w;"A miss comes back until you get it, and the chart marks the spots you still miss with a red dot. ",$[bjWeb;"FOCUS picks hard hands, soft hands or pairs.";"Focus: 1 hard, 2 soft, 3 pairs, 0 everything."]];()]
   ch:$[|/k=`miss`hint`right`wrong;(bjhdr[ind;""];bjline[ind;bjrowkey[d 0;d 2];bjrow[d 0;d 2];bjUC 13!d 1]);()]
   sit:bjwrap[w;sit];a:n-1;ch:$[a<(#sit)+#ch;();ch];why:((#why)&0|a-(#sit)+#ch)#why
   n#(,bjlr["  ",hd;bk,$[#bk;"  ";""]]),(ind,/:(a&#sit)#sit),(bjdim'ind,/:why),ch,n#,""}
 
 / ---- a hand at the table --------------------------------------------------------------------
-bjcandbl:{$[bjOn;(2=#bjH bjI)&~bjBank<bjB bjI;0]}
+bjcandbl:{$[bjOn;(2=#bjH bjI)&(~bjSA bjI)&~bjBank<bjB bjI;0]}
 bjcansp:{$[bjOn;[h:bjH bjI;(2=#h)&(=/bjPT 13!h)&(~bjBank<bjB bjI)&4>#bjH];0]}
 
-bjbet:{[b]$[b<1;bjMsg::bjred"bet at least 1";b>bjBank;bjMsg::bjred"you have ",(bjmoney bjBank)," chips";bjround b]}
+bjMIN:10                                           / the table minimum (Lugano: on the panel at the table)
+bjbet:{[b]$[b<bjMIN;bjMsg::bjred"the table minimum is ",bjmoney bjMIN;bjBank<b+bjPP+bjT3;bjMsg::bjred"you have ",bjmoney bjBank;bjround b]}
 bjround:{[b]$[78>#bjS;[bjshuf[];bjMsg::bjdim"a fresh shoe: 6 decks, shuffled"];bjMsg::""]
-  bjLast::b;bjBank::bjBank-b;bjPK::`none;bjOn::1;bjHide::1;bjSp::0;bjI::0;bjInsB::0
-  bjH::,!0;bjD::!0;bjB::,b;bjF::,0b;bjX::,"";bjDb::,0b
-  {$[2!x;bjD::bjD,bjdraw[];bjH::,(*bjH),bjdraw[]];bjframe[];bjsleep"0.22"}'!4   / you, dealer, you, the hole card
-  $[(0=13!*bjD)&~bjBank<0.5*b;bjAsk::1;bjpeek[]];}
-/ the dealer checks the hole card under an ace or a ten: a natural on either side ends the hand
-bjpeek:{$[(21=bjpt bjD)|21=bjpt@*bjH;bjend[];]}
-bjinsure:{[y]bjAsk::0;bjCo::bjCo+(~y;1)
-  $[y;[bjInsB::0.5*bjB 0;bjBank::bjBank-bjInsB;bjPK::`ins;bjPD::bjnat bjH 0];bjPK::`none]
-  bjpeek[]
-  $[bjOn&y;bjMsg::bjdim"no blackjack underneath: the insurance is lost";];}
+  bjLast::b;bjBank::bjBank-b+bjPP+bjT3;bjPK::`none;bjOn::1;bjSp::0;bjI::0;bjInsB::0;bjEM::0
+  bjH::,!0;bjD::!0;bjB::,b;bjF::,0b;bjX::,"";bjDb::,0b;bjSA::,0b
+  {$[x=1;bjD::bjD,bjdraw[];bjH::,(*bjH),bjdraw[]];bjframe[];bjsleep"0.22"}'!3   / you, the dealer's one card, you
+  bjside[]
+  $[(0=13!*bjD)&~bjBank<0.5*b;bjAsk::1;bjnat bjH 0;bjend[];];}   / an ace up: insurance first; a blackjack is settled
+/ insurance (even money with a blackjack): half the bet, paid 2 to 1 if the dealer's next card makes blackjack
+bjinsure:{[y]bjAsk::0;bjCo::bjCo+(~y;1);bj:bjnat bjH 0
+  $[y;[bjPK::`ins;bjPD::bj];bjPK::`none]
+  $[y&bj;[bjEM::1;bjend[]];y;[bjInsB::0.5*bjB 0;bjBank::bjBank-bjInsB];bj;bjend[];];}
+
+/ ---- the side bets on your first two cards (and, for 21+3, the dealer's card) ------------------
+/ Perfect Pairs pays 6 (mixed colours), 12 (same colour) or 26 to 1 (same suit); 21+3 pays 30 (straight
+/ flush), 20 (three of a kind), 10 (straight, ace high or low) or 5 to 1 (flush). Both keep a lot:
+/ 4.5% and 13.4% of every bet on 6 decks (exact, by enumerating every deal).
+bjSIDE:0 5 10 25 50 100                             / the stakes a side bet cycles through (casino: 5 to 100)
+bjppay:{[c]r:13!c;u:_c%13;$[~=/r;(0;"");=/u;(26;"perfect pair");=/(u=1)|u=2;(12;"coloured pair");(6;"mixed pair")]}
+bjt3pay:{[c]r:13!c;s:r@<r;fl:1=#?_c%13;st:(3=#?r)&((2=(s 2)-s 0)|s~0 11 12)
+  $[st&fl;(30;"straight flush");1=#?r;(20;"three of a kind");st;(10;"straight");fl;(5;"flush");(0;"")]}
+bjside:{c:*bjH;l:()
+  $[bjPP;[p:bjppay c;bjBank::bjBank+$[p 0;bjPP*1+p 0;0];l,:,$[p 0;bjgrn"Pairs: ",(p 1)," +",bjmoney bjPP*p 0;bjdim"Pairs: no pair"]];]
+  $[bjT3;[p:bjt3pay c,*bjD;bjBank::bjBank+$[p 0;bjT3*1+p 0;0];l,:,$[p 0;bjgrn"21+3: ",(p 1)," +",bjmoney bjT3*p 0;bjdim"21+3: nothing"]];]
+  bjSB::$[#l;(bjdim"  ·  ")/l;""];}
 
 bjmove:{bjMsg::""}
 bjhit:{bjmove[];bjcoach"H";bjH::@[bjH;bjI;,;bjdraw[]];bjgo[]}
@@ -192,12 +214,13 @@ bjdbl:{bjmove[];bjcoach"D";b:bjB bjI;bjBank::bjBank-b;bjB::@[bjB;bjI;:;2*b];bjDb
   bjH::@[bjH;bjI;,;bjdraw[]];bjframe[];bjsleep"0.4";bjnext[]}
 bjsplit:{bjmove[];bjcoach"P";i:bjI;h:bjH i;b:bjB i;a:0=13!h 0;bjBank::bjBank-b;bjSp::1
   bjH::(i#bjH),(,,h 0),(,,h 1),(i+1)_bjH
-  bjB::(i#bjB),(b;b),(i+1)_bjB
-  bjF::(i#bjF),(a;a),(i+1)_bjF                      / split aces: one card each, and they're done
+  bjB::(i#bjB),(b;b),(i+1)_bjB;bjF::(i#bjF),(2#0b),(i+1)_bjF;bjSA::(i#bjSA),(a;a),(i+1)_bjSA
   bjDb::(i#bjDb),(2#0b),(i+1)_bjDb;bjX::(#bjH)#,""
   bjframe[];bjsleep"0.25";bjH::@[bjH;i;,;bjdraw[]];bjframe[];bjsleep"0.25";bjH::@[bjH;i+1;,;bjdraw[]]
-  $[a;bjnext[];bjgo[]]}
-bjgo:{$[21>bjpt bjH bjI;;[bjframe[];bjsleep"0.4";bjnext[]]];}   / 21 stands by itself, a bust moves on
+  bjgo[]}
+/ a hand plays on unless it's 21 or bust; split aces get one card each, and play on only to split
+/ again when that card is another ace (Lugano lets you resplit aces)
+bjgo:{$[(21>bjpt bjH bjI)&~(bjSA bjI)&~bjcansp[];;[bjframe[];bjsleep"0.4";bjnext[]]];}
 bjnext:{bjF::@[bjF;bjI;:;1b];j:&~bjF;$[#j;[bjI::*j;bjgo[]];bjend[]];}
 
 / one hand against the dealer: (chips back; what happened; 0 won 1 lost 2 pushed 3 blackjack)
@@ -211,15 +234,20 @@ bjres:{[h;b]p:bjpt h;d:bjpt bjD;pn:bjnat h;dn:bjdnat[]
     p=d;(b;bjyel"PUSH";2)
     (0;bjred"LOSE -",bjmoney b;1)]}
 
-bjend:{bjOn::0;bjHide::0;bjframe[];bjsleep"0.5"
-  $[|/{(22>bjpt x)&~bjnat x}'bjH;{17>bjpt bjD}{bjD::bjD,bjdraw[];bjframe[];bjsleep"0.6";x}/0;]   / the dealer draws if a hand is still alive
-  r:bjres'[bjH;bjB];ip:$[bjdnat[];3*bjInsB;0]
+/ the dealer's turn. No hole card: the dealer's second card comes now, and only if it matters (a hand
+/ still alive, insurance on, or a blackjack the dealer's ace or ten could tie). A dealer blackjack
+/ takes every bet on the table, doubles and splits included, as on a no-hole-card table.
+bjend:{bjOn::0
+  em:bjEM;alive:|/{(22>bjpt x)&~bjnat x}'bjH;tie:(|/bjnat'bjH)&|/1 10=bjPT 13!*bjD
+  $[em;;alive|tie|bjInsB>0;[bjframe[];bjsleep"0.5";bjD::bjD,bjdraw[];bjframe[];bjsleep"0.6"
+    $[alive&~bjdnat[];{17>bjpt bjD}{bjD::bjD,bjdraw[];bjframe[];bjsleep"0.6";x}/0;]];]
+  r:$[em;,(2*bjB 0;bjgold"EVEN MONEY +",bjmoney bjB 0;3);bjres'[bjH;bjB]];ip:$[bjdnat[];3*bjInsB;0]
   bjBank::bjBank+ip++/r[;0];bjX::r[;1];bjSt::bjSt++/'(!4)=\:r[;2]
   n:(ip++/r[;0])-bjInsB++/bjB;dt:bjpt bjD
-  dd:$[bjdnat[];"dealer blackjack";dt>21;"dealer busts";"dealer ",$dt],$[ip>0;", insurance pays ",bjmoney 2*bjInsB;""]
-  bjMsg::$[(1=#bjH)&3=*r[;2];bjgold"Blackjack!  You win ",bjmoney n;&/21<bjpt'bjH;bjred"Bust.  You lose ",bjmoney(-n)
+  dd:$[em;"";2>#bjD;"";bjdnat[];"dealer blackjack";dt>21;"dealer busts";"dealer ",$dt],$[ip>0;", insurance pays ",bjmoney 2*bjInsB;bjInsB>0;", insurance lost";""]
+  bjMsg::$[em;bjgold"Even money: you win ",bjmoney n;(1=#bjH)&3=*r[;2];bjgold"Blackjack!  You win ",bjmoney n;&/21<bjpt'bjH;bjred"Bust.  You lose ",bjmoney(-n)
     n>0;bjgrn"You win ",bjmoney n;n<0;bjred"You lose ",bjmoney(-n);bjyel"Push"]
-  bjMsg::bjMsg,bjdim"  ·  ",dd
+  bjMsg::bjMsg,$[#dd;bjdim"  ·  ",dd;""],$[#bjSB;bjdim"  ·  ";""],bjSB
   bjsave[];}
 
 / ---- training: a hand and a dealer card, answered with H S D P -------------------------------
@@ -253,7 +281,7 @@ bjtot:{[h;d]t:bjpt h;$[0=#h;"";$[d;bjdnat[];bjnat h];bjgold"BLACKJACK";t>21;bjre
 bjtitleL:{l:"  ",(bjgold"BLACKJACK"),"  ",(bjSU 0)," ",(bjred bjSU 1)," ",(bjred bjSU 2)," ",bjSU 3
   r:$[bjMode=`chart;bjdim"basic strategy"
       bjMode=`train;(bjbold"TRAINING"),$[bjDk 1;bjdim"  ",($bjDk 0),"/",($bjDk 1),$[bjDs>2;"  streak ",$bjDs;""];""]
-      [d:bjBank-bjStart;(bjbold bjmoney bjBank),(bjdim" chips"),$[d>0;bjgrn" +",bjmoney d;d<0;bjred" -",bjmoney(-d);""]]]
+      [d:bjBank-bjStart;(bjbold bjmoney bjBank),$[d>0;bjgrn" +",bjmoney d;d<0;bjred" -",bjmoney(-d);""]]]
   bjlr[l;r,"  "]}
 
 bjcol:{[cw;i]h:bjH i;act:bjOn&(i=bjI)&1<#bjH;nm:$[1=#bjH;"YOU";"HAND ",$1+i]
@@ -265,21 +293,21 @@ bjplayer:{n:#bjH;k:$[bjN;2;4];cw:_(bjW-#bjind[])%k&n
   r:{[k;n;x]x+!k&n-x}[k;n]'k*!-_-n%k
   ,/{[cw;r]C:bjcol[cw]'r;{[cw;C;j](bjind[]),,/bjfit[;cw]'C@\:j}[cw;C]'!7}[cw]'r}
 bjwelcome:{ind:bjind[];w:bjW-2+#ind
-  t:$[bjBank<1;$[bjWeb;"You're out of chips: tap NEW for a fresh 1,000.";"You're out of chips: press N for a fresh 1,000."]
+  t:$[bjBank<1;$[bjWeb;"You're under the table minimum: tap NEW for a fresh €1,000.";"You're under the table minimum: press N for a fresh €1,000."]
       $[bjWeb;"Tap BET to choose a bet, or REBET for ",(bjmoney(_bjLast&bjBank)),".";"Press B to choose a bet, or R to bet ",(bjmoney(_bjLast&bjBank)),"."]]
-  7#("";ind,bjbold$[bjBack;"Welcome back.";"Welcome to the table."];""),(ind,/:bjwrap[w;"You have ",(bjmoney bjBank)," chips. ",t]),7#,""}
+  7#("";ind,bjbold$[bjBack;"Welcome back to Lugano.";"Welcome to Casino Lugano."];""),(ind,/:bjwrap[w;"You have ",(bjmoney bjBank),". ",t," The dealer takes one card; the second comes after you play."]),7#,""}
 
 / the message line(s): what just happened, the bet you're typing, or the insurance question
 bjmsgL:{[n]ind:bjind[]
-  t:$[bjEnt;(bjbold"Bet: "),bjBuf,(bjyel"_"),bjdim"   you have ",bjmoney bjBank
+  t:$[bjEnt;(bjbold"Bet: €"),bjBuf,(bjyel"_"),bjdim"   you have ",(bjmoney bjBank),$[bjPP+bjT3;" (side bets ",(bjmoney bjPP+bjT3)," more)";""]
       bjAsk;bjbold$[bjnat bjH 0;"The dealer shows an ace. Even money?";"The dealer shows an ace. Insurance for ",(bjmoney 0.5*bjB 0),"?"]
-      bjMode=`train;$[#bjMsg;bjMsg;bjdim"What's the play?"];bjMsg]
+      bjMode=`train;$[#bjMsg;bjMsg;bjdim"What's the play?"];bjOn&(0=#bjMsg)&#bjSB;bjSB;bjMsg]
   l:bjwrap[bjW-2+#ind;t]
   n#(ind,/:l),n#,""}
 
 bjtableL:{tr:bjMode=`train;ind:bjind[]
-  D:$[tr;,bjDu;bjHide&2=#bjD;(1#bjD),-1;bjD]
-  dl:ind,(bjbold"DEALER"),$[tr|bjHide|0=#bjD;"";"  ",bjtot[bjD;1]]
+  D:$[tr;,bjDu;bjD]
+  dl:ind,(bjbold"DEALER"),$[tr|bjOn|2>#bjD;"";"  ",bjtot[bjD;1]]
   P:$[tr;7#(,ind,(bjbold"YOU"),"  ",bjtot[bjDh;0]),(ind,/:bjhand[bjDh;bjW-4]),,"";#bjH;bjplayer[];bjwelcome[]]
   dc:ind,/:bjhand[D;bjW-4]
   $[bjN;[pn:$[7<#P;2;9];(bjtitleL[];bjrule[];"";dl),dc,(,""),(bjmsgL 2),(,""),P,("";bjrule[]),bjpanL pn]
@@ -287,7 +315,7 @@ bjtableL:{tr:bjMode=`train;ind:bjind[]
 
 bjchartL:{cur:$[bjPrev=`train;(bjrowkey[bjDh;1];bjUC 13!bjDu);bjOn;(bjrowkey[bjH bjI;bjcansp[]];bjUC 13!*bjD);("";-1)]
   lg:("";"H hit   ",(bjyel"S")," stand   ",(bjcyan"P")," split";(bjgrn"D"),"  double, or hit if you can't";(bjgrn"Ds")," double, or stand if you can't";(bjred"•"),"  a spot you still get wrong"
-      $[0>cur 1;"";(bjc["7"]"   ")," your hand right now"];"";bjdim"6 decks, dealer stands on soft 17,";bjdim"double after split, no surrender.";bjdim"Never take insurance.")
+      $[0>cur 1;"";(bjc["7"]"   ")," your hand right now"];"";bjdim"Lugano: 6 decks, no hole card,";bjdim"dealer stands on soft 17, DAS.";bjdim"Never take insurance.")
   $[bjN;(bjtitleL[];bjrule[];""),(bjtable[bjCP;"  ";cur]),"  ",/:lg
     [L:(bjtable[0;"  ";cur]),(,""),bjtable[1;"  ";cur];R:(bjtable[2;"";cur]),lg
      (bjtitleL[];bjrule[]),((bjfit[;41]'L),'R)]]}
@@ -298,8 +326,8 @@ bjkeysL:{e:$[bjMode=`chart;$[bjN;(("1";"hard");("2";"soft");("3";"pairs");("Esc"
   bjAsk;(("Y";"yes");("N";"no thanks"))
   bjMode=`train;(("H";"hit");("S";"stand");("D";"double")),($[bjdpair[];,("P";"split");()]),(("F";$bjDf);("C";"chart");("Esc";"table"))
   bjOn;(("H";"hit");("S";"stand")),($[bjcandbl[];,("D";"double");()]),($[bjcansp[];,("P";"split");()]),(("?";"hint");("C";"chart"))
-  bjBank<1;(("N";"new chips");("T";"train");("C";"chart");("Q";"quit"))
-  (("R";"rebet ",bjmoney(_bjLast&bjBank));("B";"bet");("T";"train");("C";"chart");("Q";"quit"))]
+  bjBank<bjMIN;(("N";"new €1,000");("T";"train");("C";"chart");("Q";"quit"))
+  (("R";"rebet ",bjmoney(_bjLast&bjBank));("B";"bet");("X";"pairs ",$[bjPP;bjmoney bjPP;"off"]);("Z";"21+3 ",$[bjT3;bjmoney bjT3;"off"]);("T";"train");("C";"chart"))]
   "  ",("  "/{bjcap[x 0;x 1]}'e)}
 
 / ---- output: a terminal frame, or (on the web) frames queued with the pause before each ---------
@@ -328,12 +356,14 @@ bjon1:{c:bjlow@*x;esc:x~,bjE
     bjMode=`train;bjtrainkey[c;esc]
     bjOn;bjhandkey c
     bjidlekey c];}
-bjhandkey:{$[x="h";bjhit[];x="s";bjstand[];x="d";$[bjcandbl[];bjdbl[];]
+bjhandkey:{$[x="h";$[bjSA bjI;;bjhit[]];x="s";bjstand[];x="d";$[bjcandbl[];bjdbl[];]
   x="p";$[bjcansp[];bjsplit[];];x="?";[bjPK::`hint;bjPD::(bjH bjI;*bjD;bjcansp[];bjcandbl[];" ")];x="c";bjchart[];x="q";bjQuit::1;]}
-bjidlekey:{$[(x="r")|(x=" ")|(x="\n")|x="\r";$[bjBank<1;;bjbet(_bjLast&bjBank)]
-  x="b";$[bjBank<1;;[bjEnt::1;bjBuf::"";bjMsg::""]]
+bjidlekey:{$[(x="r")|(x=" ")|(x="\n")|x="\r";$[bjBank<bjMIN;;bjbet(_bjLast&bjBank)]
+  x="b";$[bjBank<bjMIN;;[bjEnt::1;bjBuf::"";bjMsg::""]]
+  x="x";[bjPP::bjSIDE(#bjSIDE)!1+bjSIDE?bjPP;bjPK::$[bjPP;`side;`none];bjPD::`pp]
+  x="z";[bjT3::bjSIDE(#bjSIDE)!1+bjSIDE?bjT3;bjPK::$[bjT3;`side;`none];bjPD::`t3]
   x="t";bjtrain bjDf;x="c";bjchart[];x="q";bjQuit::1
-  x="n";$[bjBank<1;[bjBank::1000;bjStart::1000;bjH::();bjMsg::bjgrn"a fresh 1,000 chips";bjsave[]];];]}
+  x="n";$[bjBank<bjMIN;[bjBank::1000;bjStart::1000;bjH::();bjMsg::bjgrn"a fresh €1,000";bjsave[]];];]}
 / a bet: digits and Backspace in a terminal; on the phone, chips (+25) and a clear (the key "0c")
 bjbetkey:{[x;c;esc]$[esc;bjEnt::0;(c="\n")|c="\r";[bjEnt::0;$[#bjBuf;bjbet bjint bjBuf;]]
   "+"=*x;bjBuf::$((_bjBank)&(bjint bjBuf)+bjint 1_x);x~"0c";bjBuf::""
@@ -349,8 +379,8 @@ bjchart:{bjPrev::bjMode;bjMode::`chart
 / each returns the frames to show, each after a line \001<pause in seconds>, then \002 and the
 / state the buttons need (mode, may double, may split, rebet, pair, focus, chart page, even money),
 / then \003 and the save text when something changed
-bjwebout:{s:$[bjMode=`chart;"chart";bjEnt;"bet";bjAsk;"ask";bjMode=`train;"train";bjOn;"hand";bjBank<1;"broke";"idle"]
-  s:"|"/(s;$bjcandbl[];$bjcansp[];bjmoney(_bjLast&bjBank);$[bjMode=`train;$bjdpair[];"0"];$bjDf;$bjCP;$[bjAsk;$bjnat bjH 0;"0"])
+bjwebout:{s:$[bjMode=`chart;"chart";bjEnt;"bet";bjAsk;"ask";bjMode=`train;"train";bjOn;"hand";bjBank<bjMIN;"broke";"idle"]
+  s:"|"/(s;$bjcandbl[];$bjcansp[];bjmoney(_bjLast&bjBank);$[bjMode=`train;$bjdpair[];"0"];$bjDf;$bjCP;$[bjAsk;$bjnat bjH 0;"0"];bjmoney bjPP;bjmoney bjT3;$[bjOn;$bjSA bjI;"0"])
   o:(,/{(,(`c$1),x 0),x 1}'bjFQ),(,(`c$2),s),$[bjDirty;(,,`c$3),"\n"\bjsavetext[];()]
   bjFQ::();bjDirty::0;`0:o;}
 bjwebinit:{[sv]bjWeb::1;bjinit[];bjW::42;bjN::1;$[#sv;.[bjloadtext;,sv;{}];];bjStart::bjBank;bjframe[];bjwebout[]}

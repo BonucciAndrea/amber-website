@@ -84,15 +84,17 @@ function press(k) { if (!vm || busy) return; play(call("bjwebkey[" + kexpr(k) + 
 
 /* ---- the pad: the terminal's keys for this moment, as buttons ---------------------------------- */
 function buttons(s) {
-  const [mode, cd, cp, rebet, pair, focus, page, even] = (s || "idle").split("|");
+  const [mode, cd, cp, rebet, pair, focus, page, even, pp, t3, sa] = (s || "idle").split("|");
   const B = (label, key, cls, off) => ({ label, key, cls: cls || "", off: !!off });
   const tab = (label, key, p) => B(label, key, "ghost" + (page === p ? " on" : ""));
+  const side = (name, key, v) => B(name + (v && v !== "€0" ? " " + v : ""), key, "ghost" + (v && v !== "€0" ? " on" : ""));
   const rows = {
-    hand:  [[B("HIT", "h"), B("STAND", "s"), B("DOUBLE", "d", "", cd !== "1"), B("SPLIT", "p", "", cp !== "1")],
+    hand:  [[B("HIT", "h", "", sa === "1"), B("STAND", "s"), B("DOUBLE", "d", "", cd !== "1"), B("SPLIT", "p", "", cp !== "1")],
             [B("HINT", "?", "ghost"), B("CHART", "c", "ghost")]],
-    idle:  [[B("REBET " + rebet, "r", "gold"), B("BET", "b")], [B("TRAIN", "t", "ghost"), B("CHART", "c", "ghost")]],
-    broke: [[B("NEW 1,000 CHIPS", "n", "gold")], [B("TRAIN", "t", "ghost"), B("CHART", "c", "ghost")]],
-    bet:   [[B("+5", "+5"), B("+25", "+25"), B("+100", "+100"), B("+500", "+500")],
+    idle:  [[B("REBET " + rebet, "r", "gold"), B("BET", "b")],
+            [side("PAIRS", "x", pp), side("21+3", "z", t3), B("TRAIN", "t", "ghost"), B("CHART", "c", "ghost")]],
+    broke: [[B("NEW €1,000", "n", "gold")], [B("TRAIN", "t", "ghost"), B("CHART", "c", "ghost")]],
+    bet:   [[B("+10", "+10"), B("+25", "+25"), B("+50", "+50"), B("+100", "+100")],
             [B("CLEAR", "0c", "ghost"), B("CANCEL", "\x1b", "ghost"), B("DEAL", "\n", "gold")]],
     ask:   [[B(even === "1" ? "EVEN MONEY" : "INSURANCE", "y", "ghost"), B("NO THANKS", "n")], []],
     train: [[B("HIT", "h"), B("STAND", "s"), B("DOUBLE", "d"), B("SPLIT", "p", "", pair !== "1")],
